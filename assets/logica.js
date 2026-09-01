@@ -92,6 +92,7 @@
     $('version').textContent = 'Tarifas ' + (CAT.config.VERSION_TARIFAS || '');
     renderHoteles();
     conectarEventos();
+    calcMontar();
     $('cargando').classList.add('oculto');
     $('app').classList.remove('oculto');
   }
@@ -809,6 +810,158 @@
     var i = estado.lineas.indexOf(l);
     nodo.innerHTML = htmlLinea(l, i);
   }
+
+  // ==========================================================================
+  // CALCULADORA RAPIDA
+  //
+  // Un precio suelto, sin armar la cotizacion. La asesora la necesita mientras
+  // habla por telefono: alguien pregunta "y cuanto sale la Junior Suite dos
+  // noches", y ella no puede perder la cotizacion de tres habitaciones que ya
+  // lleva media hora armando. Por eso es una ventana aparte con su propio
+  // estado, y no reutiliza `estado` ni toca `ULTIMO`.
+  //
+  // Usa el mismo Motor: si algun dia diera un precio distinto al del panel
+  // grande, seria un error de este archivo, no de dos calculos que compiten.
+  // ==========================================================================
+  var calcAbierta = false;
+
+  function calcMontar() {
+    var selH = $('calcHotel');
+    selH.innerHTML = '<option value="">Elige…</option>' +
+      Object.keys(CAT.hoteles).map(function (c) {
+        return '<option value="' + c + '">' + esc(CAT.hoteles[c].nombre) + '</option>';
+      }).join('');
+
+    $('calcHotel').addEventListener('change', function () {
+      calcLlenarHabs();
+      calcCalcular();
+    });
+
+    ['calcHab', 'calcIn', 'calcOut'].forEach(function (id) {
+      $(id).addEventListener('change', calcCalcular);
+    });
+    ['calcAdultos', 'calcNinos'].forEach(function (id) {
+      $(id).addEventListener('input', function () { calcEdades(); calcCalcular(); });
+    });
+    $('calcEdades').addEventListener('input', calcCalcular);
+
+    $('btnCalc').addEventListener('click', function () {
+      calcAbierta ? calcCerrar() : calcAbrir();
+    });
+    $('btnCalcCerrar').addEventListener('click', calcCerrar);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && calcAbierta) calcCerrar();
+    });
+  }
+
+  function calcAbrir() {
+    calcAbierta = true;
+    $('calc').classList.remove('oculto');
+    $('btnCalc').setAttribute('aria-expanded', 'true');
+
+    // Arranca con lo que la asesora ya tiene cargado: casi siempre quiere
+    // variar sobre eso, no empezar de cero.
+    if (!$('calcHotel').value && estado.hotel) {
+      $('calcHotel').value = estado.hotel;
+      calcLlenarHabs();
+    }
+    if (!$('calcIn').value && estado.checkin) $('calcIn').value = estado.checkin;
+    if (!$('calcOut').value && estado.checkout) $('calcOut').value = estado.checkout;
+
+    calcCalcular();
+    $('calcHotel').focus();
+  }
+
+  function calcCerrar() {
+    calcAbierta = false;
+    $('calc').classList.add('oculto');
+    $('btnCalc').setAttribute('aria-expanded', 'false');
+    $('btnCalc').focus();
+  }
+
+  function calcLlenarHabs() {
+    var hotel = $('calcHotel').value;
+    var habs = hotel ? habsDe(hotel) : [];
+    $('calcHab').innerHTML = '<option value="">Elige…</option>' +
+      habs.map(function (h) {
+        return '<option value="' + esc(h.cod) + '">' + esc(h.nombre) + '</option>';
+      }).join('');
+  }
+
+  /** Un campo de edad por cada nino declarado, conservando lo ya escrito. */
+  function calcEdades() {
+    var n = Math.max(0, Math.min(6, Number($('calcNinos').value) || 0));
+    var cont = $('calcEdades');
+    var previos = [].slice.call(cont.querySelectorAll('input'))
+                    .map(function (i) { return i.value; });
+
+    if (!n) { cont.innerHTML = ''; cont.classList.add('oculto'); return; }
+
+    var html = [];
+    for (var i = 0; i < n; i++) {
+      html.push('<label class="campo campo-edad"><span class="campo-etiqueta">Edad ' +
+                (i + 1) + '</span><input type="number" class="input" min="0" max="17" ' +
+                'inputmode="numeric" value="' + esc(previos[i] || '') + '"></label>');
+    }
+    cont.innerHTML = html.join('');
+    cont.classList.remove('oculto');
+  }
+
+  function calcSalida(html, hayError) {
+    var s = $('calcSalida');
+    s.innerHTML = html;
+    s.className = 'calc-salida' + (hayError ? ' con-error' : '');
+  }
+
+  function calcCalcular() {
+    var hotel = $('calcHotel').value;
+    var cod = $('calcHab').value;
+    var ci = $('calcIn').value;
+    var co = $('calcOut').value;
+
+    if (!hotel || !cod || !ci || !co) {
+      calcSalida('<span class="calc-espera">Elige hotel, habitación y fechas.</span>', false);
+      return;
+    }
+
+    var edades = [].slice.call($('calcEdades').querySelectorAll('input'))
+      .map(function (i) { return Number(i.value); })
+      .filter(function (e) { return !isNaN(e) && edadDeMenor(e); });
+
+    var req = {
+      hotel: hotel, checkin: ci, checkout: co, promos: [],
+      lineas: [{ cod_hab: cod, cantidad: 1,
+                 adultos: Math.max(1, Number($('calcAdultos').value) || 1),
+                 edades: edades }]
+    };
+
+    var r;
+    try {
+      r = Motor.calcular(CAT, req);
+    } catch (e) {
+      calcSalida('<span class="calc-error">No se pudo calcular: ' + esc(e.message) +
+                 '</span>', true);
+      return;
+    }
+
+    if (!r.ok) {
+      calcSalida('<span class="calc-error">' +
+                 r.errores.map(esc).join('<br>') + '</span>', true);
+      return;
+    }
+
+    var porNoche = r.lineas[0].costoUniforme;
+    calcSalida(
+      '<span class="calc-total">$' + Motor.fmtMoney(CAT, r.total) + '</span>' +
+      '<span class="calc-detalle">' + r.nNoches +
+      (r.nNoches === 1 ? ' noche' : ' noches') +
+      (porNoche !== null ? ' · $' + Motor.fmtMoney(CAT, porNoche) + ' por noche' : '') +
+      '</span>', false);
+  }
+
+  /** Una edad de menor: 0 a 17. Un "18" aqui seria un adulto mal contado. */
+  function edadDeMenor(e) { return e >= 0 && e <= 17; }
 
   // ==========================================================================
   iniciar();

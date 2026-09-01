@@ -125,6 +125,66 @@
   </div>
 </div>
 
+<!-- ====================== CALCULADORA RAPIDA ====================== -->
+<!-- Un precio suelto, sin armar la cotizacion. La asesora lo necesita
+     mientras habla por telefono: no puede perder lo que ya tiene cargado. -->
+<button type="button" class="fab" id="btnCalc" title="Calculadora rápida"
+        aria-label="Abrir calculadora rápida" aria-expanded="false">
+  <span class="fab-icono" aria-hidden="true">$</span>
+  <span class="fab-texto">Calcular</span>
+</button>
+
+<div id="calc" class="calc oculto" role="dialog" aria-modal="false"
+     aria-labelledby="calcTitulo">
+  <div class="calc-cabecera">
+    <h3 id="calcTitulo" class="calc-titulo">Calculadora rápida</h3>
+    <button type="button" class="btn-cerrar" id="btnCalcCerrar"
+            aria-label="Cerrar calculadora">✕</button>
+  </div>
+
+  <div class="calc-cuerpo">
+    <label class="campo">
+      <span class="campo-etiqueta">Hotel</span>
+      <select id="calcHotel" class="select"></select>
+    </label>
+
+    <label class="campo">
+      <span class="campo-etiqueta">Habitación</span>
+      <select id="calcHab" class="select"></select>
+    </label>
+
+    <div class="calc-fechas">
+      <label class="campo">
+        <span class="campo-etiqueta">Entrada</span>
+        <input type="date" id="calcIn" class="input">
+      </label>
+      <label class="campo">
+        <span class="campo-etiqueta">Salida</span>
+        <input type="date" id="calcOut" class="input">
+      </label>
+    </div>
+
+    <div class="calc-pax">
+      <label class="campo campo-corto">
+        <span class="campo-etiqueta">Adultos</span>
+        <input type="number" id="calcAdultos" class="input" min="1" max="8" value="2"
+               inputmode="numeric">
+      </label>
+      <label class="campo campo-corto">
+        <span class="campo-etiqueta">Niños</span>
+        <input type="number" id="calcNinos" class="input" min="0" max="6" value="0"
+               inputmode="numeric">
+      </label>
+    </div>
+
+    <div class="calc-edades oculto" id="calcEdades"></div>
+
+    <div class="calc-salida" id="calcSalida" aria-live="polite">
+      <span class="calc-espera">Elige hotel, habitación y fechas.</span>
+    </div>
+  </div>
+</div>
+
 <!-- ====================== COPIA MANUAL (fallback nivel 3) ====================== -->
 <div id="modalCopia" class="modal oculto" role="dialog" aria-modal="true"
      aria-labelledby="modalCopiaTitulo">

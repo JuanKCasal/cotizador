@@ -326,6 +326,73 @@ function setVal(el, v, ev) {
      'fechas iguales siguen avisando', $('pistaFechas').textContent);
   ok($('btnCopiar').disabled, 'copiar bloqueado con fechas iguales');
 
+  // 12. Calculadora rapida: es una ventana aparte, no puede pisar la
+  //     cotizacion que la asesora ya tiene armada.
+  const antesHotel = $('hoteles').querySelector('[aria-checked=true], .hotel-op.activa');
+  const lineasAntes = doc.querySelectorAll('#lineas .hab').length;
+  const totalAntes = $('barraTotal') ? $('barraTotal').textContent : null;
+
+  const btnCalc = $('btnCalc');
+  ok(!!btnCalc, 'existe el boton de la calculadora');
+  if (btnCalc) {
+    ok($('calc').classList.contains('oculto'), 'la calculadora arranca cerrada');
+    click(btnCalc);
+    await esperar(60);
+    ok(!$('calc').classList.contains('oculto'), 'el boton la abre');
+
+    // Hereda lo que ya estaba cargado en el panel grande
+    eq($('calcHotel').value, 'HBK', 'hereda el hotel ya elegido');
+    ok($('calcHab').options.length > 1, 'se llenan las habitaciones del hotel');
+
+    setVal($('calcHotel'), 'WTC');
+    await esperar(40);
+    const codigos = [...$('calcHab').options].map((o) => o.value);
+    ok(codigos.indexOf('DLX_KING') !== -1, 'al cambiar de hotel se recargan las habitaciones',
+       'opciones=' + codigos.join(','));
+
+    setVal($('calcHab'), 'DLX_KING');
+    setVal($('calcIn'), '2026-09-01');
+    setVal($('calcOut'), '2026-09-03');
+    setVal($('calcAdultos'), '1', 'input');
+    await esperar(60);
+    const salida1 = $('calcSalida').textContent;
+    ok(salida1.indexOf('320') !== -1, 'calcula 2 noches de Deluxe King a 160',
+       'salida=' + salida1);
+
+    setVal($('calcAdultos'), '2', 'input');
+    await esperar(60);
+    const salida2 = $('calcSalida').textContent;
+    ok(salida2.indexOf('360') !== -1, 'con 2 huespedes sube a 180 por noche',
+       'salida=' + salida2);
+
+    // Un error se muestra en la calculadora, no rompe nada
+    setVal($('calcHab'), 'DLX_TWIN');
+    setVal($('calcAdultos'), '1', 'input');
+    await esperar(60);
+    ok($('calcSalida').classList.contains('con-error'),
+       'una ocupacion sin tarifa se muestra como error',
+       'salida=' + $('calcSalida').textContent);
+
+    // Los campos de edad aparecen segun el numero de ninos
+    setVal($('calcNinos'), '2', 'input');
+    await esperar(60);
+    eq(doc.querySelectorAll('#calcEdades input').length, 2, 'aparecen 2 campos de edad');
+    setVal($('calcNinos'), '0', 'input');
+    await esperar(60);
+    eq(doc.querySelectorAll('#calcEdades input').length, 0, 'y desaparecen');
+
+    // Lo importante: no toco la cotizacion de atras
+    eq(doc.querySelectorAll('#lineas .hab').length, lineasAntes,
+       'la cotizacion armada conserva sus habitaciones');
+    if (totalAntes !== null) {
+      eq($('barraTotal').textContent, totalAntes, 'y el total de la cotizacion no cambio');
+    }
+
+    click($('btnCalcCerrar'));
+    await esperar(60);
+    ok($('calc').classList.contains('oculto'), 'se cierra con la X');
+  }
+
   // ---------- Reporte ----------
   console.log('========================================');
   console.log(`SPA en jsdom -> ${total} chequeos | fallan: ${fallos.length}`);
@@ -337,4 +404,5 @@ function setVal(el, v, ev) {
     console.log('Sin errores de ejecucion.');
   }
   process.exit(fallos.length || errores.length ? 1 : 0);
+
 })();

@@ -460,3 +460,147 @@ input[type="date"] { min-height: 44px; }
     transition-duration: .001ms !important;
   }
 }
+
+/* ==========================================================================
+   CALCULADORA RAPIDA
+   Un precio suelto sin tocar la cotizacion que ya esta armada. En PC es un
+   panel chico anclado a una esquina, para poder mirarlo mientras se habla por
+   telefono; en el celular no cabe algo asi, y se comporta como una hoja que
+   sube desde abajo.
+   ========================================================================== */
+
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--acento);
+  color: #fff;
+  font-family: var(--cuerpo);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(11, 37, 69, .28);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.fab:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(11, 37, 69, .34); }
+.fab:active { transform: translateY(0); }
+.fab:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+
+.fab-icono {
+  display: grid;
+  place-items: center;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .22);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Con la barra del total ocupando el borde inferior en movil, el boton se
+   sube para no quedar debajo de ella. */
+@media (max-width: 900px) {
+  .fab { bottom: calc(var(--barra-alto) + 14px); right: 14px; padding: 0 16px; }
+  .fab-texto { display: none; }
+  .fab { padding: 0; width: 52px; height: 52px; justify-content: center; }
+}
+
+.calc {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 80;
+  width: 330px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--papel);
+  border: 1px solid var(--arena);
+  border-radius: var(--r-lg);
+  box-shadow: 0 18px 48px rgba(11, 37, 69, .26);
+}
+
+.calc-cabecera {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--acento);
+  color: #fff;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+.calc-titulo {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.calc-cabecera .btn-cerrar {
+  color: #fff;
+  background: rgba(255, 255, 255, .16);
+}
+
+.calc-cuerpo { display: grid; gap: 12px; padding: 16px; }
+.calc-fechas,
+.calc-pax    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.calc-edades { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.calc-salida {
+  min-height: 74px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--acento-sut);
+  border: 1px solid var(--arena);
+  text-align: center;
+}
+
+.calc-espera { color: var(--tinta-45); font-size: 13px; }
+
+.calc-total {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--tinta);
+}
+
+.calc-detalle { font-size: 13px; color: var(--tinta-70); }
+
+.calc-error {
+  font-size: 13px;
+  color: var(--alerta);
+  text-align: left;
+  line-height: 1.45;
+}
+
+.calc-salida.con-error { background: var(--alerta-sut); border-color: var(--alerta); }
+
+/* En el celular ocupa el ancho y sube desde abajo: un panel flotante de 330px
+   en una pantalla de 360 no es un panel, es la pantalla entera mal puesta. */
+@media (max-width: 900px) {
+  .calc {
+    right: 0; left: 0; bottom: 0;
+    width: auto;
+    max-width: none;
+    max-height: 88vh;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    border-left: 0; border-right: 0; border-bottom: 0;
+  }
+}
