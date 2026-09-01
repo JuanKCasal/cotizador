@@ -1,0 +1,114 @@
+[
+  {
+    "hotel": "HBK",
+    "cod_temp": "ALTA_26",
+    "nombre": "Temporada Alta 2026",
+    "fecha_inicio": "2026-08-01",
+    "fecha_fin": "2026-09-15",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HBK",
+    "cod_temp": "BAJA_26",
+    "nombre": "Temporada Baja 2026",
+    "fecha_inicio": "2026-09-16",
+    "fecha_fin": "2026-12-20",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HBK",
+    "cod_temp": "NAV_26",
+    "nombre": "Navidad 2026",
+    "fecha_inicio": "2026-12-21",
+    "fecha_fin": "2026-12-27",
+    "prioridad": 50
+  },
+  {
+    "hotel": "HBK",
+    "cod_temp": "FIN_26",
+    "nombre": "Fin de año 2026-27",
+    "fecha_inicio": "2026-12-28",
+    "fecha_fin": "2027-01-12",
+    "prioridad": 50
+  },
+  {
+    "hotel": "HIM",
+    "cod_temp": "ALTA_26",
+    "nombre": "Temporada Alta 2026",
+    "fecha_inicio": "2026-08-01",
+    "fecha_fin": "2026-09-15",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HIM",
+    "cod_temp": "BAJA_26",
+    "nombre": "Temporada Baja 2026",
+    "fecha_inicio": "2026-09-16",
+    "fecha_fin": "2026-12-20",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HIM",
+    "cod_temp": "NAV_26",
+    "nombre": "Navidad 2026",
+    "fecha_inicio": "2026-12-21",
+    "fecha_fin": "2026-12-27",
+    "prioridad": 50
+  },
+  {
+    "hotel": "HIM",
+    "cod_temp": "FIN_26",
+    "nombre": "Fin de año 2026-27",
+    "fecha_inicio": "2026-12-28",
+    "fecha_fin": "2027-01-12",
+    "prioridad": 50
+  },
+  {
+    "hotel": "HPA",
+    "cod_temp": "ALTA_26",
+    "nombre": "Temporada Alta 2026",
+    "fecha_inicio": "2026-08-01",
+    "fecha_fin": "2026-09-15",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HPA",
+    "cod_temp": "BAJA_26",
+    "nombre": "Temporada Baja 2026",
+    "fecha_inicio": "2026-09-16",
+    "fecha_fin": "2026-12-20",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HPA",
+    "cod_temp": "NAV_26",
+    "nombre": "Navidad 2026",
+    "fecha_inicio": "2026-12-21",
+    "fecha_fin": "2026-12-27",
+    "prioridad": 50
+  },
+  {
+    "hotel": "HPA",
+    "cod_temp": "FIN_26",
+    "nombre": "Fin de año 2026-27",
+    "fecha_inicio": "2026-12-28",
+    "fecha_fin": "2027-01-12",
+    "prioridad": 50
+  },
+  {
+    "hotel": "WTC",
+    "cod_temp": "BAJA_26",
+    "nombre": "Temporada Baja 2026",
+    "fecha_inicio": "2026-08-01",
+    "fecha_fin": "2026-12-30",
+    "prioridad": 10
+  },
+  {
+    "hotel": "HMC",
+    "cod_temp": "BAJA_26",
+    "nombre": "Temporada Baja 2026",
+    "fecha_inicio": "2026-08-01",
+    "fecha_fin": "2026-12-30",
+    "prioridad": 10
+  }
+]

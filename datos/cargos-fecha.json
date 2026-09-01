@@ -1,0 +1,56 @@
+[
+  {
+    "hotel": "HBK",
+    "fecha": "2026-12-24",
+    "nombre": "Cena de Navidad",
+    "monto_adulto": 120,
+    "monto_nino": 60,
+    "monto_infante": 0,
+    "obligatorio": true
+  },
+  {
+    "hotel": "HBK",
+    "fecha": "2026-12-31",
+    "nombre": "Fiesta de Fin de Año",
+    "monto_adulto": 140,
+    "monto_nino": 70,
+    "monto_infante": 0,
+    "obligatorio": true
+  },
+  {
+    "hotel": "HIM",
+    "fecha": "2026-12-24",
+    "nombre": "Cena de Navidad",
+    "monto_adulto": 100,
+    "monto_nino": 50,
+    "monto_infante": 0,
+    "obligatorio": true
+  },
+  {
+    "hotel": "HIM",
+    "fecha": "2026-12-31",
+    "nombre": "Fiesta de Fin de Año",
+    "monto_adulto": 120,
+    "monto_nino": 60,
+    "monto_infante": 0,
+    "obligatorio": true
+  },
+  {
+    "hotel": "HPA",
+    "fecha": "2026-12-24",
+    "nombre": "Cena de Navidad",
+    "monto_adulto": 100,
+    "monto_nino": 50,
+    "monto_infante": 0,
+    "obligatorio": true
+  },
+  {
+    "hotel": "HPA",
+    "fecha": "2026-12-31",
+    "nombre": "Fiesta de Fin de Año",
+    "monto_adulto": 120,
+    "monto_nino": 60,
+    "monto_infante": 0,
+    "obligatorio": true
+  }
+]

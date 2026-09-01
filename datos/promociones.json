@@ -1,0 +1,32 @@
+[
+  {
+    "hotel": "HIM",
+    "cod_promo": "PRO_RESIDENTES",
+    "nombre": "Promoción para Residentes",
+    "vig_inicio": "2026-08-01",
+    "vig_fin": "2026-09-15",
+    "cod_hab": "TODAS",
+    "tipo": "DESCUENTO_MONTO",
+    "valor": 5,
+    "min_noches": 1,
+    "dias_semana": "",
+    "mensaje": "Promoción aplicable previa presentación del RIF",
+    "prioridad": 100,
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_promo": "PRO_RESIDENTES",
+    "nombre": "Promoción para Residentes",
+    "vig_inicio": "2026-08-01",
+    "vig_fin": "2026-09-15",
+    "cod_hab": "TODAS",
+    "tipo": "DESCUENTO_MONTO",
+    "valor": 5,
+    "min_noches": 1,
+    "dias_semana": "",
+    "mensaje": "Promoción aplicable previa presentación del RIF",
+    "prioridad": 100,
+    "activo": true
+  }
+]

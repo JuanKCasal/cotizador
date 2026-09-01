@@ -1,0 +1,401 @@
+[
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_DBL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 85,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_DBL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_DBL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 95,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_DBL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 120,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_TPL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 85,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_TPL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_TPL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 95,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_TPL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 120,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_QUA",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 85,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_QUA",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_QUA",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 95,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "BAS_QUA",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 120,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_DBL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 105,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_DBL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 90,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_DBL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 115,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_DBL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 140,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_TPL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 105,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_TPL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 90,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_TPL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 115,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_TPL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 140,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_QUA",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 105,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_QUA",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 90,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_QUA",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 115,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HBK",
+    "cod_hab": "DLX_QUA",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 140,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMON",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMON",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 55,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMON",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMON",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 100,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMAR",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 75,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMAR",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 60,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMAR",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 75,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMAR",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 105,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_GARD",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 65,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_GARD",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 50,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_GARD",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 60,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_GARD",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 90,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_POOL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 67,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_POOL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 52,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_POOL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 62,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_POOL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 92,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_GARD",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 70,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_GARD",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 55,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_GARD",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 65,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_GARD",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 95,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_POOL",
+    "cod_temp": "ALTA_26",
+    "tarifa_pp_noche": 72,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_POOL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 57,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_POOL",
+    "cod_temp": "NAV_26",
+    "tarifa_pp_noche": 67,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_POOL",
+    "cod_temp": "FIN_26",
+    "tarifa_pp_noche": 97,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "DLX_KING",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 200,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "DLX_TWIN",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 200,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "DLX_TPL",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 240,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "SUITE_FLY",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 320,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "JR_SUITE",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 220,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "WTC",
+    "cod_hab": "SUITE_EXE",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 350,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_KING",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 144,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_TWIN",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 144,
+    "tarifa_nino_override": null
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "SUITE",
+    "cod_temp": "BAJA_26",
+    "tarifa_pp_noche": 166,
+    "tarifa_nino_override": null
+  }
+]
