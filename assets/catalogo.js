@@ -12,7 +12,7 @@ var Catalogo = (function () {
 
   var TABLAS = ['config', 'hoteles', 'habitaciones', 'temporadas', 'tarifas',
                 'stop-sales', 'politica-ninos', 'promociones', 'cargos-fecha',
-                'plantillas'];
+                'plantillas', 'adicionales'];
 
   // ==========================================================================
   // NORMALIZADORES
@@ -121,13 +121,59 @@ var Catalogo = (function () {
       };
     });
 
-    var tarifas = {}; // hotel|cod_hab|cod_temp -> {tarifa, ninoOverride}
+    /**
+     * hotel|cod_hab|cod_temp -> { tarifa, ninoOverride, porPax, paxOrdenados }
+     *
+     * `pax` vacio: una sola tarifa, sin importar cuantos se alojen. Es el caso
+     * de los hoteles de playa, donde la tarifa es por persona y multiplicarla
+     * ya refleja la ocupacion.
+     *
+     * `pax` con numero: una fila por ocupacion. Los hoteles de ciudad cobran
+     * por habitacion y el precio cambia segun cuantos duerman en ella: la
+     * Deluxe King de Valencia son $160 con un huesped y $180 con dos. Sin esta
+     * dimension habria que inventar un tipo de habitacion por ocupacion.
+     */
+    var tarifas = {};
     (crudo.tarifas || []).forEach(function (r) {
       if (r.tarifa_pp_noche === '' || r.tarifa_pp_noche === null) return;
-      tarifas[r.hotel + '|' + r.cod_hab + '|' + r.cod_temp] = {
-        tarifa: Number(r.tarifa_pp_noche),
-        ninoOverride: num(r.tarifa_nino_override)
-      };
+      var k = r.hotel + '|' + r.cod_hab + '|' + r.cod_temp;
+      if (!tarifas[k]) {
+        tarifas[k] = { tarifa: null, ninoOverride: null, porPax: {}, paxOrdenados: [] };
+      }
+      var monto = Number(r.tarifa_pp_noche);
+      var pax = num(r.pax);
+      if (pax === null) {
+        tarifas[k].tarifa = monto;
+        tarifas[k].ninoOverride = num(r.tarifa_nino_override);
+      } else {
+        tarifas[k].porPax[pax] = monto;
+      }
+    });
+    Object.keys(tarifas).forEach(function (k) {
+      tarifas[k].paxOrdenados = Object.keys(tarifas[k].porPax)
+        .map(Number)
+        .sort(function (a, b) { return a - b; });
+    });
+
+    /**
+     * hotel|cod_hab -> [ {edadMin, edadMax, monto, etiqueta} ]
+     *
+     * Lo que paga cada huesped por encima de la ocupacion que cubre la tarifa.
+     * En Maracay una Deluxe Twin son $144 por dos personas y admite dos mas,
+     * a $20 si pasan de 10 anos y $10 entre 3 y 9.
+     */
+    var adicionales = {};
+    (crudo.adicionales || []).forEach(function (r) {
+      var k = r.hotel + '|' + String(r.cod_hab || 'TODAS').trim();
+      if (!adicionales[k]) adicionales[k] = [];
+      adicionales[k].push({
+        edadMin: Number(r.edad_min), edadMax: Number(r.edad_max),
+        monto: Number(r.monto_noche),
+        etiqueta: String(r.etiqueta || 'persona adicional').trim()
+      });
+    });
+    Object.keys(adicionales).forEach(function (k) {
+      adicionales[k].sort(function (a, b) { return a.edadMin - b.edadMin; });
     });
 
     // Cierres de venta. Lista plana: son pocos y se recorren una vez por noche.
@@ -200,7 +246,7 @@ var Catalogo = (function () {
       config: config, hoteles: hoteles, habitaciones: habitaciones,
       temporadas: temporadas, tarifas: tarifas, stopSales: stopSales,
       politica: politica, promociones: promociones, cargos: cargos,
-      plantillas: plantillas,
+      plantillas: plantillas, adicionales: adicionales,
       generado: new Date().toISOString()
     };
   }

@@ -100,7 +100,7 @@
     "cod_temp": "BAJA_26",
     "nombre": "Temporada Baja 2026",
     "fecha_inicio": "2026-08-01",
-    "fecha_fin": "2026-12-30",
+    "fecha_fin": "2026-12-20",
     "prioridad": 10
   },
   {
@@ -108,7 +108,7 @@
     "cod_temp": "BAJA_26",
     "nombre": "Temporada Baja 2026",
     "fecha_inicio": "2026-08-01",
-    "fecha_fin": "2026-12-30",
+    "fecha_fin": "2026-12-20",
     "prioridad": 10
   }
 ]

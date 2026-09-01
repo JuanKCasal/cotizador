@@ -159,7 +159,7 @@
     "hotel": "HMC",
     "cod_rango": "INF",
     "edad_min": 0,
-    "edad_max": 4,
+    "edad_max": 2,
     "etiqueta_sing": "infante",
     "etiqueta_plur": "infantes",
     "etiqueta_rango": "0-4 años",
@@ -171,8 +171,8 @@
   {
     "hotel": "HMC",
     "cod_rango": "NIN",
-    "edad_min": 5,
-    "edad_max": 10,
+    "edad_min": 3,
+    "edad_max": 9,
     "etiqueta_sing": "niño",
     "etiqueta_plur": "niños",
     "etiqueta_rango": "5-10 años",
@@ -184,7 +184,7 @@
   {
     "hotel": "HMC",
     "cod_rango": "MAY",
-    "edad_min": 11,
+    "edad_min": 10,
     "edad_max": 17,
     "etiqueta_sing": "niño",
     "etiqueta_plur": "niños",

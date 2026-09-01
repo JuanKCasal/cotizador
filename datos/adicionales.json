@@ -1,0 +1,42 @@
+[
+  {
+    "hotel": "WTC",
+    "cod_hab": "SUITE_FLY",
+    "edad_min": 3,
+    "edad_max": 120,
+    "monto_noche": 20,
+    "etiqueta": "persona adicional"
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_KING",
+    "edad_min": 3,
+    "edad_max": 9,
+    "monto_noche": 10,
+    "etiqueta": "niño adicional"
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_KING",
+    "edad_min": 10,
+    "edad_max": 120,
+    "monto_noche": 20,
+    "etiqueta": "persona adicional"
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_TWIN",
+    "edad_min": 3,
+    "edad_max": 9,
+    "monto_noche": 10,
+    "etiqueta": "niño adicional"
+  },
+  {
+    "hotel": "HMC",
+    "cod_hab": "DLX_TWIN",
+    "edad_min": 10,
+    "edad_max": 120,
+    "monto_noche": 20,
+    "etiqueta": "persona adicional"
+  }
+]

@@ -107,9 +107,12 @@ var Validador = (function () {
         .filter(function (x) { return x.hotel === h; });
 
       habs.forEach(function (hab) {
+        // Se chequea la cobertura con la ocupacion minima vendible: si esa no
+        // tiene tarifa, la habitacion no se puede cotizar de ninguna forma.
+        var ocupChequeo = hab.ocupMinFisica || 1;
         var huecos = [], d = desde, guard = 0;
         while (d <= horizonte && guard++ < 800) {
-          var r = M._interno.tarifaNoche(cat, h, hab.cod, d, 1, []);
+          var r = M._interno.tarifaNoche(cat, h, hab.cod, d, 1, [], ocupChequeo);
           // Una noche con stop sale no es un hueco de carga: esta cerrada a
           // proposito y el motor ya da un mensaje propio.
           if (r.error && !r.sinCupo) {
@@ -123,6 +126,35 @@ var Validador = (function () {
           add('ERROR', 'tarifas', 'HUECO_COBERTURA',
               h + ' / ' + hab.nombre + ': sin tarifa desde ' + F.fmtCorto(x.desde) +
               ' hasta ' + F.fmtCorto(x.hasta) + '.');
+        });
+      });
+
+      // Ocupaciones intermedias sin tarifa. Una habitacion que cobra por
+      // ocupacion y tiene precio para 1 y para 3 pero no para 2 deja un hueco
+      // que solo aparece cuando la asesora intenta esa combinacion exacta.
+      habs.forEach(function (hab) {
+        var ts = cat.temporadas.filter(function (t) { return t.hotel === h; });
+        ts.forEach(function (temp) {
+          var t = cat.tarifas[h + '|' + hab.cod + '|' + temp.cod];
+          if (!t || t.tarifa !== null || !t.paxOrdenados.length) return;
+          var maxCargado = t.paxOrdenados[t.paxOrdenados.length - 1];
+          var faltan = [];
+          for (var o = hab.ocupMinFisica || 1; o <= maxCargado; o++) {
+            if (t.porPax[o] === undefined) faltan.push(o);
+          }
+          if (faltan.length) {
+            add('ERROR', 'tarifas', 'OCUPACION_SIN_TARIFA',
+                h + ' / ' + hab.nombre + ' (' + temp.cod + '): sin tarifa para ' +
+                faltan.join(', ') + ' huesped(es), pero si para ' + maxCargado + '.');
+          }
+          if (maxCargado < hab.ocupMaxTotal &&
+              !(cat.adicionales || {})[h + '|' + hab.cod] &&
+              !(cat.adicionales || {})[h + '|TODAS']) {
+            add('ADVERTENCIA', 'tarifas', 'ADICIONAL_SIN_MONTO',
+                h + ' / ' + hab.nombre + ': admite hasta ' + hab.ocupMaxTotal +
+                ' huespedes, la tarifa cubre ' + maxCargado +
+                ' y no hay monto de persona adicional cargado.');
+          }
         });
       });
 

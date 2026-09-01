@@ -441,33 +441,99 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
   t.contiene(txt, 'CARGOS ESPECIALES', 'Muestra el bloque de cargos');
   t.contiene(txt, 'Cena de Navidad', 'Detalla el cargo');
 
-  // ---- T24. Hotel de ciudad: POR_HABITACION -------------------------------
+  // ---- T24. Hotel de ciudad: tarifa por ocupacion -------------------------
   // Sin impuestos: la tarifa cargada es el precio final, igual que en playa.
+  // Y el precio depende de cuantos duerman en la habitacion.
   t.caso('T24 Hotel de ciudad');
   r = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 1)]));
   t.ok(r.ok, 'Calculo sin errores', (r.errores || []).join('; '));
   t.eq(r.nNoches, 3, '3 noches');
   t.eq(r.lineas[0].aplicoSingle, false, 'POR_HABITACION no aplica suplemento single');
-  t.eq(r.lineas[0].detalleNoches[0].neto, 200, 'Neto 200 por habitacion');
-  t.eq(r.lineas[0].costoUniforme, 200, 'Sin impuesto encima: el costo es la tarifa');
-  t.eq(r.total, 600, 'Total 600');
+  t.eq(r.lineas[0].costoUniforme, 160, 'Deluxe King con 1 huesped: 160');
+  t.eq(r.total, 480, 'Total 480');
 
   r2 = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 2)]));
-  t.eq(r2.total, 600, 'Con 2 adultos cuesta lo mismo: la tarifa es por habitacion');
+  t.eq(r2.lineas[0].costoUniforme, 180, 'Deluxe King con 2 huespedes: 180');
+  t.eq(r2.total, 540, 'Total 540: la ocupacion cambia el precio');
 
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
   t.eq(M.marcadoresNoResueltos(txt).length, 0, 'Sin marcadores pendientes');
   t.contiene(txt, 'CHECK IN 3:00 PM: 22/08/2026', 'Fecha en formato dd/MM/yyyy');
-  t.contiene(txt, 'Total, por noche: $200', 'Renglon de precio sin desglose');
+  t.contiene(txt, 'Total, por noche: $160', 'Renglon de precio sin desglose');
   t.noContiene(txt, 'IVA', 'El mensaje no menciona impuestos en ningun hotel');
   t.contiene(txt, 'Adultos: 1', 'Ocupantes en renglones separados');
   t.contiene(txt, 'Ni\u00F1os:', 'Renglon de ninos aunque este vacio');
-  t.contiene(txt, '*TOTAL: $600 (3 NOCHES)*', 'Total con la palabra en plural');
+  t.contiene(txt, '*TOTAL: $480 (3 NOCHES)*', 'Total con la palabra en plural');
 
   r = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-23', [lin_('DLX_KING', 1, [8])]));
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
   t.contiene(txt, 'Ni\u00F1os: 8 a\u00F1os', 'Las edades tambien salen en el formato de renglones');
   t.contiene(txt, '(1 NOCHE)', 'Singular con una sola noche');
+
+  // ---- T24b. El resto del tarifario de ciudad -----------------------------
+  t.caso('T24b Tarifario de ciudad');
+  [['WTC', 'DLX_TWIN',  2, [], 200], ['WTC', 'DLX_TPL',   3, [], 240],
+   ['WTC', 'JR_SUITE',  1, [], 200], ['WTC', 'JR_SUITE',  2, [], 220],
+   ['WTC', 'SUITE_EXE', 1, [], 330], ['WTC', 'SUITE_EXE', 2, [], 350],
+   ['WTC', 'SUITE_FLY', 4, [], 320],
+   ['HMC', 'DLX_KING',  1, [], 138], ['HMC', 'DLX_KING',  2, [], 144],
+   ['HMC', 'DLX_TWIN',  2, [], 144],
+   ['HMC', 'SUITE',     1, [], 166], ['HMC', 'SUITE',     2, [], 166]
+  ].forEach(function (c) {
+    var rr = M.calcular(cat, req_(c[0], '2026-09-01', '2026-09-02',
+                                  [lin_(c[1], c[2], c[3])]));
+    t.ok(rr.ok, c[0] + ' ' + c[1] + ' x' + c[2] + ': calcula', (rr.errores || []).join('; '));
+    if (rr.ok) t.eq(rr.total, c[4], c[0] + ' ' + c[1] + ' con ' + c[2] + ' huesped(es)');
+  });
+
+  // ---- T24c. Ocupaciones que no se venden ---------------------------------
+  // La Twin de Valencia solo tiene tarifa para dos y la Triple para tres. No
+  // se inventa un precio: se bloquea con un mensaje claro.
+  t.caso('T24c Ocupaciones bloqueadas');
+  t.ok(!M.calcular(cat, req_('WTC', '2026-09-01', '2026-09-02', [lin_('DLX_TWIN', 1)])).ok,
+       'La Deluxe Twin no se vende a 1 huesped');
+  t.ok(!M.calcular(cat, req_('WTC', '2026-09-01', '2026-09-02', [lin_('DLX_TPL', 2)])).ok,
+       'La Deluxe Triple no se vende a 2 huespedes');
+  t.ok(!M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_TWIN', 1)])).ok,
+       'La Twin de Maracay tampoco se vende a 1');
+
+  // ---- T24d. Personas adicionales -----------------------------------------
+  t.caso('T24d Personas adicionales');
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_KING', 3)]));
+  t.ok(r.ok, 'Tres adultos en la King de Maracay', (r.errores || []).join('; '));
+  t.eq(r.total, 164, '144 + 20 del tercer adulto');
+
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_KING', 2, [5])]));
+  t.eq(r.total, 154, '144 + 10 del nino de 5 anos');
+
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_TWIN', 2, [5, 7])]));
+  t.eq(r.total, 164, '144 + dos ninos a 10');
+
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_TWIN', 4)]));
+  t.eq(r.total, 184, '144 + dos adultos a 20');
+
+  // Con una plaza de sobra y ocupantes de distinto precio, el adicional es el
+  // mas barato: la tarifa base cubre a los demas.
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-02', [lin_('DLX_KING', 2, [12])]));
+  t.eq(r.total, 164, 'Un menor de 12 paga como adulto: 144 + 20');
+
+  r = M.calcular(cat, req_('WTC', '2026-09-01', '2026-09-02', [lin_('SUITE_FLY', 5)]));
+  t.eq(r.total, 340, 'La quinta persona en la Family Suite: 320 + 20');
+
+  r = M.calcular(cat, req_('HMC', '2026-09-01', '2026-09-03', [lin_('DLX_KING', 2, [5])]));
+  txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  t.eq(r.total, 308, 'El adicional se cobra por noche, no por estadia');
+  t.contiene(txt, 'incluye 1 ni\u00F1o adicional a $10', 'El mensaje explica el adicional');
+
+  // ---- T24e. Los cortes de edad de Maracay --------------------------------
+  // Maracay usa rangos propios: 0-2 sin cargo, 3-9 a mitad, 10-17 completo.
+  t.caso('T24e Edades de Maracay');
+  t.eq(M.rangoPorEdad(cat, 'HMC', 3).cod, 'NIN', 'A los 3 anos ya es nino en Maracay');
+  t.eq(M.rangoPorEdad(cat, 'HMC', 2).cod, 'INF', 'A los 2 sigue siendo infante');
+  t.eq(M.rangoPorEdad(cat, 'HMC', 10).cod, 'MAY', 'A los 10 pasa a mayor');
+  t.eq(M.rangoPorEdad(cat, 'HBK', 3).cod, 'INF', 'En Morrocoy los cortes no cambiaron');
+  t.eq(M.rangoPorEdad(cat, 'HBK', 9).cod, 'NIN', 'En Morrocoy a los 9 todavia es nino');
+  t.eq(M.rangoPorEdad(cat, 'HMC', 9).cod, 'NIN', 'En Maracay a los 9 tambien');
 
   // ---- T25. Cobertura de hoteles activos -----------------------------------
   t.caso('T25 Cobertura de hoteles');

@@ -159,7 +159,35 @@ var Motor = (function () {
     return mejor;
   }
 
-  function tarifaNoche(cat, hotel, codHab, noche, nNoches, promosSel) {
+  /**
+   * Tarifa que cubre a `ocupacion` huespedes, y a cuantos cubre.
+   *
+   * Con una fila por ocupacion se elige la mayor que no la supere: si la
+   * habitacion admite mas gente que la ultima tarifa cargada, el resto se
+   * cobra como personas adicionales. Si la ocupacion queda por DEBAJO de la
+   * menor tarifa cargada no se inventa un precio: la Deluxe Twin de Valencia
+   * solo tiene tarifa para dos, y venderla a uno es una decision comercial que
+   * nadie tomo.
+   */
+  function tarifaPorPax(t, ocupacion) {
+    var elegida = null;
+    for (var i = 0; i < t.paxOrdenados.length; i++) {
+      if (t.paxOrdenados[i] <= ocupacion) elegida = t.paxOrdenados[i];
+    }
+    return elegida;
+  }
+
+  /** Lo que paga un huesped adicional de esa edad. null si no paga. */
+  function adicionalDe(cat, hotel, codHab, edad) {
+    var lista = (cat.adicionales || {})[hotel + '|' + codHab] ||
+                (cat.adicionales || {})[hotel + '|TODAS'] || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (edad >= lista[i].edadMin && edad <= lista[i].edadMax) return lista[i];
+    }
+    return null;
+  }
+
+  function tarifaNoche(cat, hotel, codHab, noche, nNoches, promosSel, ocupacion) {
     // La disponibilidad se revisa ANTES que el precio: si no hay cupo, el
     // precio es irrelevante y el mensaje debe hablar de cupo, no de tarifas.
     var ss = stopSaleDe(cat, hotel, codHab, noche);
@@ -172,10 +200,24 @@ var Motor = (function () {
     }
 
     var temp = temporadaDe(cat, hotel, noche);
-    var base = null;
+    var base = null, paxCubiertos = null;
     if (temp) {
       var t = cat.tarifas[hotel + '|' + codHab + '|' + temp.cod];
-      if (t) base = t.tarifa;
+      if (t) {
+        if (t.tarifa !== null) {
+          base = t.tarifa;                       // tarifa unica
+        } else if (t.paxOrdenados.length) {
+          paxCubiertos = tarifaPorPax(t, ocupacion);
+          if (paxCubiertos === null) {
+            return {
+              error: 'no tiene tarifa para ' + ocupacion +
+                     (ocupacion === 1 ? ' huesped' : ' huespedes') +
+                     ' el ' + F.fmtCorto(noche) + '.'
+            };
+          }
+          base = t.porPax[paxCubiertos];
+        }
+      }
     }
     var promo = promoDe(cat, hotel, codHab, noche, nNoches, promosSel);
     var final = base, origen = temp ? temp.nombre : null;
@@ -200,7 +242,7 @@ var Motor = (function () {
       };
     }
     return {
-      fecha: noche, tarifaBase: base, tarifaFinal: final,
+      fecha: noche, tarifaBase: base, tarifaFinal: final, paxCubiertos: paxCubiertos,
       temporada: temp ? temp.cod : null, temporadaNombre: temp ? temp.nombre : null,
       promo: promo ? promo.cod : null, promoNombre: promo ? promo.nombre : null,
       origen: origen
@@ -363,22 +405,55 @@ var Motor = (function () {
         res.advertencias.push(etq + ': ocupacion menor a 2 pax facturables sin suplemento configurado.');
       }
 
+      // Lo que paga cada ocupante si le toca ser "persona adicional". Los
+      // adultos se tratan como mayores; los menores, por su edad real.
+      var montosAdic = [];
+      for (var ad = 0; ad < adultos; ad++) {
+        montosAdic.push(adicionalDe(cat, req.hotel, L.cod_hab, 18));
+      }
+      (L.edades || []).forEach(function (e) {
+        var rg = rangoPorEdad(cat, req.hotel, Number(e));
+        if (rg && !rg.cuentaOcupacion) return;   // quien no ocupa, no es adicional
+        montosAdic.push(adicionalDe(cat, req.hotel, L.cod_hab, Number(e)));
+      });
+      // Los adicionales se cobran de menor a mayor: si sobra una plaza y en la
+      // habitacion hay un nino y un adulto, el adicional es el nino. La tarifa
+      // base cubre a los demas y el cliente paga lo menos posible.
+      montosAdic.sort(function (a, b) {
+        return (a ? a.monto : 0) - (b ? b.monto : 0);
+      });
+
       // Costo noche a noche
-      var detalleNoches = [], subLinea = 0, errLinea = false;
+      var detalleNoches = [], subLinea = 0, errLinea = false, adicTotales = [];
       for (var n = 0; n < noches.length; n++) {
-        var tn = tarifaNoche(cat, req.hotel, L.cod_hab, noches[n], noches.length, promosSel);
+        var tn = tarifaNoche(cat, req.hotel, L.cod_hab, noches[n], noches.length,
+                             promosSel, ocupacion);
         if (tn.error) {
           res.errores.push(tn.sinCupo ? hab.nombre + ': ' + tn.error
                                       : hab.nombre + ' - ' + tn.error);
           errLinea = true; break;
         }
+
+        // Huespedes por encima de lo que cubre la tarifa
+        var adicNoche = 0, adicDet = [];
+        if (tn.paxCubiertos !== null && ocupacion > tn.paxCubiertos) {
+          var sobran = ocupacion - tn.paxCubiertos;
+          for (var q = 0; q < sobran && q < montosAdic.length; q++) {
+            if (!montosAdic[q]) continue;
+            adicNoche += montosAdic[q].monto;
+            adicDet.push(montosAdic[q]);
+          }
+        }
+        if (adicDet.length) adicTotales = adicDet;
+
         var neto = porHabitacion
-          ? tn.tarifaFinal
+          ? tn.tarifaFinal + adicNoche
           : r2(tn.tarifaFinal * paxEfectivo + suplemento);
         var costo = techo(neto);
         detalleNoches.push({
           fecha: tn.fecha, tarifa: tn.tarifaFinal, tarifaBase: tn.tarifaBase,
           temporada: tn.temporadaNombre, promo: tn.promo, promoNombre: tn.promoNombre,
+          paxCubiertos: tn.paxCubiertos, adicionales: adicNoche,
           neto: techo(neto), costo: costo
         });
         subLinea += costo;
@@ -423,6 +498,7 @@ var Motor = (function () {
         huespedesQuePagan: huespedesQuePagan,
         aplicoSingle: aplicoSingle, suplemento: suplemento,
         detalleNoches: detalleNoches, tramos: tramos, costoUniforme: uniforme,
+        adicionales: adicTotales,
         subtotalUnidad: subLinea,
         subtotalLinea: subLinea * cantidad,
         cargosUnidad: cargosLinea,
@@ -550,6 +626,21 @@ var Motor = (function () {
    */
   function lineaPrecio(cat, tramo, linea, sufijo) {
     var txt = 'Total, por noche: $' + fmtMoney(cat, tramo.costo) + sufijo;
+
+    // Con personas adicionales el monto por si solo no se explica: quien
+    // recibe la cotizacion tiene que poder reconstruir de donde sale.
+    if (linea.adicionales && linea.adicionales.length) {
+      var porEtiqueta = {};
+      linea.adicionales.forEach(function (a) {
+        var k = a.etiqueta + '|' + a.monto;
+        porEtiqueta[k] = (porEtiqueta[k] || 0) + 1;
+      });
+      var partes = Object.keys(porEtiqueta).map(function (k) {
+        var p = k.split('|'), cant = porEtiqueta[k];
+        return cant + ' ' + p[0] + (cant > 1 ? 's' : '') + ' a $' + fmtMoney(cat, Number(p[1]));
+      });
+      txt += '\n(incluye ' + partes.join(' y ') + ' por noche)';
+    }
     // El "p/p" solo se muestra si multiplicar de vuelta da exactamente el
     // total Y ese total se armo cobrandole lo mismo a cada huesped.
     //
