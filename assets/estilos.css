@@ -604,3 +604,20 @@ input[type="date"] { min-height: 44px; }
     border-left: 0; border-right: 0; border-bottom: 0;
   }
 }
+
+/* --------------------------------------------------------- Sin disponibilidad
+   Un cierre de venta no es un error de datos y no se pinta como tal: no hay
+   nada que corregir, hay que ofrecer otra cosa. */
+.burbuja-sincupo {
+  background: #FFF7E8;
+  border: 1px solid #E0A93B;
+  color: var(--tinta);
+}
+.burbuja-sincupo .burbuja-titulo { color: #8A5D07; }
+.burbuja-sincupo ul { margin: 8px 0 0; padding-left: 18px; }
+.burbuja-sincupo li { margin-bottom: 4px; }
+.burbuja-pie {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--tinta-70);
+}

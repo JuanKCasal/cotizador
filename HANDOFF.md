@@ -110,8 +110,10 @@ muestra en pantalla). Falta agregar `extras.json`.
 
 **Fase 2 — Convertir a sitio estático.** ✅ hecho (01/09/2026). Ver §11.
 
-**Fase 3 — Stop Sales de cara al usuario.** Cargar los cierres reales y mostrar en la
-interfaz, con claridad, por qué unas fechas no se pueden vender.
+**Fase 3 — Stop Sales de cara al usuario.** ✅ hecho el motor y la interfaz. Un cierre
+ya no se lee como un error de datos: tiene su propio aviso, con el motivo y las noches
+afectadas, y las fechas avisan antes de terminar de armar la cotización. **Falta cargar
+los cierres reales** — la tabla sigue vacía.
 
 **Fase 4 — Extras cobrables.** `extras.json` + casilla en la interfaz + suma en el motor
 + línea en el mensaje de WhatsApp + casos de prueba nuevos. Early Check-In y Late
@@ -324,6 +326,14 @@ puede volver a cargarlas.
 Las habitaciones nuevas se agregan **al principio** de la lista y las ya configuradas
 bajan una posición. En el celular, agregar la cuarta habitación ya no la mandaba fuera
 de la pantalla.
+
+### Pendientes de negocio abiertos
+
+- **La King de Maracay admite hasta 4 huéspedes por decisión mía, no tuya.** Se indicó
+  que cobra adicionales pero no cuántos caben; se copió el criterio de la Twin. Si son
+  solo 3, o solo 2, es cambiar un número en `datos/habitaciones.json`.
+- **La quinta persona de la Family Suite paga $20 a cualquier edad.** En Maracay los
+  adicionales sí distinguen edad; en Valencia no se indicó, y se cargó monto único.
 
 ### Lo que falta para publicar
 

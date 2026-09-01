@@ -426,7 +426,8 @@
 
     if (!res.ok) {
       ULTIMO = null; TEXTO = '';
-      pintarErrores(res.errores);
+      if (res.sinCupo && res.sinCupo.length) pintarSinCupo(res.sinCupo);
+      else pintarErrores(res.errores);
       return;
     }
 
@@ -454,8 +455,17 @@
       p.textContent = 'La fecha de entrada ya pasó. Verifica antes de enviar.';
       p.className = 'pista alerta';
     } else {
-      p.textContent = 'La noche de salida no se cobra.';
-      p.className = 'pista';
+      var cierres = cierresDelRango(estado.hotel, estado.checkin, estado.checkout);
+      if (cierres.length) {
+        var todoElHotel = cierres.some(function (c) { return c.codHab === 'TODAS'; });
+        p.textContent = todoElHotel
+          ? 'Ojo: el hotel tiene noches cerradas en ese rango.'
+          : 'Ojo: hay habitaciones cerradas en ese rango.';
+        p.className = 'pista alerta';
+      } else {
+        p.textContent = 'La noche de salida no se cobra.';
+        p.className = 'pista';
+      }
     }
   }
 
@@ -482,6 +492,61 @@
     $('barraMonto').textContent = '—';
     habilitar(false);
     botonPanel('error');
+  }
+
+  /**
+   * No hay habitaciones. Es distinto de un error de datos y se dice distinto:
+   * ahi no hay nada que corregir, hay que ofrecer otra cosa. Si se muestra con
+   * la misma cara que "falta el nombre del cliente", la asesora pierde tiempo
+   * buscando su propio error y termina prometiendo algo que no existe.
+   */
+  function pintarSinCupo(cierres) {
+    var porMotivo = {};
+    cierres.forEach(function (c) {
+      var k = c.hab + '|' + c.motivo;
+      if (!porMotivo[k]) porMotivo[k] = { hab: c.hab, motivo: c.motivo, noches: [] };
+      porMotivo[k].noches.push(c.noche);
+    });
+
+    var filas = Object.keys(porMotivo).map(function (k) {
+      var c = porMotivo[k];
+      var fechas = c.noches.map(function (n) { return Motor.Fechas.fmtCorto(n); });
+      return '<li><strong>' + esc(c.hab) + '</strong>: ' +
+             (fechas.length === 1 ? 'la noche del ' : 'las noches del ') +
+             esc(fechas.join(', ')) +
+             (c.motivo ? ' — ' + esc(c.motivo) : '') + '</li>';
+    });
+
+    $('burbuja').className = 'burbuja burbuja-sincupo';
+    $('burbuja').innerHTML =
+      '<p class="burbuja-titulo">No hay disponibilidad</p><ul>' + filas.join('') +
+      '</ul><p class="burbuja-pie">Prueba con otras fechas o con otro tipo de ' +
+      'habitación. El precio no es el problema.</p>';
+    $('barraEtiqueta').textContent = 'Sin disponibilidad';
+    $('barraMonto').textContent = '—';
+    habilitar(false);
+    botonPanel('error');
+  }
+
+  /**
+   * Cierres de venta que tocan las fechas elegidas, para avisar ANTES de que
+   * la asesora termine de armar la cotizacion.
+   */
+  function cierresDelRango(hotel, ci, co) {
+    if (!hotel || !ci || !co || co <= ci) return [];
+    var noches = Motor.Fechas.noches(ci, co);
+    var vistos = {}, out = [];
+    (CAT.stopSales || []).forEach(function (s) {
+      if (s.hotel !== hotel) return;
+      for (var i = 0; i < noches.length; i++) {
+        if (noches[i] >= s.inicio && noches[i] <= s.fin) {
+          var k = s.codHab + '|' + s.inicio + '|' + s.fin;
+          if (!vistos[k]) { vistos[k] = true; out.push(s); }
+          return;
+        }
+      }
+    });
+    return out;
   }
 
   function pintarMensaje(res, texto) {

@@ -195,7 +195,7 @@ var Motor = (function () {
       return {
         error: 'Sin cupo la noche del ' + F.fmtCorto(noche) +
                (ss.motivo ? ' (' + ss.motivo + ')' : '') + '.',
-        sinCupo: true
+        sinCupo: true, noche: noche, motivo: ss.motivo || ''
       };
     }
 
@@ -329,7 +329,7 @@ var Motor = (function () {
    */
   function calcular(cat, req) {
     var res = {
-      ok: false, errores: [], advertencias: [],
+      ok: false, errores: [], advertencias: [], sinCupo: [],
       hotel: req.hotel, checkin: req.checkin, checkout: req.checkout,
       lineas: [], subtotal: 0, cargos: 0, total: 0,
       promosAplicadas: [], cargosResumen: [], totalHabitaciones: 0
@@ -431,6 +431,10 @@ var Motor = (function () {
         if (tn.error) {
           res.errores.push(tn.sinCupo ? hab.nombre + ': ' + tn.error
                                       : hab.nombre + ' - ' + tn.error);
+          if (tn.sinCupo) {
+            res.sinCupo.push({ hab: hab.nombre, codHab: L.cod_hab,
+                               noche: tn.noche, motivo: tn.motivo });
+          }
           errLinea = true; break;
         }
 

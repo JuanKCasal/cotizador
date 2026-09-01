@@ -46,9 +46,21 @@ const dom = new JSDOM(pagina, {
         return Promise.resolve({ ok: false, status: 404,
                                  json: () => Promise.reject(new Error('404')) });
       }
+      let datos = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+
+      // El catalogo real no tiene cierres de venta cargados, asi que la
+      // interfaz de "no hay disponibilidad" no se ejercitaria nunca. Se agrega
+      // uno del arnes, en octubre, lejos de las fechas que usan los demas
+      // chequeos. El archivo real se sigue leyendo: si estuviera roto, se veria.
+      if (nombre === 'stop-sales.json') {
+        datos = datos.concat([{
+          hotel: 'HBK', cod_hab: '', fecha_inicio: '2026-10-15',
+          fecha_fin: '2026-10-17', motivo: 'Hotel lleno por convención',
+          activo: true
+        }]);
+      }
       return Promise.resolve({
-        ok: true, status: 200,
-        json: () => Promise.resolve(JSON.parse(fs.readFileSync(ruta, 'utf8')))
+        ok: true, status: 200, json: () => Promise.resolve(datos)
       });
     };
     // Un navegador con el almacenamiento bloqueado tira excepcion al tocarlo;
@@ -392,6 +404,30 @@ function setVal(el, v, ev) {
     await esperar(60);
     ok($('calc').classList.contains('oculto'), 'se cierra con la X');
   }
+
+  // 13. Un cierre de venta se ve distinto de un error de datos
+  setVal($('checkin'), '2026-10-14');
+  setVal($('checkout'), '2026-10-17');
+  await esperar(140);
+  const burb = $('burbuja');
+  ok(burb.classList.contains('burbuja-sincupo'),
+     'sin disponibilidad se pinta distinto de un error de datos',
+     'clases=' + burb.className);
+  ok(burb.textContent.indexOf('No hay disponibilidad') !== -1,
+     'el titulo habla de disponibilidad');
+  ok(burb.textContent.indexOf('convención') !== -1,
+     'se muestra el motivo del cierre', burb.textContent.slice(0, 120));
+  eq($('barraEtiqueta').textContent, 'Sin disponibilidad', 'la barra tambien lo dice');
+  ok($('btnCopiar').disabled, 'no se puede copiar una cotizacion sin cupo');
+  ok($('pistaFechas').textContent.indexOf('cerradas') !== -1,
+     'las fechas avisan antes de terminar de armar', $('pistaFechas').textContent);
+
+  // Saliendo la manana del primer dia cerrado si hay cupo
+  setVal($('checkin'), '2026-10-13');
+  setVal($('checkout'), '2026-10-15');
+  await esperar(140);
+  ok(!$('burbuja').classList.contains('burbuja-sincupo'),
+     'quien sale el 15 no ocupa la noche del 15');
 
   // ---------- Reporte ----------
   console.log('========================================');

@@ -535,6 +535,48 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
   t.eq(M.rangoPorEdad(cat, 'HBK', 9).cod, 'NIN', 'En Morrocoy a los 9 todavia es nino');
   t.eq(M.rangoPorEdad(cat, 'HMC', 9).cod, 'NIN', 'En Maracay a los 9 tambien');
 
+  // ---- T24f. Un cierre de venta se distingue de un error de datos ---------
+  // La asesora tiene que saber si el problema es que no hay habitaciones o si
+  // le falta cargar algo: son dos conversaciones distintas con el cliente.
+  t.caso('T24f Sin cupo');
+  var catCerrado = conStopSales_(cat, [
+    { hotel: 'HBK', codHab: 'TODAS', inicio: '2026-09-10', fin: '2026-09-12',
+      motivo: 'Hotel lleno por convención' }
+  ]);
+  r = M.calcular(catCerrado, req_('HBK', '2026-09-09', '2026-09-12',
+                                  [lin_('BAS_DBL', 2)]));
+  t.ok(!r.ok, 'La cotizacion se bloquea');
+  t.eq(r.sinCupo.length, 1, 'El cierre se reporta aparte de los errores');
+  t.eq(r.sinCupo[0].motivo, 'Hotel lleno por convención', 'Con su motivo');
+  t.eq(r.sinCupo[0].noche, '2026-09-10', 'Y la primera noche afectada');
+
+  // Salir la manana del primer dia cerrado no ocupa esa noche
+  r = M.calcular(catCerrado, req_('HBK', '2026-09-08', '2026-09-10',
+                                  [lin_('BAS_DBL', 2)]));
+  t.ok(r.ok, 'Quien sale el 10 no ocupa la noche del 10', (r.errores || []).join('; '));
+  t.eq(r.sinCupo.length, 0, 'Y no se reporta ningun cierre');
+
+  // Un cierre de una sola habitacion deja libres las demas
+  var catHab = conStopSales_(cat, [
+    { hotel: 'HBK', codHab: 'BAS_DBL', inicio: '2026-09-10', fin: '2026-09-11',
+      motivo: 'Mantenimiento' }
+  ]);
+  t.ok(!M.calcular(catHab, req_('HBK', '2026-09-10', '2026-09-11',
+                                [lin_('BAS_DBL', 2)])).ok,
+       'La habitacion cerrada no se vende');
+  t.ok(M.calcular(catHab, req_('HBK', '2026-09-10', '2026-09-11',
+                               [lin_('BAS_TPL', 2)])).ok,
+       'Las demas del mismo hotel siguen disponibles');
+
+  // Sin cupo gana sobre el precio: si no hay habitacion, la tarifa da igual
+  var catSinTarifa = conStopSales_(cat, [
+    { hotel: 'HBK', codHab: 'TODAS', inicio: '2027-06-01', fin: '2027-06-02',
+      motivo: 'Cerrado' }
+  ]);
+  r = M.calcular(catSinTarifa, req_('HBK', '2027-06-01', '2027-06-02',
+                                    [lin_('BAS_DBL', 2)]));
+  t.eq(r.sinCupo.length, 1, 'Fuera del horizonte, el mensaje habla de cupo y no de tarifas');
+
   // ---- T25. Cobertura de hoteles activos -----------------------------------
   t.caso('T25 Cobertura de hoteles');
   [['HBK', 'BAS_DBL'], ['HIM', 'DLX_VMON'], ['HPA', 'HOL_GARD']].forEach(function (par) {
