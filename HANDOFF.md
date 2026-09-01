@@ -108,16 +108,16 @@ Las 13 hojas quedaron en 10 archivos bajo `datos/`: se fueron `Cotizaciones` y
 `CotizacionLineas` (sin registro) y `Validacion` (era la salida del validador, ahora se
 muestra en pantalla). Falta agregar `extras.json`.
 
-**Fase 2 — Convertir a sitio estático.** `02_Motor.html` → `motor.js` sin tocar la
-lógica; `01_Catalogo.gs` → carga por `fetch` de los JSON conservando los normalizadores
-defensivos; `04_Validador.gs` → módulo del navegador; `03_Api.gs` y `00_Setup.gs`
-desaparecen. Las dos suites de Node deben seguir en verde en cada paso.
+**Fase 2 — Convertir a sitio estático.** ✅ hecho (01/09/2026). Ver §11.
 
 **Fase 3 — Stop Sales de cara al usuario.** Cargar los cierres reales y mostrar en la
 interfaz, con claridad, por qué unas fechas no se pueden vender.
 
 **Fase 4 — Extras cobrables.** `extras.json` + casilla en la interfaz + suma en el motor
-+ línea en el mensaje de WhatsApp + casos de prueba nuevos.
++ línea en el mensaje de WhatsApp + casos de prueba nuevos. Early Check-In y Late
+Check-Out se cobran **por persona, una vez por estadía**, y los menores pagan según
+`factor_pago` de la política de niños. El brazalete VIP es el mismo patrón pero por día:
+conviene dejar el modelo preparado aunque no se active todavía.
 
 **Fase 5 — Pantalla de administración.** Edita el catálogo, corre el validador antes de
 dejar guardar, y descarga el JSON listo para subir.
@@ -269,3 +269,65 @@ corto. Producción tenía:
 4. **El validador no se ha vuelto a correr desde que se activaron WTC y HMC.** La hoja
    `Validacion` es del 21/08/2026 y todavía los reporta inactivos. Nadie ha validado el
    catálogo tal como está hoy en producción.
+
+
+---
+
+## 11. Conversión a sitio estático — hecha el 01/09/2026
+
+Google Apps Script desapareció del proyecto. El sitio se sirve desde la raíz del repo.
+
+| Antes | Ahora |
+|---|---|
+| `02_Motor.html` | `assets/motor.js` — **sin un solo cambio de lógica** |
+| `07_Estilos.html` | `assets/estilos.css` |
+| `08_Logica.html` | `assets/logica.js` |
+| `01_Catalogo.gs` | `assets/catalogo.js` — misma forma de objeto, pero por `fetch` |
+| `04_Validador.gs` | `assets/validador.js` — devuelve hallazgos, ya no abre diálogos |
+| `05_Pruebas.gs` | `verificacion/pruebas.js` |
+| `06_SPA.html` | `index.html` |
+| `00_Setup.gs`, `03_Api.gs`, `appsscript.json` | eliminados |
+
+Lo que se fue con ellos: el registro de cotizaciones, la caché de Apps Script, el menú
+del Sheet, el generador de hojas y los datos de instalación. Las iniciales de la asesora
+pasaron de `PropertiesService` a `localStorage`.
+
+### El IVA se eliminó por completo
+
+Ninguna tarifa lleva impuestos encima y el mensaje no los menciona en ningún hotel. Se
+quitó `iva_pct` del motor, del catálogo y de `datos/hoteles.json`, y con él el renglón
+`"Precio por noche $200 + IVA= $232"`.
+
+**Los hoteles de ciudad bajan de precio:** la tarifa cargada pasa a ser el precio final,
+así que Valencia cotiza $200 por noche donde antes cobraba $232. Fue una decisión
+explícita, no un efecto colateral.
+
+### Las suites siguen siendo el control
+
+**231 aserciones y 51 chequeos de interfaz, todo en verde.** Y ahora corren contra
+`assets/` y `datos/` reales: se cerró la brecha que dejaba fuera la capa de persistencia.
+
+Al migrar, ocho aserciones fallaron. Ninguna era un error de conversión: todas
+reflejaban cambios que el Sheet ya tenía y el código no.
+
+- `pax_min_cobrados` vacío: las cuádruples de Morrocoy cobran 2,5 pax donde antes
+  forzaban 3. **Cambia el precio al público** — es el pendiente 3 de §10
+- `ocup_min_fisica` en 1: ahora se acepta una pareja en una cuádruple
+- WTC y HMC activos: dejaron de estar ocultos
+
+Las tres reglas que ya ningún dato ejercita (`pax_min_cobrados`, `ocup_min_fisica` alto)
+siguen probadas inyectándolas con `conHab_()`, porque el motor las soporta y la gerencia
+puede volver a cargarlas.
+
+### Mejora de interfaz
+
+Las habitaciones nuevas se agregan **al principio** de la lista y las ya configuradas
+bajan una posición. En el celular, agregar la cuarta habitación ya no la mandaba fuera
+de la pantalla.
+
+### Lo que falta para publicar
+
+- Activar GitHub Pages (rama `main`, carpeta raíz)
+- **Probar en un celular real.** Al salir del iframe de Apps Script, el copiado en tres
+  niveles puede simplificarse — pero eso se comprueba en un teléfono, no en jsdom
+- Revisar `README.md`, que todavía describe la arquitectura de Apps Script

@@ -1,117 +1,55 @@
-/* Arnes local (Node) para validar el motor fuera de Apps Script.
-   NO forma parte del entregable.
+/* Arnes de verificacion del Cotizador Hesperia.
+   NO forma parte del sitio publicado.
 
-   A diferencia de la version anterior, este arnes NO duplica las aserciones:
-   carga 05_Pruebas.gs y ejecuta la MISMA suite que corre dentro del Sheet,
-   con stubs de las APIs de Google. Una asercion nueva en 05_Pruebas.gs
-   aparece aqui sola, y es imposible que las dos listas se desincronicen. */
+   Corre la suite de pruebas.js contra los archivos de datos/ REALES, los
+   mismos que descarga el navegador. Cuando el catalogo vivia en Sheets esto
+   no era posible y quedaba un hueco: el bug del "5,6" no aparecia aqui porque
+   el dato nunca pasaba por Google. Ahora la fuente es la misma en los dos
+   lados, asi que lo que pasa aqui es lo que va a pasar en produccion. */
 
 const fs = require('fs');
+const path = require('path');
 const vm = require('vm');
 
-/* Los archivos fuente viven en apps-script/. El arnes los lee de ahi
-   directamente: si se copiaran aqui, las copias divergirian y las pruebas
-   validarian codigo viejo sin avisar. */
-const path = require('path');
-const SRC = path.join(__dirname, '..', 'apps-script');
-const leer = (f) => fs.readFileSync(path.join(SRC, f), 'utf8');
+const RAIZ = path.join(__dirname, '..');
+const leerAsset = (f) => fs.readFileSync(path.join(RAIZ, 'assets', f), 'utf8');
+const leerDato = (f) => JSON.parse(fs.readFileSync(path.join(RAIZ, 'datos', f), 'utf8'));
 
+// --- Motor, catalogo y validador, en un contexto limpio ---------------------
 const ctx = { console };
 ctx.global = ctx;
 vm.createContext(ctx);
+vm.runInContext(leerAsset('motor.js'), ctx);
+vm.runInContext(leerAsset('catalogo.js'), ctx);
+vm.runInContext(leerAsset('validador.js'), ctx);
 
-// --- Stubs minimos de Apps Script ---
-ctx.Utilities = {
-  formatDate: (d, tz, f) => d.toISOString().slice(0, 10),
-  getUuid: () => 'uuid'
-};
-ctx.Logger = { log: (s) => console.log(s) };
-ctx.Session = { getScriptTimeZone: () => 'UTC' };
-ctx.PropertiesService = {
-  getUserProperties: () => ({ getProperty: () => null, setProperty: () => {} })
-};
-ctx.CacheService = {
-  getScriptCache: () => ({ get: () => null, put: () => {}, remove: () => {} })
-};
-ctx.LockService = {
-  getScriptLock: () => ({ tryLock: () => true, releaseLock: () => {} })
-};
-
-let ALERTAS = [];
-ctx.SpreadsheetApp = {
-  getActiveSpreadsheet: () => ({
-    getSheetByName: () => null,
-    insertSheet: () => null,
-    setActiveSheet: () => {}
-  }),
-  getUi: () => ({
-    alert: (...a) => ALERTAS.push(a.join(' | ')),
-    ButtonSet: { OK: 1 },
-    createMenu: () => ({ addItem() { return this; }, addSeparator() { return this; }, addToUi() {} })
-  }),
-  newDataValidation: () => ({
-    requireValueInList() { return this; },
-    setAllowInvalid() { return this; },
-    build() { return {}; }
-  }),
-  flush: () => {}
-};
-
-// --- Carga 00_Setup (esquema + datos) ---
-vm.runInContext(leer('00_Setup.gs'), ctx);
-
-// Captura de las filas que instalarTodo() escribiria en cada hoja
-const DATOS = {};
-ctx.escribir_ = function (ss, hoja, filas) { DATOS[hoja] = filas; };
-vm.runInContext('cargarDatosDemo_({});', ctx);
-
-// --- Carga 01_Catalogo, sustituyendo leerHoja_ por lectura de DATOS ---
-vm.runInContext(leer('01_Catalogo.gs'), ctx);
-
-ctx.__DATOS = DATOS;
-vm.runInContext(`
-leerHoja_ = function (ss, nombre) {
-  var def = ESQUEMA[nombre];
-  var filas = __DATOS[nombre] || [];
-  return filas.map(function (fila, i) {
-    var obj = {};
-    def.cols.forEach(function (h, j) {
-      var v = fila[j];
-      if (def.fechas.indexOf(h) !== -1) obj[h] = normalizarFecha_(v, nombre + '!' + h + ' fila ' + (i + 2));
-      else obj[h] = (typeof v === 'string') ? v.trim() : v;
-    });
-    return obj;
-  });
-};
-`, ctx);
-
-// --- Motor y puente MOTOR() ---
-const motorSrc = leer('02_Motor.html')
-  .replace(/<script[^>]*>/gi, '').replace(/<\/script>/gi, '');
-vm.runInContext(motorSrc, ctx);
 const M = ctx.Motor;
-ctx.MOTOR = () => M;
+const Validador = ctx.Validador;
 
-// --- Validador y suite ---
-vm.runInContext(leer('04_Validador.gs'), ctx);
-vm.runInContext(leer('05_Pruebas.gs'), ctx);
+// --- Catalogo construido desde datos/ ---------------------------------------
+const crudo = {};
+ctx.Catalogo.TABLAS.forEach((t) => { crudo[t] = leerDato(t + '.json'); });
 
-// La suite escribe en la hoja "Pruebas"; aqui solo se recogen los resultados.
-let RESULTADOS = [];
-ctx.escribirResultados_ = function (res) { RESULTADOS = res; };
+let cat;
+try {
+  cat = ctx.Catalogo.construir(crudo);
+} catch (e) {
+  console.error('\nNo se pudo construir el catalogo desde datos/:\n  ' + e.message + '\n');
+  process.exit(1);
+}
 
 // ============================================================================
-// 1. SUITE COMPARTIDA (la misma que corre en el Sheet)
+// 1. SUITE FUNCIONAL
 // ============================================================================
-vm.runInContext('ejecutarPruebas();', ctx);
+const { ejecutarPruebas } = require('./pruebas.js');
+const RESULTADOS = ejecutarPruebas(cat, M, Validador, ctx.Catalogo);
 
-const cat = vm.runInContext('getCatalogo(true)', ctx);
-let fallos = RESULTADOS.filter(r => !r.pass)
-  .map(r => `[${r.caso}] ${r.desc}${r.detalle ? ' -> ' + r.detalle : ''}`);
+let fallos = RESULTADOS.filter((r) => !r.pass)
+  .map((r) => `[${r.caso}] ${r.desc}${r.detalle ? ' -> ' + r.detalle : ''}`);
 let total = RESULTADOS.length;
 
 // ============================================================================
-// 2. FLUJO DE LA SPA (no vive en 05_Pruebas.gs porque es logica de cliente)
+// 2. FLUJO DE LA SPA (logica de cliente, no vive en pruebas.js)
 // ============================================================================
 let casoActual = 'SPA flujo';
 function eq(a, e, d) {
@@ -189,9 +127,10 @@ muestra('HBK familia con edades', 'HBK', '2026-09-01', '2026-09-04',
         [{ cod_hab: 'BAS_QUA', cantidad: 1, adultos: 2, edades: [3, 8] }]);
 muestra('HIM con Promocion Residentes', 'HIM', '2026-09-14', '2026-09-17',
         [{ cod_hab: 'DLX_VMON', cantidad: 1, adultos: 2, edades: [] }], ['PRO_RESIDENTES']);
-muestra('WTC ciudad con IVA', 'WTC', '2026-08-22', '2026-08-25',
-        [{ cod_hab: 'DLX_KING', cantidad: 1, adultos: 1, edades: [] }], [],
-        vm.runInContext('conWTC_(getCatalogo(true), 100)', ctx));
+// WTC ya esta activo con tarifas propias: se cotiza contra el catalogo real,
+// sin inyectar nada.
+muestra('WTC ciudad', 'WTC', '2026-08-22', '2026-08-25',
+        [{ cod_hab: 'DLX_KING', cantidad: 1, adultos: 1, edades: [] }]);
 
 // ============================================================================
 console.log('\n========================================');

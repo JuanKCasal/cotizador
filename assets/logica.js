@@ -1,4 +1,3 @@
-<script>
 /**
  * COTIZADOR HESPERIA — 08_Logica.html
  * Estado de la SPA, cascada de habitaciones, calculo en vivo y copiado.
@@ -10,7 +9,6 @@
   var CAT = null;
   var ULTIMO = null;      // ultimo resultado del motor
   var TEXTO = '';         // ultimo texto renderizado
-  var REGISTRADA = false;
   var secuencia = 0;
 
   var estado = {
@@ -52,16 +50,41 @@
   // ARRANQUE
   // ==========================================================================
   function iniciar() {
-    google.script.run
-      .withSuccessHandler(function (datos) {
-        CAT = datos.catalogo;
-        estado.asesor = (datos.prefs && datos.prefs.asesorIniciales) || '';
+    Catalogo.cargar()
+      .then(function (cat) {
+        CAT = cat;
+        estado.asesor = leerIniciales(cat);
         montar();
       })
-      .withFailureHandler(function (err) {
-        $('cargandoTexto').textContent = 'No se pudieron cargar las tarifas: ' + err.message;
-      })
-      .apiIniciar();
+      .catch(function (err) {
+        $('cargandoTexto').textContent =
+          'No se pudieron cargar las tarifas: ' + err.message;
+      });
+  }
+
+  /**
+   * Iniciales de la asesora. El valor de config llena el campo desde el primer
+   * arranque; solo se pisa si alguien escribio otras iniciales en este
+   * navegador. Antes vivia en PropertiesService, del lado del servidor.
+   */
+  function leerIniciales(cat) {
+    var porDefecto = 'MZ';
+    try {
+      if (cat && cat.config && cat.config.INICIALES_POR_DEFECTO) {
+        porDefecto = String(cat.config.INICIALES_POR_DEFECTO).trim().toUpperCase();
+      }
+    } catch (e) { /* se queda con MZ */ }
+    try {
+      return localStorage.getItem('iniciales') || porDefecto;
+    } catch (e) {
+      return porDefecto;  // navegador con el almacenamiento bloqueado
+    }
+  }
+
+  function guardarIniciales(v) {
+    try {
+      localStorage.setItem('iniciales', String(v || '').trim().slice(0, 4).toUpperCase());
+    } catch (e) { /* no es critico */ }
   }
 
   function montar() {
@@ -359,9 +382,6 @@
   }
 
   function recalcular() {
-    REGISTRADA = false;
-    $('btnRegistrar').textContent = 'Registrar cotización';
-
     // Noches entre fechas
     var puente = $('puenteNoches');
     if (estado.checkin && estado.checkout && estado.checkout > estado.checkin) {
@@ -474,10 +494,9 @@
     botonPanel('ok');
   }
 
-  /** Copiar y registrar: solo con una cotizacion valida. */
+  /** Copiar: solo con una cotizacion valida. */
   function habilitar(v) {
     $('btnCopiar').disabled = !v;
-    $('btnRegistrar').disabled = !v;
   }
 
   /**
@@ -586,54 +605,6 @@
       if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return true;
     } catch (e) { /* sigue */ }
     return (window.innerWidth || 1024) < 900;
-  }
-
-  // ==========================================================================
-  // REGISTRO
-  // ==========================================================================
-  function registrar() {
-    if (!ULTIMO || REGISTRADA) return;
-    if (!estado.cliente.trim()) {
-      aviso('Escribe el nombre del cliente', 'error');
-      $('cliente').focus();
-      return;
-    }
-    var btn = $('btnRegistrar');
-    btn.disabled = true;
-    btn.textContent = 'Registrando…';
-
-    google.script.run
-      .withSuccessHandler(function (out) {
-        if (out.ok) {
-          REGISTRADA = true;
-          btn.textContent = 'Registrada · ' + out.id;
-          aviso('Cotización registrada', 'exito');
-        } else {
-          btn.disabled = false;
-          btn.textContent = 'Registrar cotización';
-          aviso(out.error, 'error');
-        }
-      })
-      .withFailureHandler(function (err) {
-        btn.disabled = false;
-        btn.textContent = 'Registrar cotización';
-        aviso('No se pudo registrar: ' + err.message, 'error');
-      })
-      .apiRegistrarCotizacion({
-        cliente: estado.cliente,
-        asesorIniciales: estado.asesor,
-        req: {
-          hotel: estado.hotel,
-          checkin: estado.checkin,
-          checkout: estado.checkout,
-          promos: estado.promos.slice(),
-          lineas: estado.lineas.map(function (l) {
-            var hab = habDeLinea(l);
-            return { cod_hab: hab ? hab.cod : '', cantidad: l.cantidad,
-                     adultos: l.adultos, edades: l.edades.slice() };
-          })
-        }
-      });
   }
 
   // ==========================================================================
@@ -755,9 +726,16 @@
     $('btnAgregar').addEventListener('click', function () {
       if (!estado.hotel) { aviso('Primero elige el hotel', 'error'); return; }
       if (estado.lineas.length >= 8) { aviso('Máximo 8 tipos de habitación', 'error'); return; }
-      estado.lineas.push(nuevaLinea());
+      // Al inicio, no al final: la habitacion recien agregada es la que hay que
+      // configurar, y en el celular una lista larga la dejaria fuera de la
+      // pantalla. Las ya configuradas bajan una posicion.
+      estado.lineas.unshift(nuevaLinea());
       renderLineas();
       recalcular();
+      var primera = $('lineas').firstElementChild;
+      if (primera && primera.scrollIntoView) {
+        primera.scrollIntoView({ block: 'nearest' });
+      }
     });
 
     // --- Promociones ---
@@ -774,9 +752,7 @@
     // --- Registro ---
     $('cliente').addEventListener('input', function () {
       estado.cliente = this.value;
-      REGISTRADA = false;
-      $('btnRegistrar').textContent = 'Registrar cotización';
-      if (ULTIMO) $('btnRegistrar').disabled = false;
+      recalcular();
     });
     $('asesor').addEventListener('input', function () {
       estado.asesor = this.value.toUpperCase();
@@ -784,12 +760,11 @@
       recalcular();
     });
     $('asesor').addEventListener('blur', function () {
-      if (estado.asesor) google.script.run.apiGuardarIniciales(estado.asesor);
+      if (estado.asesor) guardarIniciales(estado.asesor);
     });
 
     // --- Acciones ---
     $('btnCopiar').addEventListener('click', copiar);
-    $('btnRegistrar').addEventListener('click', registrar);
     $('btnVerMensaje').addEventListener('click', function () {
       $('columnaVista').classList.add('abierta');
     });
@@ -838,4 +813,3 @@
   // ==========================================================================
   iniciar();
 })();
-</script>

@@ -1,10 +1,11 @@
-<script>
 /**
- * COTIZADOR HESPERIA - Motor.html
- * Motor de calculo y render. Se usa TAL CUAL en el cliente (SPA) y en el
- * servidor (recalculo al registrar). Una sola implementacion, cero divergencia.
+ * COTIZADOR HESPERIA - motor.js
+ * Motor de calculo y render. Una sola implementacion del calculo: ningun otro
+ * archivo puede reproducir estas reglas.
  *
- * No depende de ninguna API de Apps Script ni del DOM.
+ * No depende del DOM ni de ninguna API externa. Se mantiene en ES5 a proposito:
+ * es el archivo que menos debe cambiar, y asi corre igual en los arneses de
+ * Node, en el navegador y en cualquier celular viejo.
  */
 var Motor = (function () {
   'use strict';
@@ -306,14 +307,11 @@ var Motor = (function () {
     }
 
     var porHabitacion = hotel.modoTarifa === 'POR_HABITACION';
-    var iva = Number(hotel.ivaPct) || 0;
-    var factorIva = 1 + iva / 100;
 
     var noches = F.noches(req.checkin, req.checkout);
     res.noches = noches;
     res.nNoches = noches.length;
     res.nDias = noches.length + 1;
-    res.iva = iva;
     if (res.nNoches > 60) res.advertencias.push('Estadia de ' + res.nNoches + ' noches: verifique las fechas.');
 
     var promosSel = req.promos || [];
@@ -377,7 +375,7 @@ var Motor = (function () {
         var neto = porHabitacion
           ? tn.tarifaFinal
           : r2(tn.tarifaFinal * paxEfectivo + suplemento);
-        var costo = techo(neto * factorIva);
+        var costo = techo(neto);
         detalleNoches.push({
           fecha: tn.fecha, tarifa: tn.tarifaFinal, tarifaBase: tn.tarifaBase,
           temporada: tn.temporadaNombre, promo: tn.promo, promoNombre: tn.promoNombre,
@@ -395,7 +393,7 @@ var Motor = (function () {
         if (!cg) continue;
         var monto = adultos * cg.ADULTO;
         detMenores.forEach(function (m) { monto += m.cant * (cg[m.rango.categoriaCargo] || 0); });
-        monto = techo(monto * factorIva);
+        monto = techo(monto);
         if (monto <= 0) continue;
         cargosLinea += monto;
         cargosDet.push({ fecha: noches[c], nombre: cg.nombre, monto: monto });
@@ -510,7 +508,6 @@ var Motor = (function () {
 
   function bloqueHabitaciones(cat, res) {
     var h = cat.hoteles[res.hotel];
-    var iva = Number(h.ivaPct) || 0;
 
     var bloques = res.lineas.map(function (l) {
       var out = [];
@@ -523,7 +520,7 @@ var Motor = (function () {
       var sufijo = l.cantidad > 1 ? ' c/u' : '';
 
       if (l.costoUniforme !== null) {
-        out.push(lineaPrecio(cat, l.tramos[0], l, iva, sufijo));
+        out.push(lineaPrecio(cat, l.tramos[0], l, sufijo));
       } else {
         out.push('Tarifa por temporada:');
         l.tramos.forEach(function (t) {
@@ -542,15 +539,16 @@ var Motor = (function () {
 
   /**
    * El renglon de precio por noche.
-   * Con IVA se muestra el neto y el bruto porque el hotel factura asi.
+   *
+   * Toda tarifa cargada es el precio final que paga el cliente. No hay
+   * impuestos que sumar ni que mostrar por separado, en ningun hotel: si
+   * alguna vez hay que facturar un impuesto aparte, es una decision comercial
+   * que se toma antes de tocar este archivo.
+   *
    * El suplemento de habitacion individual va incluido en el monto y NO se
    * menciona: la asesora manda el precio, no el desglose interno.
    */
-  function lineaPrecio(cat, tramo, linea, iva, sufijo) {
-    if (iva > 0) {
-      return 'Precio por noche $' + fmtMoney(cat, tramo.neto) +
-             ' + IVA= $' + fmtMoney(cat, tramo.costo) + sufijo;
-    }
+  function lineaPrecio(cat, tramo, linea, sufijo) {
     var txt = 'Total, por noche: $' + fmtMoney(cat, tramo.costo) + sufijo;
     // El "p/p" solo se muestra si multiplicar de vuelta da exactamente el
     // total Y ese total se armo cobrandole lo mismo a cada huesped.
@@ -664,4 +662,3 @@ var Motor = (function () {
     }
   };
 })();
-</script>

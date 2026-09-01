@@ -1,12 +1,14 @@
 /**
- * COTIZADOR HESPERIA - 05_Pruebas.gs
+ * COTIZADOR HESPERIA - pruebas.js
  * Suite de pruebas funcionales sobre las tarifas cargadas.
  *
- * USO: menu Cotizador > Ejecutar pruebas funcionales
- *      (o ejecutar ejecutarPruebas() desde el editor y ver el Registro)
+ * Era 05_Pruebas.gs y corria dentro del Sheet. Ahora corre en Node contra los
+ * archivos de datos/ reales, que son la misma fuente que consume la aplicacion:
+ * desaparece la brecha entre "las pruebas del arnes" y "las pruebas de verdad"
+ * que obligaba a validar cada cambio dos veces.
  *
- * IMPORTANTE: los valores esperados estan atados a las tarifas de
- * cargarDatosDemo_(). Si cambian las tarifas, hay que actualizarlos.
+ * IMPORTANTE: los valores esperados estan atados a las tarifas de datos/.
+ * Si cambian las tarifas, hay que actualizarlos.
  */
 
 // ============================================================================
@@ -63,30 +65,24 @@ function conStopSales_(cat, filas) {
 }
 
 /**
- * Copia del catalogo con WTC activo y una tarifa, para ejercitar el modo
- * POR_HABITACION + IVA sin depender de que el hotel ya este publicado.
+ * Copia del catalogo con atributos cambiados en una habitacion.
+ *
+ * Hoy ninguna habitacion del catalogo real usa pax_min_cobrados ni
+ * ocup_min_fisica mayor que 1, pero el motor los soporta y la gerencia puede
+ * volver a cargarlos en cualquier momento. Inyectarlos aqui mantiene esas
+ * reglas cubiertas sin atarlas a un dato que hoy no existe.
  */
-function conWTC_(cat, tarifa) {
+function conHab_(cat, clave, cambios) {
   var c = JSON.parse(JSON.stringify(cat));
-  c.hoteles.WTC = {
-    codigo: 'WTC', nombre: 'HOTEL HESPERIA WTC VALENCIA', emojis: '\uD83C\uDFE8',
-    horaIn: '3:00 PM', horaOut: '12:00 PM', formatoFecha: 'dd/MM/yyyy',
-    modoTarifa: 'POR_HABITACION', ivaPct: 16, formatoOcupantes: 'LINEAS',
-    deposito: 0, labelDeposito: 'Dep\u00F3sito', earlyPP: 0, latePP: 0,
-    horaLate: '2:00 PM', vipDia: 0
-  };
-  ['ALTA_26', 'BAJA_26', 'NAV_26', 'FIN_26'].forEach(function (t) {
-    c.tarifas['WTC|DLX_KING|' + t] = { tarifa: tarifa, ninoOverride: null };
-  });
+  Object.keys(cambios).forEach(function (k) { c.habitaciones[clave][k] = cambios[k]; });
   return c;
 }
 
 // ============================================================================
 // SUITE
 // ============================================================================
-function ejecutarPruebas() {
-  var cat = getCatalogo(true);
-  var M = MOTOR();
+function ejecutarPruebas(cat, M, Validador, Catalogo) {
+  var parseDias_ = Catalogo._interno.parseDias;
   var F = M.Fechas;
   var t = _T();
   var r, r2, txt;
@@ -236,10 +232,19 @@ function ejecutarPruebas() {
 
   // ---- T13. Minimo facturable (pax_min_cobrados) --------------------------
   t.caso('T13 Minimo facturable');
+  // El catalogo real ya no carga pax_min_cobrados: las cuadruples de Morrocoy
+  // lo tenian en 3 y quedo vacio. Se prueban las dos situaciones, porque la
+  // regla sigue viva en el motor.
   r = M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2, [7])]));
   t.ok(r.ok, 'Calculo sin errores', (r.errores || []).join('; '));
-  t.eq(r.lineas[0].paxPagos, 2.5, 'Solo 2,5 pax pagarian');
-  t.eq(r.lineas[0].paxEfectivo, 3, 'Forzado al minimo de 3 pax');
+  t.eq(r.lineas[0].paxPagos, 2.5, 'Solo 2,5 pax pagan');
+  t.eq(r.lineas[0].paxEfectivo, 2.5, 'Sin minimo cargado, se cobran los 2,5');
+  t.eq(r.lineas[0].costoUniforme, 213, '85 x 2,5 = 212,5, redondeado hacia arriba');
+  t.eq(r.total, 426, 'Total 426');
+
+  var catMin = conHab_(cat, 'HBK|BAS_QUA', { paxMinCobrados: 3 });
+  r = M.calcular(catMin, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2, [7])]));
+  t.eq(r.lineas[0].paxEfectivo, 3, 'Con el minimo cargado, sube a 3 pax');
   t.eq(r.lineas[0].costoUniforme, 255, '85 x 3');
   t.eq(r.total, 510, 'Total 510');
 
@@ -252,10 +257,12 @@ function ejecutarPruebas() {
   t.eq(M.rangoPorEdad(cat, 'HBK', 3).factor, 0, 'HBK: infante no paga');
   t.eq(M.rangoPorEdad(cat, 'HBK', 18), null, '18 anos no cae en ningun rango de menor');
 
-  // ---- T15. parseDias_ tolerante ------------------------------------------
-  t.caso('T15 parseDias_');
+  // ---- T15. parseDias tolerante -------------------------------------------
+  // Nadie reformatea ya los datos, pero quien edite el catalogo a mano sigue
+  // pudiendo escribir cualquiera de estas formas.
+  t.caso('T15 parseDias');
   t.eq(parseDias_('5,6').join('-'), '5-6', 'Texto con coma');
-  t.eq(parseDias_(5.6).join('-'), '5-6', 'Numero corrompido por Sheets');
+  t.eq(parseDias_(5.6).join('-'), '5-6', 'Numero sin comillas');
   t.eq(parseDias_('5;6').join('-'), '5-6', 'Punto y coma');
   t.eq(parseDias_(' 5 , 6 ').join('-'), '5-6', 'Con espacios');
   t.eq(parseDias_('').length, 0, 'Vacio = todos los dias');
@@ -301,8 +308,11 @@ function ejecutarPruebas() {
        'Rechaza 3 adultos en una doble');
   t.ok(!M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_DBL', 2, [2])])).ok,
        'Rechaza 3 huespedes en una doble (el infante ocupa)');
-  t.ok(!M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2)])).ok,
-       'Rechaza 2 huespedes en una cuadruple (ocup_min_fisica 3)');
+  t.ok(M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2)])).ok,
+       'Acepta 2 huespedes en una cuadruple: ocup_min_fisica quedo en 1');
+  t.ok(!M.calcular(conHab_(cat, 'HBK|BAS_QUA', { ocupMinFisica: 3 }),
+                   req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2)])).ok,
+       'Con ocup_min_fisica 3 si rechaza 2 huespedes');
   t.ok(!M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_DBL', 0, [7])])).ok,
        'Rechaza habitacion sin adultos');
   t.ok(!M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('NO_EXISTE', 2)])).ok,
@@ -377,10 +387,16 @@ function ejecutarPruebas() {
   r = M.calcular(cat, req_('HBK', '2026-09-19', '2026-09-21', [lin_('BAS_QUA', 2, [5])]));
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
   t.eq(r.lineas[0].paxPagos, 2.5, 'Pagan 2,5 pax');
-  t.eq(r.lineas[0].paxEfectivo, 3, 'pax_min_cobrados los sube a 3');
-  t.eq(r.lineas[0].ocupacion, 3, 'Y la ocupacion tambien es 3, por casualidad');
-  t.noContiene(txt, 'p/p', 'Con minimo facturable NO se muestra el precio por persona');
-  t.contiene(txt, 'Total, por noche: $210', 'Solo el monto');
+  t.eq(r.lineas[0].ocupacion, 3, 'Pero la habitacion la ocupan 3 personas');
+  t.noContiene(txt, 'p/p', 'Con un menor a mitad de precio NO se muestra el p/p');
+  t.contiene(txt, 'Total, por noche: $175', 'Solo el monto: 70 x 2,5');
+
+  var catMin2 = conHab_(cat, 'HBK|BAS_QUA', { paxMinCobrados: 3 });
+  r = M.calcular(catMin2, req_('HBK', '2026-09-19', '2026-09-21', [lin_('BAS_QUA', 2, [5])]));
+  txt = M.render(catMin2, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  t.eq(r.lineas[0].paxEfectivo, 3, 'Con minimo facturable sube a 3');
+  t.noContiene(txt, 'p/p', 'Con minimo facturable tampoco se muestra el p/p');
+  t.contiene(txt, 'Total, por noche: $210', 'Solo el monto: 70 x 3');
 
   r = M.calcular(cat, req_('HBK', '2026-09-19', '2026-09-21', [lin_('BAS_QUA', 3)]));
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
@@ -425,31 +441,32 @@ function ejecutarPruebas() {
   t.contiene(txt, 'CARGOS ESPECIALES', 'Muestra el bloque de cargos');
   t.contiene(txt, 'Cena de Navidad', 'Detalla el cargo');
 
-  // ---- T24. Hotel de ciudad: POR_HABITACION + IVA -------------------------
-  t.caso('T24 Hotel de ciudad con IVA');
-  var catW = conWTC_(cat, 100);
-  r = M.calcular(catW, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 1)]));
+  // ---- T24. Hotel de ciudad: POR_HABITACION -------------------------------
+  // Sin impuestos: la tarifa cargada es el precio final, igual que en playa.
+  t.caso('T24 Hotel de ciudad');
+  r = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 1)]));
   t.ok(r.ok, 'Calculo sin errores', (r.errores || []).join('; '));
   t.eq(r.nNoches, 3, '3 noches');
   t.eq(r.lineas[0].aplicoSingle, false, 'POR_HABITACION no aplica suplemento single');
-  t.eq(r.lineas[0].detalleNoches[0].neto, 100, 'Neto 100 por habitacion');
-  t.eq(r.lineas[0].costoUniforme, 116, '100 + 16% de IVA');
-  t.eq(r.total, 348, 'Total 348 (replica el ejemplo enviado)');
+  t.eq(r.lineas[0].detalleNoches[0].neto, 200, 'Neto 200 por habitacion');
+  t.eq(r.lineas[0].costoUniforme, 200, 'Sin impuesto encima: el costo es la tarifa');
+  t.eq(r.total, 600, 'Total 600');
 
-  r2 = M.calcular(catW, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 2)]));
-  t.eq(r2.total, 348, 'Con 2 adultos cuesta lo mismo: la tarifa es por habitacion');
+  r2 = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 2)]));
+  t.eq(r2.total, 600, 'Con 2 adultos cuesta lo mismo: la tarifa es por habitacion');
 
-  txt = M.render(catW, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
   t.eq(M.marcadoresNoResueltos(txt).length, 0, 'Sin marcadores pendientes');
   t.contiene(txt, 'CHECK IN 3:00 PM: 22/08/2026', 'Fecha en formato dd/MM/yyyy');
-  t.contiene(txt, 'Precio por noche $100 + IVA= $116', 'Renglon de precio con IVA');
+  t.contiene(txt, 'Total, por noche: $200', 'Renglon de precio sin desglose');
+  t.noContiene(txt, 'IVA', 'El mensaje no menciona impuestos en ningun hotel');
   t.contiene(txt, 'Adultos: 1', 'Ocupantes en renglones separados');
-  t.contiene(txt, 'Niños:', 'Renglon de ninos aunque este vacio');
-  t.contiene(txt, '*TOTAL: $348 (3 NOCHES)*', 'Total con la palabra en plural');
+  t.contiene(txt, 'Ni\u00F1os:', 'Renglon de ninos aunque este vacio');
+  t.contiene(txt, '*TOTAL: $600 (3 NOCHES)*', 'Total con la palabra en plural');
 
-  r = M.calcular(catW, req_('WTC', '2026-08-22', '2026-08-23', [lin_('DLX_KING', 1, [8])]));
-  txt = M.render(catW, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
-  t.contiene(txt, 'Niños: 8 años', 'Las edades tambien salen en el formato de renglones');
+  r = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-23', [lin_('DLX_KING', 1, [8])]));
+  txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  t.contiene(txt, 'Ni\u00F1os: 8 a\u00F1os', 'Las edades tambien salen en el formato de renglones');
   t.contiene(txt, '(1 NOCHE)', 'Singular con una sola noche');
 
   // ---- T25. Cobertura de hoteles activos -----------------------------------
@@ -462,62 +479,28 @@ function ejecutarPruebas() {
     t.eq(M.marcadoresNoResueltos(tt).length, 0, par[0] + ': plantilla completa');
     t.ok(tt.length > 200, par[0] + ': texto con contenido');
   });
-  t.eq(cat.hoteles.WTC, undefined, 'WTC no aparece: esta inactivo hasta cargar tarifas');
-  t.eq(cat.hoteles.HMC, undefined, 'HMC no aparece: esta inactivo hasta cargar tarifas');
+  // Los dos hoteles de ciudad ya estan activos y con tarifas propias.
+  [['WTC', 'DLX_KING'], ['HMC', 'DLX_KING']].forEach(function (par) {
+    t.ok(!!cat.hoteles[par[0]], par[0] + ' esta activo en el catalogo');
+    var rr = M.calcular(cat, req_(par[0], '2026-09-01', '2026-09-03', [lin_(par[1], 2)]));
+    t.ok(rr.ok, par[0] + ': calcula sin errores', (rr.errores || []).join('; '));
+    if (!rr.ok) return;
+    var tt = M.render(cat, rr, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+    t.eq(M.marcadoresNoResueltos(tt).length, 0, par[0] + ': plantilla completa');
+    t.noContiene(tt, 'IVA', par[0] + ': sin mencion de impuestos');
+  });
 
   // ---- T26. El validador no reporta errores -------------------------------
   t.caso('T26 Validador');
-  var hallazgos = validarCatalogoCore_();
+  var hallazgos = Validador.validar(cat, M, '2026-09-01');
   var errores = hallazgos.filter(function (h) { return h[0] === 'ERROR'; });
   t.eq(errores.length, 0, 'El catalogo cargado no tiene errores',
        errores.map(function (h) { return h[2] + ': ' + h[3]; }).join(' | '));
 
-  escribirResultados_(t.resultados);
   return t.resultados;
 }
 
-// ============================================================================
-// CICLO COMPLETO DE REGISTRO (escribe una fila real: borrarla despues)
-// ============================================================================
-function pruebaRegistro() {
-  var out = apiRegistrarCotizacion({
-    cliente: 'PRUEBA - borrar',
-    asesorIniciales: 'MZ',
-    req: req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_QUA', 2, [6, 8])])
-  });
-  Logger.log(JSON.stringify(out, null, 2));
-  return out;
-}
-
-// ============================================================================
-// SALIDA
-// ============================================================================
-function escribirResultados_(resultados) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName('Pruebas');
-  if (!sh) sh = ss.insertSheet('Pruebas');
-  sh.clear();
-
-  sh.getRange(1, 1, 1, 4).setValues([['resultado', 'caso', 'aserción', 'detalle']])
-    .setFontWeight('bold').setBackground('#1f3864').setFontColor('#ffffff');
-  sh.setFrozenRows(1);
-
-  var filas = resultados.map(function (r) {
-    return [r.pass ? 'OK' : 'FALLA', r.caso, r.desc, r.detalle];
-  });
-  sh.getRange(2, 1, filas.length, 4).setValues(filas);
-  sh.getRange(2, 1, filas.length, 1).setBackgrounds(filas.map(function (f) {
-    return [f[0] === 'OK' ? '#d9ead3' : '#f4cccc'];
-  }));
-  sh.autoResizeColumns(1, 4);
-
-  var fallan = resultados.filter(function (r) { return !r.pass; }).length;
-  ss.setActiveSheet(sh);
-  SpreadsheetApp.getUi().alert(
-    'Pruebas funcionales',
-    (resultados.length - fallan) + ' de ' + resultados.length + ' aserciones pasan.' +
-    (fallan ? '\n\nHay ' + fallan + ' falla(s). Revise la hoja "Pruebas".'
-            : '\n\nTodo en verde.'),
-    SpreadsheetApp.getUi().ButtonSet.OK
-  );
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { ejecutarPruebas: ejecutarPruebas, req_: req_, lin_: lin_,
+                     conStopSales_: conStopSales_, conHab_: conHab_ };
 }

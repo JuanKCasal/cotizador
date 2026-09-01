@@ -1,4 +1,3 @@
-<style>
 /* ==========================================================================
    COTIZADOR HESPERIA — Estilos
    Ancla: tinta marina. El acento cambia según el hotel seleccionado, para que
@@ -461,4 +460,3 @@ input[type="date"] { min-height: 44px; }
     transition-duration: .001ms !important;
   }
 }
-</style>

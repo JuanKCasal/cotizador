@@ -1,86 +1,63 @@
-/* Ejecuta la SPA real en jsdom, con google.script.run stubbeado contra el
-   catalogo real generado por 00_Setup.gs. Detecta errores en tiempo de
-   ejecucion que el chequeo de sintaxis no ve. */
-const fs = require('fs');
-const vm = require('vm');
+/* Ejecuta la interfaz real en jsdom y detecta errores en tiempo de ejecucion
+   que un chequeo de sintaxis no ve.
 
-/* Los archivos fuente viven en apps-script/. El arnes los lee de ahi
-   directamente: si se copiaran aqui, las copias divergirian y las pruebas
-   validarian codigo viejo sin avisar. */
+   Carga index.html tal cual, con los mismos assets/ y los mismos datos/ que
+   descarga el navegador. jsdom no trae los recursos externos por su cuenta,
+   asi que los scripts se insertan en linea y fetch se sirve desde el disco:
+   el resto del arranque (Catalogo.cargar, promesas, DOM) corre de verdad. */
+
+const fs = require('fs');
 const path = require('path');
-const SRC = path.join(__dirname, '..', 'apps-script');
-const leer = (f) => fs.readFileSync(path.join(SRC, f), 'utf8');
 const { JSDOM } = require('jsdom');
 
-// ---------- Catalogo real (misma cadena que _verificar.js) ----------
-const ctxS = { console };
-vm.createContext(ctxS);
-ctxS.Utilities = { formatDate: (d) => d.toISOString().slice(0, 10) };
-ctxS.Logger = { log: () => {} };
-ctxS.SpreadsheetApp = { getActiveSpreadsheet: () => ({ getSheetByName: () => null }), getUi: () => ({ alert: () => {} }), flush: () => {} };
-ctxS.Session = { getScriptTimeZone: () => 'UTC' };
-vm.runInContext(leer('00_Setup.gs'), ctxS);
-const DATOS = {};
-ctxS.escribir_ = (ss, hoja, filas) => { DATOS[hoja] = filas; };
-vm.runInContext('cargarDatosDemo_({});', ctxS);
-vm.runInContext(leer('01_Catalogo.gs'), ctxS);
-ctxS.__DATOS = DATOS;
-vm.runInContext(`
-leerHoja_ = function (ss, nombre) {
-  var def = ESQUEMA[nombre];
-  return (__DATOS[nombre] || []).map(function (fila, i) {
-    var obj = {};
-    def.cols.forEach(function (h, j) {
-      var v = fila[j];
-      if (def.fechas.indexOf(h) !== -1) obj[h] = normalizarFecha_(v, nombre);
-      else if ((def.texto || []).indexOf(h) !== -1) obj[h] = normalizarTexto_(v);
-      else obj[h] = (typeof v === 'string') ? v.trim() : v;
-    });
-    return obj;
-  });
-};`, ctxS);
-const CATALOGO = vm.runInContext('construirCatalogo_()', ctxS);
+const RAIZ = path.join(__dirname, '..');
+const leerRaiz = (f) => fs.readFileSync(path.join(RAIZ, f), 'utf8');
 
-// ---------- Ensamblar la pagina como lo hace HtmlService ----------
-const motor = leer('02_Motor.html');
-const estilos = leer('07_Estilos.html');
-const logica = leer('08_Logica.html');
-let pagina = leer('06_SPA.html');
-// Funcion de reemplazo: el contenido incluye $('...') y "$'" es un patron
-// especial de String.replace que corromperia el resultado.
-pagina = pagina
-  .replace(/<\?!=\s*include\('07_Estilos'\);?\s*\?>/g, () => estilos)
-  .replace(/<\?!=\s*include\('02_Motor'\);?\s*\?>/g, () => motor)
-  .replace(/<\?!=\s*include\('08_Logica'\);?\s*\?>/g, () => logica);
+// ---------- Pagina con los assets embebidos ----------
+let pagina = leerRaiz('index.html');
 
-const restantes = pagina.match(/<\?!?=?[\s\S]{0,60}?\?>/g);
-if (restantes) { console.log('SCRIPTLETS SIN RESOLVER:', restantes); process.exit(1); }
+pagina = pagina.replace(
+  /<link rel="stylesheet" href="(assets\/[^"]+)">/g,
+  (_, ruta) => '<style>\n' + leerRaiz(ruta) + '\n</style>'
+);
+
+// Funcion de reemplazo, no string: el codigo contiene $('...') y "$'" es un
+// patron especial de String.replace que corromperia el resultado.
+pagina = pagina.replace(
+  /<script src="(assets\/[^"]+)"><\/script>/g,
+  (_, ruta) => '<script>\n' + leerRaiz(ruta) + '\n</script>'
+);
+
+const pendientes = pagina.match(/(src|href)="assets\/[^"]*"/g);
+if (pendientes) { console.log('ASSETS SIN RESOLVER:', pendientes); process.exit(1); }
 
 // ---------- Errores capturados ----------
 const errores = [];
 const dom = new JSDOM(pagina, {
   runScripts: 'dangerously',
   pretendToBeVisual: true,
-  url: 'https://script.google.com/macros/s/x/exec',
+  url: 'https://juankcasal.github.io/cotizador/',
   beforeParse(w) {
-    w.google = {
-      script: {
-        run: (function () {
-          const api = {
-            withSuccessHandler(fn) { this._ok = fn; return this; },
-            withFailureHandler(fn) { this._err = fn; return this; },
-            apiIniciar() {
-              const r = { catalogo: CATALOGO, prefs: { asesorIniciales: 'MZ' } };
-              setTimeout(() => this._ok && this._ok(r), 0);
-            },
-            apiGuardarIniciales() {},
-            apiRegistrarCotizacion(p) {
-              setTimeout(() => this._ok && this._ok({ ok: true, id: 'HBK-202608-0001', total: 340 }), 0);
-            }
-          };
-          return new Proxy(api, { get: (t, k) => (k in t ? t[k] : undefined) });
-        })()
+    // fetch contra datos/, que es exactamente lo que hace Catalogo.cargar().
+    w.fetch = (url) => {
+      const nombre = String(url).split('?')[0].replace(/^.*\//, '');
+      const ruta = path.join(RAIZ, 'datos', nombre);
+      if (!fs.existsSync(ruta)) {
+        return Promise.resolve({ ok: false, status: 404,
+                                 json: () => Promise.reject(new Error('404')) });
       }
+      return Promise.resolve({
+        ok: true, status: 200,
+        json: () => Promise.resolve(JSON.parse(fs.readFileSync(ruta, 'utf8')))
+      });
+    };
+    // Un navegador con el almacenamiento bloqueado tira excepcion al tocarlo;
+    // aqui se emula el caso normal, que si guarda.
+    const memoria = {};
+    w.localStorage = {
+      getItem: (k) => (k in memoria ? memoria[k] : null),
+      setItem: (k, v) => { memoria[k] = String(v); },
+      removeItem: (k) => { delete memoria[k]; }
     };
     w.addEventListener('error', (e) => errores.push('window.onerror: ' + (e.error ? e.error.stack : e.message)));
     w.addEventListener('unhandledrejection', (e) => errores.push('promesa: ' + e.reason));
@@ -220,18 +197,30 @@ function setVal(el, v, ev) {
        'copiar entrega el texto completo', 'copiado=' + (copiado ? copiado.length + ' chars' : 'null'));
   }
 
-  // 7. Registro sin nombre de cliente debe bloquear
-  const btnReg = $('btnRegistrar');
-  ok(!!btnReg, 'existe el boton de registrar');
-  if (btnReg && $('cliente')) {
-    $('cliente').value = '';
-    click(btnReg);
-    await esperar(60);
-    setVal($('cliente'), 'Juan Perez', 'input');
-    await esperar(60);
-    click(btnReg);
-    await esperar(120);
-    ok(true, 'el registro se ejecuta sin lanzar excepciones');
+  // 7. Ya no hay registro de cotizaciones
+  ok(!$('btnRegistrar'), 'el boton de registrar ya no existe');
+
+  // 7b. Una habitacion nueva se agrega ARRIBA, no al final
+  const btnAgregar = $('btnAgregar');
+  ok(!!btnAgregar, 'existe el boton de agregar habitacion');
+  if (btnAgregar) {
+    const antes = doc.querySelectorAll('#lineas .hab').length;
+    const primeraAntes = doc.querySelector('#lineas .hab');
+    const idAntes = primeraAntes && primeraAntes.dataset.id;
+    click(btnAgregar);
+    await esperar(80);
+    const despues = doc.querySelectorAll('#lineas .hab');
+    eq(despues.length, antes + 1, 'se agrega una habitacion');
+    if (despues.length === antes + 1) {
+      ok(despues[0].dataset.id !== idAntes,
+         'la nueva queda primera en la lista');
+      ok(despues[1].dataset.id === idAntes,
+         'la que ya estaba configurada baja una posicion');
+      const indice = despues[0].querySelector('.hab-indice');
+      ok(indice && indice.textContent.indexOf('1') !== -1,
+         'la primera se numera como Habitacion 1',
+         indice ? indice.textContent : 'sin indice');
+    }
   }
 
   // 8. Estado invalido: 3 adultos en una doble
