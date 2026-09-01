@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Cotizador Hesperia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <?!= include('07_Estilos'); ?>
+</head>
+<body data-hotel="">
+
+<!-- ====================== CARGANDO ====================== -->
+<div id="cargando" class="cargando">
+  <div class="cargando-marca">HESPERIA</div>
+  <div class="cargando-barra"><span></span></div>
+  <p id="cargandoTexto">Cargando tarifas…</p>
+</div>
+
+<!-- ====================== APP ====================== -->
+<div id="app" class="oculto">
+
+  <header class="cabecera">
+    <div class="cabecera-marca">
+      <span class="marca-nombre">Cotizador</span>
+      <span class="marca-hotel" id="marcaHotel">Hesperia</span>
+    </div>
+    <button type="button" class="btn-icono" id="btnReiniciar" title="Empezar de nuevo"
+            aria-label="Empezar de nuevo">↺</button>
+  </header>
+
+  <main class="lienzo">
+
+    <!-- ---------- Columna del formulario ---------- -->
+    <div class="columna-form">
+
+      <section class="tarjeta">
+        <h2 class="titulo-seccion">Hotel</h2>
+        <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
+      </section>
+
+      <section class="tarjeta">
+        <h2 class="titulo-seccion">Estadía</h2>
+        <div class="fechas">
+          <label class="campo">
+            <span class="campo-etiqueta">Entrada</span>
+            <input type="date" id="checkin" class="input">
+          </label>
+          <div class="fechas-puente" id="puenteNoches" aria-hidden="true">—</div>
+          <label class="campo">
+            <span class="campo-etiqueta">Salida</span>
+            <input type="date" id="checkout" class="input">
+          </label>
+        </div>
+        <p class="pista" id="pistaFechas">La noche de salida no se cobra.</p>
+      </section>
+
+      <section class="tarjeta">
+        <div class="seccion-cabecera">
+          <h2 class="titulo-seccion">Habitaciones</h2>
+          <button type="button" class="btn-texto" id="btnAgregar">+ Agregar</button>
+        </div>
+        <div id="lineas" class="lineas"></div>
+      </section>
+
+      <section class="tarjeta oculto" id="seccionPromos">
+        <h2 class="titulo-seccion">Promociones</h2>
+        <div id="promos" class="promos"></div>
+      </section>
+
+      <section class="tarjeta">
+        <h2 class="titulo-seccion">Registro</h2>
+        <div class="registro">
+          <label class="campo">
+            <span class="campo-etiqueta">Cliente</span>
+            <input type="text" id="cliente" class="input" placeholder="Nombre del cliente"
+                   autocomplete="off">
+          </label>
+          <label class="campo campo-corto">
+            <span class="campo-etiqueta">Iniciales</span>
+            <input type="text" id="asesor" class="input" placeholder="MZ" maxlength="4"
+                   autocomplete="off">
+          </label>
+        </div>
+      </section>
+
+      <p class="version" id="version"></p>
+    </div>
+
+    <!-- ---------- Columna del mensaje ---------- -->
+    <div class="columna-vista" id="columnaVista">
+      <div class="vista-encabezado">
+        <h2 class="titulo-seccion">Mensaje para el cliente</h2>
+        <button type="button" class="btn-icono btn-cerrar" id="btnCerrarVista"
+                aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="chat">
+        <div class="burbuja" id="burbuja">
+          <p class="burbuja-vacio">Selecciona hotel, fechas y habitación para ver el mensaje.</p>
+        </div>
+      </div>
+
+      <div class="vista-acciones">
+        <button type="button" class="btn btn-secundario" id="btnRegistrar" disabled>
+          Registrar cotización
+        </button>
+        <button type="button" class="btn btn-primario" id="btnCopiar" disabled>
+          Copiar mensaje
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ---------- Barra fija (móvil) ---------- -->
+  <div class="barra" id="barra">
+    <div class="barra-total">
+      <span class="barra-etiqueta" id="barraEtiqueta">Sin cotizar</span>
+      <strong class="barra-monto" id="barraMonto">—</strong>
+    </div>
+    <button type="button" class="btn btn-primario btn-barra" id="btnVerMensaje" disabled>
+      Ver mensaje
+    </button>
+  </div>
+</div>
+
+<!-- ====================== COPIA MANUAL (fallback nivel 3) ====================== -->
+<div id="modalCopia" class="modal oculto" role="dialog" aria-modal="true"
+     aria-labelledby="modalCopiaTitulo">
+  <div class="modal-caja">
+    <h3 id="modalCopiaTitulo">Copia el mensaje a mano</h3>
+    <p class="modal-pista" id="modalCopiaPista">
+      El texto ya está seleccionado. Mantén presionado y elige <strong>Copiar</strong>.
+    </p>
+    <textarea id="modalCopiaTexto" class="modal-texto" readonly></textarea>
+    <button type="button" class="btn btn-primario" id="btnCerrarModal">Listo</button>
+  </div>
+</div>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+<?!= include('02_Motor'); ?>
+<?!= include('08_Logica'); ?>
+</body>
+</html>

@@ -1,0 +1,94 @@
+COTIZADOR HESPERIA - INSTALACION RAPIDA
+=======================================
+(El detalle completo esta en README.md)
+
+
+PASO 1 - Crear el proyecto
+--------------------------
+Google Sheet nuevo  ->  Extensiones  ->  Apps Script
+
+
+PASO 2 - Crear los 9 archivos
+------------------------------
+En el editor, crear cada archivo con EL NOMBRE EXACTO de la izquierda.
+El nombre importa: 03_Api busca el motor y la interfaz por nombre.
+
+  NOMBRE EN EL EDITOR   TIPO      ARCHIVO EN apps-script/
+  -------------------   -------   -----------------------
+  00_Setup              Script    00_Setup.gs
+  01_Catalogo           Script    01_Catalogo.gs
+  02_Motor              HTML      02_Motor.html
+  03_Api                Script    03_Api.gs
+  04_Validador          Script    04_Validador.gs
+  05_Pruebas            Script    05_Pruebas.gs
+  06_SPA                HTML      06_SPA.html
+  07_Estilos            HTML      07_Estilos.html
+  08_Logica             HTML      08_Logica.html
+
+Nota: al crear un archivo HTML, Apps Script agrega la extension solo.
+Escribir "02_Motor", no "02_Motor.html".
+
+
+PASO 3 - Manifiesto y zona horaria
+----------------------------------
+Configuracion del proyecto (engranaje)
+  -> marcar "Mostrar el archivo de manifiesto appsscript.json"
+  -> zona horaria: (GMT-04:00) Caracas
+Volver al Editor y reemplazar appsscript.json
+
+
+PASO 4 - Instalar
+-----------------
+Ejecutar la funcion  instalarTodo()  y autorizar los permisos.
+
+Al autorizar aparece "Google no verifico esta aplicacion":
+  Configuracion avanzada -> Ir a Cotizador Hesperia (no seguro)
+Es normal en proyectos internos. Solo pasa una vez y solo al dueno.
+
+Recargar la hoja (F5) -> aparece el menu "Cotizador"
+
+
+PASO 5 - Verificar
+------------------
+  Cotizador -> Validar catalogo           debe dar 0 errores
+                                          (con 2 advertencias: WTC y HMC
+                                           estan inactivos hasta que se
+                                           carguen sus tarifas)
+  Cotizador -> Ejecutar pruebas           debe dar 201 de 201
+
+
+PASO 6 - Publicar
+-----------------
+Implementar -> Nueva implementacion -> Aplicacion web
+
+  Ejecutar como:          Yo
+  Quien tiene acceso:     Cualquier usuario de la organizacion
+
+Esa combinacion permite que las asesoras usen la app SIN acceso al Sheet.
+Compartir el enlace que termina en /exec.
+
+Agregar ?diag=1 al final abre la pantalla de diagnostico.
+
+
+AL ACTUALIZAR EL CODIGO
+-----------------------
+Implementar -> Administrar implementaciones -> lapiz
+  -> Version: Nueva version -> Implementar
+
+El enlace NO cambia. Las asesoras no hacen nada.
+
+Los cambios de TARIFAS, STOP SALES o PROMOCIONES no requieren esto:
+  editar la hoja  ->  Cotizador -> Publicar cambios
+
+
+HOTELES SIN TARIFAS (WTC Valencia, Maracay)
+-------------------------------------------
+Vienen con activo = NO, asi que no aparecen en el cotizador.
+Para activarlos:
+
+  1. Cotizador -> Generar matriz de tarifas faltantes
+  2. Llenar tarifa_pp_noche (precio NETO por habitacion, sin IVA:
+     el 16% lo agrega el motor)
+  3. Revisar la plantilla en la hoja Plantillas (es un borrador)
+  4. Hoteles -> activo = SI
+  5. Validar catalogo -> Publicar cambios

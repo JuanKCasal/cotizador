@@ -1,0 +1,49 @@
+VERIFICACION FUERA DE APPS SCRIPT
+=================================
+
+Estos arneses NO forman parte del despliegue. Sirven para iterar rapido sobre
+el motor sin abrir el Google Sheet: un ciclo de prueba tarda segundos en vez
+de minutos.
+
+Los arneses leen los archivos directamente de ../apps-script/. No hay copias
+que sincronizar: lo que se prueba es siempre el codigo real.
+
+(03_Api.gs no se carga: el arnes provee su propio puente MOTOR().)
+
+Las rutas se resuelven con __dirname, asi que los arneses corren igual desde
+esta carpeta o desde la raiz del repositorio.
+
+
+COMO USARLOS
+------------
+
+  node _verificar.js
+      218 aserciones. No requiere instalar nada.
+      NO duplica las pruebas: carga 05_Pruebas.gs y corre la MISMA suite que
+      corre dentro del Sheet (201 aserciones) con stubs de las APIs de Google,
+      mas un bloque propio para lo que es logica de cliente (cascada de
+      habitacion, vista previa). Una asercion nueva en 05_Pruebas.gs aparece
+      aqui sola: las dos listas no se pueden desincronizar.
+
+  npm install
+  node _verificar_spa.js
+      47 chequeos. Ensambla la pagina como lo hace HtmlService y ejecuta la
+      interfaz en un DOM simulado: arranque, cascada de habitacion, selectores
+      de edad, calculo en vivo, vista previa, reinicio, los tres niveles de
+      copiado y el registro.
+
+Ambos imprimen los textos de WhatsApp generados, utiles para comparar contra
+los formatos escritos a mano.
+
+
+LIMITE CONOCIDO
+---------------
+
+_verificar.js valida la logica del motor, NO la capa de persistencia.
+
+El bug real de "5,6" convertido por Sheets en el numero 5.6 (que rompia el
+filtro de dias de semana de las promociones) no aparecia aqui, porque el dato
+nunca pasaba por Sheets: el arnes lo inyecta como string literal.
+
+Por eso las pruebas del menu Cotizador DENTRO del Sheet son la fuente de
+verdad. Estos arneses son para iterar, no para dar por validado un cambio.

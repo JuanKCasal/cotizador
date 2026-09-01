@@ -1,0 +1,13 @@
+{
+  "name": "cotizador-hesperia-verificacion",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Arneses de verificacion del Cotizador Hesperia fuera de Apps Script",
+  "scripts": {
+    "test": "node _verificar.js",
+    "test:spa": "node _verificar_spa.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}

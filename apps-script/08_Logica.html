@@ -1,0 +1,841 @@
+<script>
+/**
+ * COTIZADOR HESPERIA — 08_Logica.html
+ * Estado de la SPA, cascada de habitaciones, calculo en vivo y copiado.
+ * El calculo corre en el cliente con el mismo Motor que usa el servidor.
+ */
+(function () {
+  'use strict';
+
+  var CAT = null;
+  var ULTIMO = null;      // ultimo resultado del motor
+  var TEXTO = '';         // ultimo texto renderizado
+  var REGISTRADA = false;
+  var secuencia = 0;
+
+  var estado = {
+    hotel: '',
+    checkin: '',
+    checkout: '',
+    lineas: [],
+    promos: [],
+    cliente: '',
+    asesor: ''
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /**
+   * Asigna una fecha verificando que el navegador la haya aceptado.
+   *
+   * Algunos selectores nativos moviles rechazan en silencio un valor que
+   * choca con un `min`/`max` recien asignado: la propiedad queda en cadena
+   * vacia y el campo aparece en blanco. Si eso ocurre, se levanta la
+   * restriccion, se asigna y se restaura.
+   */
+  function fijarFecha(input, iso) {
+    input.value = iso;
+    if (input.value === iso) return true;
+
+    var min = input.min, max = input.max;
+    input.min = ''; input.max = '';
+    input.value = iso;
+    input.min = min; input.max = max;
+    return input.value === iso;
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // ==========================================================================
+  // ARRANQUE
+  // ==========================================================================
+  function iniciar() {
+    google.script.run
+      .withSuccessHandler(function (datos) {
+        CAT = datos.catalogo;
+        estado.asesor = (datos.prefs && datos.prefs.asesorIniciales) || '';
+        montar();
+      })
+      .withFailureHandler(function (err) {
+        $('cargandoTexto').textContent = 'No se pudieron cargar las tarifas: ' + err.message;
+      })
+      .apiIniciar();
+  }
+
+  function montar() {
+    $('asesor').value = estado.asesor;
+    $('version').textContent = 'Tarifas ' + (CAT.config.VERSION_TARIFAS || '');
+    renderHoteles();
+    conectarEventos();
+    $('cargando').classList.add('oculto');
+    $('app').classList.remove('oculto');
+  }
+
+  // ==========================================================================
+  // CATALOGO: helpers de consulta
+  // ==========================================================================
+  function habsDe(hotel) {
+    return Object.keys(CAT.habitaciones)
+      .map(function (k) { return CAT.habitaciones[k]; })
+      .filter(function (h) { return h.hotel === hotel; })
+      .sort(function (a, b) { return a.orden - b.orden; });
+  }
+
+  function unicos(lista, campo) {
+    var vistos = {}, out = [];
+    lista.forEach(function (x) {
+      if (!vistos[x[campo]]) { vistos[x[campo]] = true; out.push(x[campo]); }
+    });
+    return out;
+  }
+
+  function rangosDe(hotel) {
+    return (CAT.politica[hotel] || []).slice()
+      .sort(function (a, b) { return a.edadMin - b.edadMin; });
+  }
+
+  function habDeLinea(l) {
+    var c = habsDe(estado.hotel).filter(function (h) {
+      return h.categoria === l.categoria && h.ocupacion === l.ocupacion &&
+             (h.atributo || '') === (l.atributo || '');
+    });
+    return c[0] || null;
+  }
+
+  /** Ajusta ocupacion y atributo a la primera opcion valida de la categoria. */
+  function normalizarLinea(l) {
+    var habs = habsDe(estado.hotel);
+    if (!habs.length) return;
+
+    var cats = unicos(habs, 'categoria');
+    if (cats.indexOf(l.categoria) === -1) l.categoria = cats[0];
+
+    var porCat = habs.filter(function (h) { return h.categoria === l.categoria; });
+    var ocups = unicos(porCat, 'ocupacion');
+    if (ocups.indexOf(l.ocupacion) === -1) l.ocupacion = ocups[0];
+
+    var porOcup = porCat.filter(function (h) { return h.ocupacion === l.ocupacion; });
+    var atrs = unicos(porOcup, 'atributo');
+    if (atrs.indexOf(l.atributo || '') === -1) l.atributo = atrs[0] || '';
+
+    // Las edades NO se tocan al cambiar de hotel: una edad es una edad. Lo que
+    // cambia entre hoteles es a que rango cae, y de eso se encarga el motor.
+    if (!l.edades) l.edades = [];
+  }
+
+  function nuevaLinea() {
+    var l = { id: ++secuencia, categoria: '', ocupacion: '', atributo: '',
+              cantidad: 1, adultos: 2, edades: [] };
+    normalizarLinea(l);
+    return l;
+  }
+
+  /** Rango de la politica del hotel al que cae una edad. null si no cae. */
+  function rangoDeEdad(edad) {
+    var rs = rangosDe(estado.hotel);
+    for (var i = 0; i < rs.length; i++) {
+      if (edad >= rs[i].edadMin && edad <= rs[i].edadMax) return rs[i];
+    }
+    return null;
+  }
+
+  function textoFactor(f) {
+    return f === 0 ? 'no paga' : f === 1 ? 'tarifa completa'
+                                         : Math.round(f * 100) + '% de la tarifa';
+  }
+
+  // ==========================================================================
+  // RENDER
+  // ==========================================================================
+  function renderHoteles() {
+    var cont = $('hoteles');
+    cont.innerHTML = '';
+    Object.keys(CAT.hoteles).forEach(function (cod) {
+      var h = CAT.hoteles[cod];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'hotel-op';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', estado.hotel === cod ? 'true' : 'false');
+      b.dataset.hotel = cod;
+      b.innerHTML =
+        '<span class="hotel-sigla">' + esc(cod) + '</span>' +
+        '<span class="hotel-nombre">' + esc(nombreCorto(h.nombre)) + '</span>';
+      cont.appendChild(b);
+    });
+  }
+
+  function nombreCorto(n) {
+    return String(n).replace(/^HOTEL\s+HESPERIA\s+/i, '');
+  }
+
+  function renderLineas() {
+    var cont = $('lineas');
+    cont.innerHTML = '';
+    if (!estado.hotel) {
+      cont.innerHTML = '<p class="pista">Selecciona un hotel para elegir habitaciones.</p>';
+      return;
+    }
+    estado.lineas.forEach(function (l, i) {
+      cont.appendChild(nodoLinea(l, i));
+    });
+  }
+
+  function nodoLinea(l, i) {
+    var div = document.createElement('div');
+    div.className = 'hab';
+    div.dataset.id = l.id;
+    div.innerHTML = htmlLinea(l, i);
+    return div;
+  }
+
+  function htmlLinea(l, i) {
+    var habs = habsDe(estado.hotel);
+    var cats = unicos(habs, 'categoria');
+    var porCat = habs.filter(function (h) { return h.categoria === l.categoria; });
+    var ocups = unicos(porCat, 'ocupacion');
+    var porOcup = porCat.filter(function (h) { return h.ocupacion === l.ocupacion; });
+    var atrs = unicos(porOcup, 'atributo');
+    var hab = habDeLinea(l);
+
+    var h = [];
+    h.push('<div class="hab-cabecera">');
+    h.push('<span class="hab-indice">Habitación ' + (i + 1) + '</span>');
+    if (estado.lineas.length > 1) {
+      h.push('<button type="button" class="hab-quitar" data-act="quitar">Quitar</button>');
+    }
+    h.push('</div>');
+
+    h.push('<div class="hab-selects">');
+    h.push(select('categoria', 'Categoría', cats, l.categoria));
+    h.push(select('ocupacion', 'Ocupación', ocups, l.ocupacion, ocups.length < 2));
+    if (atrs.length > 1) {
+      h.push(select('atributo', 'Vista', atrs, l.atributo, false,
+                    function (v) { return v || 'Estándar'; }));
+    }
+    h.push('</div>');
+
+    h.push('<div class="hab-conteos">');
+    h.push(conteo('cantidad', 'Habitaciones', 'iguales a esta', l.cantidad, 1, 20));
+    h.push(conteo('adultos', 'Adultos', hab ? 'máx. ' + hab.ocupMaxAdultos : '',
+                  l.adultos, 0, hab ? hab.ocupMaxAdultos : 9));
+    h.push(conteo('menores', 'Menores de 18', 'se indica la edad de cada uno',
+                  l.edades.length, 0, 9));
+    h.push('</div>');
+
+    h.push(htmlEdades(l));
+
+    if (hab) {
+      h.push('<p class="pista">' + esc(hab.nombre) + ' · hasta ' + hab.ocupMaxTotal +
+             ' huésped' + (hab.ocupMaxTotal === 1 ? '' : 'es') +
+             (hab.permiteSingle ? ' · suplemento individual $' + hab.suplementoSingle : '') +
+             '</p>');
+    }
+    return h.join('');
+  }
+
+  /**
+   * Un selector de edad por menor. Arranca VACIO a proposito: la asesora tiene
+   * que declarar la edad real, no aceptar un valor por defecto que despues
+   * termina impreso en el mensaje del cliente.
+   */
+  function htmlEdades(l) {
+    if (!l.edades.length) return '';
+    var h = ['<div class="edades">'];
+    l.edades.forEach(function (edad, i) {
+      var op = ['<option value=""' + (edad === '' ? ' selected' : '') + '>— edad —</option>'];
+      for (var e = 0; e <= 17; e++) {
+        var r = rangoDeEdad(e);
+        op.push('<option value="' + e + '"' + (String(edad) === String(e) ? ' selected' : '') +
+                '>' + e + (e === 1 ? ' año' : ' años') +
+                (r ? ' · ' + textoFactor(r.factor) : '') + '</option>');
+      }
+      h.push('<label class="campo campo-edad">' +
+               '<span class="campo-etiqueta">Menor ' + (i + 1) + '</span>' +
+               '<select class="select" data-campo="edad" data-idx="' + i + '">' +
+                 op.join('') +
+               '</select>' +
+             '</label>');
+    });
+    h.push('</div>');
+    h.push('<p class="pista">' + esc(leyendaRangos()) + '</p>');
+    return h.join('');
+  }
+
+  function leyendaRangos() {
+    return rangosDe(estado.hotel).map(function (r) {
+      return r.rango + ': ' + textoFactor(r.factor);
+    }).join(' · ');
+  }
+
+  function select(campo, etiqueta, opciones, valor, unica, formato) {
+    var f = formato || function (v) { return v; };
+    var o = opciones.map(function (v) {
+      return '<option value="' + esc(v) + '"' + (v === valor ? ' selected' : '') + '>' +
+             esc(f(v)) + '</option>';
+    }).join('');
+    return '<label class="campo">' +
+             '<span class="campo-etiqueta">' + esc(etiqueta) + '</span>' +
+             '<select class="select" data-campo="' + campo + '"' +
+             (unica ? ' disabled' : '') + '>' + o + '</select>' +
+           '</label>';
+  }
+
+  function conteo(campo, nombre, detalle, valor, min, max) {
+    return '<div class="conteo">' +
+             '<span class="conteo-etiqueta">' +
+               '<span class="conteo-nombre">' + esc(nombre) + '</span>' +
+               (detalle ? '<span class="conteo-detalle">' + esc(detalle) + '</span>' : '') +
+             '</span>' +
+             '<span class="paso" data-campo="' + campo + '" data-min="' + min +
+                   '" data-max="' + max + '">' +
+               '<button type="button" class="paso-btn" data-paso="-1"' +
+                 (valor <= min ? ' disabled' : '') + ' aria-label="Restar">−</button>' +
+               '<span class="paso-valor" data-cero="' + (valor ? 'no' : 'si') + '">' +
+                 valor + '</span>' +
+               '<button type="button" class="paso-btn" data-paso="1"' +
+                 (valor >= max ? ' disabled' : '') + ' aria-label="Sumar">+</button>' +
+             '</span>' +
+           '</div>';
+  }
+
+  function renderPromos() {
+    var cont = $('promos');
+    var seccion = $('seccionPromos');
+    var aplicables = promosAplicables();
+
+    // La seccion se oculta solo si aun no hay hotel y fechas. Con fechas ya
+    // elegidas se muestra siempre, aunque no haya promos vigentes: si se
+    // ocultara, la asesora no sabria si la funcion existe o si el hotel
+    // simplemente no tiene promociones en ese rango.
+    var listo = estado.hotel && estado.checkin && estado.checkout &&
+                estado.checkout > estado.checkin;
+    if (!listo) {
+      seccion.classList.add('oculto');
+      cont.innerHTML = '';
+      return;
+    }
+    seccion.classList.remove('oculto');
+    if (!aplicables.length) {
+      cont.innerHTML = '<p class="pista">No hay promociones vigentes para estas fechas.</p>';
+      return;
+    }
+    cont.innerHTML = aplicables.map(function (p) {
+      var sel = estado.promos.indexOf(p.cod) !== -1;
+      var det = p.tipo === 'SUSTITUYE' ? 'Tarifa especial de $' + p.valor + ' por persona'
+              : p.tipo === 'DESCUENTO_PCT' ? p.valor + '% de descuento'
+              : '$' + p.valor + ' de descuento por persona';
+      if (p.minNoches > 1) det += ' · mínimo ' + p.minNoches + ' noches';
+      if (p.mensaje) det += ' · ' + p.mensaje;
+      return '<button type="button" class="promo-op" data-promo="' + esc(p.cod) + '"' +
+               ' role="checkbox" aria-checked="' + sel + '">' +
+               '<span class="promo-marca">' + (sel ? '✓' : '') + '</span>' +
+               '<span>' +
+                 '<span class="promo-nombre">' + esc(p.nombre) + '</span>' +
+                 '<span class="promo-detalle">' + esc(det) + '</span>' +
+               '</span>' +
+             '</button>';
+    }).join('');
+  }
+
+  /** Promos del hotel cuya vigencia toca el rango de la estadia. */
+  function promosAplicables() {
+    if (!estado.hotel || !estado.checkin || !estado.checkout) return [];
+    if (estado.checkout <= estado.checkin) return [];
+    var ultima = Motor.Fechas.sumarDias(estado.checkout, -1);
+    return CAT.promociones.filter(function (p) {
+      return p.hotel === estado.hotel && p.inicio <= ultima && p.fin >= estado.checkin;
+    });
+  }
+
+  // ==========================================================================
+  // CALCULO EN VIVO
+  // ==========================================================================
+  function completo() {
+    return !!(estado.hotel && estado.checkin && estado.checkout &&
+              estado.checkout > estado.checkin && estado.lineas.length);
+  }
+
+  function recalcular() {
+    REGISTRADA = false;
+    $('btnRegistrar').textContent = 'Registrar cotización';
+
+    // Noches entre fechas
+    var puente = $('puenteNoches');
+    if (estado.checkin && estado.checkout && estado.checkout > estado.checkin) {
+      var n = Motor.Fechas.diffDias(estado.checkin, estado.checkout);
+      puente.textContent = n + (n === 1 ? ' noche' : ' noches');
+    } else {
+      puente.textContent = '—';
+    }
+    avisoFechas();
+
+    if (!completo()) {
+      ULTIMO = null; TEXTO = '';
+      pintarVacio('Selecciona hotel, fechas y habitación para ver el mensaje.');
+      return;
+    }
+
+    var req = {
+      hotel: estado.hotel,
+      checkin: estado.checkin,
+      checkout: estado.checkout,
+      promos: estado.promos.slice(),
+      lineas: estado.lineas.map(function (l) {
+        var hab = habDeLinea(l);
+        return {
+          cod_hab: hab ? hab.cod : '',
+          cantidad: l.cantidad,
+          adultos: l.adultos,
+          edades: l.edades.slice()
+        };
+      })
+    };
+
+    var res;
+    try {
+      res = Motor.calcular(CAT, req);
+    } catch (e) {
+      ULTIMO = null; TEXTO = '';
+      pintarErrores(['Error inesperado en el cálculo: ' + e.message]);
+      return;
+    }
+
+    if (!res.ok) {
+      ULTIMO = null; TEXTO = '';
+      pintarErrores(res.errores);
+      return;
+    }
+
+    ULTIMO = res;
+    try {
+      TEXTO = Motor.render(CAT, res, {
+        asesorIniciales: estado.asesor,
+        cliente: estado.cliente
+      });
+    } catch (e) {
+      TEXTO = '';
+      pintarErrores(['No se pudo armar el mensaje: ' + e.message]);
+      return;
+    }
+    pintarMensaje(res, TEXTO);
+  }
+
+  function avisoFechas() {
+    var p = $('pistaFechas');
+    var hoy = new Date().toISOString().slice(0, 10);
+    if (estado.checkin && estado.checkout && estado.checkout <= estado.checkin) {
+      p.textContent = 'La salida debe ser posterior a la entrada.';
+      p.className = 'pista alerta';
+    } else if (estado.checkin && estado.checkin < hoy) {
+      p.textContent = 'La fecha de entrada ya pasó. Verifica antes de enviar.';
+      p.className = 'pista alerta';
+    } else {
+      p.textContent = 'La noche de salida no se cobra.';
+      p.className = 'pista';
+    }
+  }
+
+  // ==========================================================================
+  // PINTADO DEL MENSAJE
+  // ==========================================================================
+  function pintarVacio(msg) {
+    $('burbuja').className = 'burbuja';
+    $('burbuja').innerHTML = '<p class="burbuja-vacio">' + esc(msg) + '</p>';
+    $('barraEtiqueta').textContent = 'Sin cotizar';
+    $('barraMonto').textContent = '—';
+    habilitar(false);
+    botonPanel('vacio');
+  }
+
+  function pintarErrores(errores) {
+    $('burbuja').className = 'burbuja burbuja-error';
+    $('burbuja').innerHTML =
+      '<p class="burbuja-titulo">Falta resolver esto:</p><ul>' +
+      errores.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') +
+      '</ul>';
+    $('barraEtiqueta').textContent = errores.length === 1
+      ? '1 cosa por corregir' : errores.length + ' cosas por corregir';
+    $('barraMonto').textContent = '—';
+    habilitar(false);
+    botonPanel('error');
+  }
+
+  function pintarMensaje(res, texto) {
+    $('burbuja').className = 'burbuja';
+    $('burbuja').innerHTML = aHtmlWhatsApp(texto);
+    $('barraEtiqueta').textContent =
+      res.nNoches + (res.nNoches === 1 ? ' noche' : ' noches') + ' · ' +
+      res.totalHabitaciones + (res.totalHabitaciones === 1 ? ' habitación' : ' habitaciones');
+    $('barraMonto').textContent = '$' + Motor.fmtMoney(CAT, res.total);
+    habilitar(true);
+    botonPanel('ok');
+  }
+
+  /** Copiar y registrar: solo con una cotizacion valida. */
+  function habilitar(v) {
+    $('btnCopiar').disabled = !v;
+    $('btnRegistrar').disabled = !v;
+  }
+
+  /**
+   * El boton de la barra movil es la UNICA via para abrir el panel, y el panel
+   * es donde se explican los errores. Si se deshabilita al haber errores, la
+   * asesora ve "Revisa los datos" sin ninguna forma de saber que revisar.
+   */
+  function botonPanel(estadoPanel) {
+    var b = $('btnVerMensaje');
+    if (estadoPanel === 'vacio') {
+      b.disabled = true;
+      b.textContent = 'Ver mensaje';
+      b.classList.remove('btn-alerta');
+    } else if (estadoPanel === 'error') {
+      b.disabled = false;
+      b.textContent = 'Ver qué falta';
+      b.classList.add('btn-alerta');
+    } else {
+      b.disabled = false;
+      b.textContent = 'Ver mensaje';
+      b.classList.remove('btn-alerta');
+    }
+  }
+
+  /** Convierte el formato de WhatsApp a HTML solo para la vista previa. */
+  function aHtmlWhatsApp(texto) {
+    return esc(texto)
+      .replace(/\*([^\s*][^*\n]*?)\*/g, '<strong>$1</strong>')
+      .replace(/_([^\s_][^_\n]*?)_/g, '<em>$1</em>');
+  }
+
+  // ==========================================================================
+  // COPIAR — tres niveles de respaldo
+  // ==========================================================================
+  function copiar() {
+    if (!TEXTO) return;
+
+    // Nivel 1: API moderna del portapapeles
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(TEXTO).then(
+        function () { aviso('Mensaje copiado', 'exito'); },
+        function () { copiarNivel2(); }
+      );
+      return;
+    }
+    copiarNivel2();
+  }
+
+  function copiarNivel2() {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = TEXTO;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, TEXTO.length);
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) { aviso('Mensaje copiado', 'exito'); return; }
+    } catch (e) { /* cae al nivel 3 */ }
+    copiarNivel3();
+  }
+
+  function copiarNivel3() {
+    // Ultimo recurso: pase lo que pase, el modal DEBE abrirse con el texto
+    // dentro. Cada paso decorativo va aislado para que un fallo en el mensaje
+    // de ayuda no impida mostrar el mensaje que hay que copiar.
+    var ta = $('modalCopiaTexto');
+    var modal = $('modalCopia');
+    if (!ta || !modal) { alert(TEXTO); return; }
+
+    ta.value = TEXTO;
+    modal.classList.remove('oculto');
+
+    try {
+      $('modalCopiaPista').innerHTML = esMovil()
+        ? 'El texto ya está seleccionado. Mantén presionado y elige <strong>Copiar</strong>.'
+        : 'El texto ya está seleccionado. Presiona <strong>Ctrl + C</strong> ' +
+          '(o <strong>⌘ + C</strong> en Mac).';
+    } catch (e) { /* la pista es opcional; el texto ya esta visible */ }
+
+    setTimeout(function () {
+      try {
+        ta.focus();
+        ta.select();
+        ta.setSelectionRange(0, TEXTO.length);
+      } catch (e) { /* la seleccion es opcional */ }
+    }, 60);
+  }
+
+  /**
+   * Deteccion de tactil. Se usa DENTRO del ultimo recurso de copiado, asi que
+   * no puede lanzar: algunos navegadores integrados (WhatsApp en Android
+   * antiguo, WebViews viejos) no exponen matchMedia, y una excepcion aqui
+   * dejaria a la asesora sin ninguna forma de copiar el mensaje.
+   */
+  function esMovil() {
+    try {
+      if (typeof window.matchMedia === 'function') {
+        return window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
+      }
+    } catch (e) { /* sigue con las alternativas */ }
+    try {
+      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) return true;
+    } catch (e) { /* sigue */ }
+    return (window.innerWidth || 1024) < 900;
+  }
+
+  // ==========================================================================
+  // REGISTRO
+  // ==========================================================================
+  function registrar() {
+    if (!ULTIMO || REGISTRADA) return;
+    if (!estado.cliente.trim()) {
+      aviso('Escribe el nombre del cliente', 'error');
+      $('cliente').focus();
+      return;
+    }
+    var btn = $('btnRegistrar');
+    btn.disabled = true;
+    btn.textContent = 'Registrando…';
+
+    google.script.run
+      .withSuccessHandler(function (out) {
+        if (out.ok) {
+          REGISTRADA = true;
+          btn.textContent = 'Registrada · ' + out.id;
+          aviso('Cotización registrada', 'exito');
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Registrar cotización';
+          aviso(out.error, 'error');
+        }
+      })
+      .withFailureHandler(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Registrar cotización';
+        aviso('No se pudo registrar: ' + err.message, 'error');
+      })
+      .apiRegistrarCotizacion({
+        cliente: estado.cliente,
+        asesorIniciales: estado.asesor,
+        req: {
+          hotel: estado.hotel,
+          checkin: estado.checkin,
+          checkout: estado.checkout,
+          promos: estado.promos.slice(),
+          lineas: estado.lineas.map(function (l) {
+            var hab = habDeLinea(l);
+            return { cod_hab: hab ? hab.cod : '', cantidad: l.cantidad,
+                     adultos: l.adultos, edades: l.edades.slice() };
+          })
+        }
+      });
+  }
+
+  // ==========================================================================
+  // AVISOS
+  // ==========================================================================
+  var avisoTimer = null;
+  function aviso(msg, tipo) {
+    var a = $('aviso');
+    a.textContent = msg;
+    a.className = 'aviso visible' + (tipo ? ' ' + tipo : '');
+    clearTimeout(avisoTimer);
+    avisoTimer = setTimeout(function () { a.className = 'aviso'; }, 2600);
+  }
+
+  // ==========================================================================
+  // EVENTOS
+  // ==========================================================================
+  function conectarEventos() {
+    // --- Hotel ---
+    $('hoteles').addEventListener('click', function (e) {
+      var b = e.target.closest('.hotel-op');
+      if (!b) return;
+      if (estado.hotel === b.dataset.hotel) return;
+      estado.hotel = b.dataset.hotel;
+      document.body.dataset.hotel = estado.hotel;
+      $('marcaHotel').textContent = nombreCorto(CAT.hoteles[estado.hotel].nombre);
+      estado.promos = [];
+      if (!estado.lineas.length) estado.lineas = [nuevaLinea()];
+      else estado.lineas.forEach(normalizarLinea);
+      renderHoteles();
+      renderLineas();
+      renderPromos();
+      recalcular();
+    });
+
+    // --- Fechas ---
+    // El `min` del selector se fija en la fecha de ENTRADA, no en entrada+1.
+    // Varios selectores nativos de Android tratan `min` como exclusivo o
+    // rechazan un valor que coincide exactamente con un `min` recien asignado,
+    // lo que dejaba la salida vacia y el dia siguiente bloqueado: era imposible
+    // cotizar una sola noche desde el celular. El orden de las fechas lo valida
+    // el motor, que ya devuelve un mensaje claro.
+    $('checkin').addEventListener('change', function () {
+      estado.checkin = this.value;
+      if (estado.checkin) {
+        $('checkout').min = estado.checkin;
+        if (estado.checkout && estado.checkout <= estado.checkin) {
+          estado.checkout = Motor.Fechas.sumarDias(estado.checkin, 1);
+          fijarFecha($('checkout'), estado.checkout);
+        }
+      }
+      renderPromos();
+      recalcular();
+    });
+    $('checkout').addEventListener('change', function () {
+      estado.checkout = this.value;
+      renderPromos();
+      recalcular();
+    });
+
+    // --- Habitaciones: selects y contadores ---
+    $('lineas').addEventListener('change', function (e) {
+      var sel = e.target.closest('select[data-campo]');
+      if (!sel) return;
+      var nodo = sel.closest('.hab');
+      var l = buscarLinea(nodo.dataset.id);
+      if (!l) return;
+
+      if (sel.dataset.campo === 'edad') {
+        var idx = Number(sel.dataset.idx);
+        l.edades[idx] = sel.value === '' ? '' : Number(sel.value);
+        // Solo se repinta la pista: repintar la linea completa cerraria el
+        // selector nativo que la asesora acaba de usar.
+        recalcular();
+        return;
+      }
+
+      l[sel.dataset.campo] = sel.value;
+      normalizarLinea(l);
+      refrescarLinea(nodo, l);
+      recalcular();
+    });
+
+    $('lineas').addEventListener('click', function (e) {
+      var nodo = e.target.closest('.hab');
+      if (!nodo) return;
+      var l = buscarLinea(nodo.dataset.id);
+      if (!l) return;
+
+      if (e.target.closest('[data-act="quitar"]')) {
+        estado.lineas = estado.lineas.filter(function (x) { return x.id !== l.id; });
+        renderLineas();
+        recalcular();
+        return;
+      }
+
+      var btn = e.target.closest('.paso-btn');
+      if (!btn) return;
+      var grupo = btn.closest('.paso');
+      var campo = grupo.dataset.campo;
+      var min = Number(grupo.dataset.min), max = Number(grupo.dataset.max);
+      var delta = Number(btn.dataset.paso);
+
+      var actual = campo === 'menores' ? l.edades.length : l[campo];
+      var nuevo = Math.min(max, Math.max(min, actual + delta));
+      if (nuevo === actual) return;
+
+      if (campo === 'menores') {
+        // Al sumar entra un menor SIN edad; al restar sale el ultimo.
+        if (nuevo > actual) l.edades.push('');
+        else l.edades.length = nuevo;
+      } else {
+        l[campo] = nuevo;
+      }
+      refrescarLinea(nodo, l);
+      recalcular();
+    });
+
+    $('btnAgregar').addEventListener('click', function () {
+      if (!estado.hotel) { aviso('Primero elige el hotel', 'error'); return; }
+      if (estado.lineas.length >= 8) { aviso('Máximo 8 tipos de habitación', 'error'); return; }
+      estado.lineas.push(nuevaLinea());
+      renderLineas();
+      recalcular();
+    });
+
+    // --- Promociones ---
+    $('promos').addEventListener('click', function (e) {
+      var b = e.target.closest('.promo-op');
+      if (!b) return;
+      var cod = b.dataset.promo;
+      var i = estado.promos.indexOf(cod);
+      if (i === -1) estado.promos.push(cod); else estado.promos.splice(i, 1);
+      renderPromos();
+      recalcular();
+    });
+
+    // --- Registro ---
+    $('cliente').addEventListener('input', function () {
+      estado.cliente = this.value;
+      REGISTRADA = false;
+      $('btnRegistrar').textContent = 'Registrar cotización';
+      if (ULTIMO) $('btnRegistrar').disabled = false;
+    });
+    $('asesor').addEventListener('input', function () {
+      estado.asesor = this.value.toUpperCase();
+      this.value = estado.asesor;
+      recalcular();
+    });
+    $('asesor').addEventListener('blur', function () {
+      if (estado.asesor) google.script.run.apiGuardarIniciales(estado.asesor);
+    });
+
+    // --- Acciones ---
+    $('btnCopiar').addEventListener('click', copiar);
+    $('btnRegistrar').addEventListener('click', registrar);
+    $('btnVerMensaje').addEventListener('click', function () {
+      $('columnaVista').classList.add('abierta');
+    });
+    $('btnCerrarVista').addEventListener('click', function () {
+      $('columnaVista').classList.remove('abierta');
+    });
+    $('btnCerrarModal').addEventListener('click', function () {
+      $('modalCopia').classList.add('oculto');
+    });
+    // Sin dialogo de confirmacion: el boton no borra nada que no se pueda
+    // rehacer en segundos, y el confirm() nativo interrumpe el flujo en movil.
+    $('btnReiniciar').addEventListener('click', function () {
+      estado.hotel = ''; estado.checkin = ''; estado.checkout = '';
+      estado.lineas = []; estado.promos = []; estado.cliente = '';
+      document.body.dataset.hotel = '';
+      $('marcaHotel').textContent = 'Hesperia';
+      $('checkin').value = ''; $('checkout').value = ''; $('cliente').value = '';
+      $('columnaVista').classList.remove('abierta');
+      renderHoteles(); renderLineas(); renderPromos(); recalcular();
+      aviso('Cotización nueva', 'exito');
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      $('modalCopia').classList.add('oculto');
+      $('columnaVista').classList.remove('abierta');
+    });
+
+    renderLineas();
+    recalcular();
+  }
+
+  function buscarLinea(id) {
+    id = Number(id);
+    for (var i = 0; i < estado.lineas.length; i++) {
+      if (estado.lineas[i].id === id) return estado.lineas[i];
+    }
+    return null;
+  }
+
+  function refrescarLinea(nodo, l) {
+    var i = estado.lineas.indexOf(l);
+    nodo.innerHTML = htmlLinea(l, i);
+  }
+
+  // ==========================================================================
+  iniciar();
+})();
+</script>

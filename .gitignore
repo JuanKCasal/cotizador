@@ -1,0 +1,12 @@
+node_modules/
+package-lock.json
+
+# clasp: contiene el scriptId del proyecto, no va al repo publico
+.clasp.json
+.clasprc.json
+
+# Windows / editores
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
