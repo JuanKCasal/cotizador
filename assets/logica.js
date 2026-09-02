@@ -17,6 +17,7 @@
     checkout: '',
     lineas: [],
     promos: [],
+    extras: [],
     cliente: '',
     asesor: ''
   };
@@ -364,6 +365,41 @@
     }).join('');
   }
 
+  /**
+   * Servicios adicionales del hotel.
+   *
+   * Se muestran una vez elegido el hotel, sin esperar a las fechas: el precio
+   * no depende de ellas -salvo el que se cobra por dia- y la asesora suele
+   * preguntar por el early check-in antes de cerrar la estadia.
+   */
+  function renderExtras() {
+    var cont = $('extras');
+    var seccion = $('seccionExtras');
+    var lista = (CAT.extras && CAT.extras[estado.hotel]) || [];
+
+    if (!estado.hotel || !lista.length) {
+      seccion.classList.add('oculto');
+      cont.innerHTML = '';
+      return;
+    }
+    seccion.classList.remove('oculto');
+
+    cont.innerHTML = lista.map(function (x) {
+      var sel = estado.extras.indexOf(x.cod) !== -1;
+      var det = '$' + x.monto + ' por persona' +
+                (x.tipo === 'POR_PERSONA_DIA' ? ', por día' : '') +
+                (x.detalle ? ' · ' + x.detalle : '');
+      return '<button type="button" class="promo-op" data-extra="' + esc(x.cod) + '"' +
+               ' role="checkbox" aria-checked="' + sel + '">' +
+               '<span class="promo-marca">' + (sel ? '✓' : '') + '</span>' +
+               '<span>' +
+                 '<span class="promo-nombre">' + esc(x.nombre) + '</span>' +
+                 '<span class="promo-detalle">' + esc(det) + '</span>' +
+               '</span>' +
+             '</button>';
+    }).join('');
+  }
+
   /** Promos del hotel cuya vigencia toca el rango de la estadia. */
   function promosAplicables() {
     if (!estado.hotel || !estado.checkin || !estado.checkout) return [];
@@ -404,6 +440,7 @@
       checkin: estado.checkin,
       checkout: estado.checkout,
       promos: estado.promos.slice(),
+      extras: estado.extras.slice(),
       lineas: estado.lineas.map(function (l) {
         var hab = habDeLinea(l);
         return {
@@ -708,9 +745,14 @@
       estado.promos = [];
       if (!estado.lineas.length) estado.lineas = [nuevaLinea()];
       else estado.lineas.forEach(normalizarLinea);
+      // Los servicios del hotel anterior no valen aqui: cada hotel tiene los
+      // suyos, a su precio. Dejarlos marcados cobraria un early check-in que
+      // este hotel quiza ni ofrece.
+      estado.extras = [];
       renderHoteles();
       renderLineas();
       renderPromos();
+      renderExtras();
       recalcular();
     });
 
@@ -731,11 +773,13 @@
         }
       }
       renderPromos();
+      renderExtras();
       recalcular();
     });
     $('checkout').addEventListener('change', function () {
       estado.checkout = this.value;
       renderPromos();
+      renderExtras();
       recalcular();
     });
 
@@ -823,6 +867,16 @@
       recalcular();
     });
 
+    $('extras').addEventListener('click', function (e) {
+      var b = e.target.closest('.promo-op');
+      if (!b) return;
+      var cod = b.dataset.extra;
+      var i = estado.extras.indexOf(cod);
+      if (i === -1) estado.extras.push(cod); else estado.extras.splice(i, 1);
+      renderExtras();
+      recalcular();
+    });
+
     // --- Registro ---
     $('cliente').addEventListener('input', function () {
       estado.cliente = this.value;
@@ -857,7 +911,8 @@
       $('marcaHotel').textContent = 'Hesperia';
       $('checkin').value = ''; $('checkout').value = ''; $('cliente').value = '';
       $('columnaVista').classList.remove('abierta');
-      renderHoteles(); renderLineas(); renderPromos(); recalcular();
+      estado.extras = [];
+      renderHoteles(); renderLineas(); renderPromos(); renderExtras(); recalcular();
       aviso('Cotización nueva', 'exito');
     });
 

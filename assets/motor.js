@@ -330,6 +330,7 @@ var Motor = (function () {
   function calcular(cat, req) {
     var res = {
       ok: false, errores: [], advertencias: [], sinCupo: [],
+      extras: [], totalExtras: 0,
       hotel: req.hotel, checkin: req.checkin, checkout: req.checkout,
       lineas: [], subtotal: 0, cargos: 0, total: 0,
       promosAplicadas: [], cargosResumen: [], totalHabitaciones: 0
@@ -519,7 +520,43 @@ var Motor = (function () {
       res.subtotal += l.subtotalLinea;
       res.cargos += l.cargosLinea;
     });
-    res.total = res.subtotal + res.cargos;
+
+    // --- Servicios adicionales contratados -----------------------------------
+    // Se cobran sobre TODA la cotizacion, no por habitacion: quien pide early
+    // check-in lo pide para su grupo, no para una de las dos habitaciones que
+    // reservo. Por eso el pax base es la suma de todas las lineas.
+    var extrasSel = req.extras || [];
+    if (extrasSel.length) {
+      var paxConFactor = 0, paxTotal = 0;
+      res.lineas.forEach(function (l) {
+        paxConFactor += l.paxPagos * l.cantidad;
+        paxTotal += l.ocupacion * l.cantidad;
+      });
+
+      (cat.extras[req.hotel] || []).forEach(function (x) {
+        if (extrasSel.indexOf(x.cod) === -1) return;
+        var pax = x.aplicaFactorNinos ? paxConFactor : paxTotal;
+        var veces = (x.tipo === 'POR_PERSONA_DIA') ? res.nNoches : 1;
+        var monto = techo(x.monto * pax * veces);
+        if (monto <= 0) return;
+        res.extras.push({
+          cod: x.cod, nombre: x.nombre, detalle: x.detalle, tipo: x.tipo,
+          montoUnitario: x.monto, pax: r2(pax), veces: veces, monto: monto
+        });
+        res.totalExtras += monto;
+      });
+
+      // Un extra pedido que el hotel no ofrece no puede desaparecer en
+      // silencio: la asesora lo marco y espera verlo cobrado.
+      extrasSel.forEach(function (cod) {
+        var existe = (cat.extras[req.hotel] || []).some(function (x) { return x.cod === cod; });
+        if (!existe) {
+          res.advertencias.push('El servicio "' + cod + '" no esta disponible en este hotel.');
+        }
+      });
+    }
+
+    res.total = res.subtotal + res.cargos + res.totalExtras;
 
     // Resumen de promos y cargos
     Object.keys(promoUso).forEach(function (cod) {
@@ -674,6 +711,42 @@ var Motor = (function () {
     return out.join('\n');
   }
 
+  /**
+   * Los servicios adicionales del hotel.
+   *
+   * Lo contratado va arriba, con su monto, porque ya esta dentro del total y
+   * el cliente tiene que poder reconstruirlo. Lo demas se sigue ofreciendo
+   * como opcional, que es como aparecia antes de que se pudieran cobrar.
+   */
+  function bloqueExtras(cat, res) {
+    var lista = (cat.extras && cat.extras[res.hotel]) || [];
+    if (!lista.length) return '';
+
+    var contratados = res.extras || [];
+    var codsSel = contratados.map(function (e) { return e.cod; });
+    var sueltos = lista.filter(function (x) { return codsSel.indexOf(x.cod) === -1; });
+
+    var out = [];
+    if (contratados.length) {
+      out.push('');
+      out.push('\uD83D\uDD05 *SERVICIOS ADICIONALES INCLUIDOS EN EL TOTAL:*');
+      contratados.forEach(function (e) {
+        var det = e.detalle ? ': ' + e.detalle : '';
+        out.push('\u2705 ' + e.nombre + det + ' \u2014 $' + fmtMoney(cat, e.monto));
+      });
+    }
+    if (sueltos.length) {
+      out.push('');
+      out.push('\uD83D\uDD05 *SERVICIOS ADICIONALES: (Opcionales)*');
+      sueltos.forEach(function (x) {
+        var porQue = (x.tipo === 'POR_PERSONA_DIA') ? ' por persona, por d\u00EDa' : ' por persona';
+        out.push(x.nombre + ': $' + fmtMoney(cat, x.monto) + porQue +
+                 (x.detalle ? ': ' + x.detalle : ''));
+      });
+    }
+    return out.join('\n');
+  }
+
   function bloquePromo(cat, res) {
     if (!res.promosAplicadas.length) return '';
     var out = [''];
@@ -703,6 +776,7 @@ var Motor = (function () {
       FECHA_OUT: F.fmt(res.checkout, ff),
       BLOQUE_HABITACIONES: bloqueHabitaciones(cat, res),
       BLOQUE_CARGOS: bloqueCargos(cat, res),
+      BLOQUE_EXTRAS: bloqueExtras(cat, res),
       BLOQUE_PROMO: bloquePromo(cat, res),
       TOTAL: fmtMoney(cat, res.total),
       SUBTOTAL: fmtMoney(cat, res.subtotal),
@@ -714,10 +788,7 @@ var Motor = (function () {
       PALABRA_DIAS: res.nDias === 1 ? 'D\u00CDA' : 'D\u00CDAS',
       DEPOSITO: fmtMoney(cat, h.deposito),
       LABEL_DEPOSITO: h.labelDeposito,
-      EARLY_PP: fmtMoney(cat, h.earlyPP),
-      LATE_PP: fmtMoney(cat, h.latePP),
       HORA_LATE: h.horaLate,
-      VIP_DIA: fmtMoney(cat, h.vipDia),
       MENSAJE_CASHEA: (cat.config && cat.config.MENSAJE_CASHEA) || ''
     };
 
@@ -737,9 +808,9 @@ var Motor = (function () {
 
   /** Marcadores que render() sabe resolver. Lo usa el validador. */
   var MARCADORES = ['HOTEL_NOMBRE','EMOJIS','ASESOR_INICIALES','CLIENTE','HORA_IN','HORA_OUT',
-    'FECHA_IN','FECHA_OUT','BLOQUE_HABITACIONES','BLOQUE_CARGOS','BLOQUE_PROMO','TOTAL',
-    'SUBTOTAL','DIAS','NOCHES','DIAS_N','NOCHES_N','PALABRA_NOCHES','PALABRA_DIAS',
-    'DEPOSITO','LABEL_DEPOSITO','EARLY_PP','LATE_PP','HORA_LATE','VIP_DIA','MENSAJE_CASHEA'];
+    'FECHA_IN','FECHA_OUT','BLOQUE_HABITACIONES','BLOQUE_CARGOS','BLOQUE_EXTRAS','BLOQUE_PROMO',
+    'TOTAL','SUBTOTAL','DIAS','NOCHES','DIAS_N','NOCHES_N','PALABRA_NOCHES','PALABRA_DIAS',
+    'DEPOSITO','LABEL_DEPOSITO','HORA_LATE','MENSAJE_CASHEA'];
 
   return {
     Fechas: F,

@@ -577,6 +577,88 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
                                     [lin_('BAS_DBL', 2)]));
   t.eq(r.sinCupo.length, 1, 'Fuera del horizonte, el mensaje habla de cupo y no de tarifas');
 
+  // ---- T24g. Servicios adicionales cobrables ------------------------------
+  // Early check-in y late check-out se cobran por persona, una vez por
+  // estadia, y los menores pagan segun el factor de la politica de ninos.
+  t.caso('T24g Servicios adicionales');
+  var reqExtra = function (extras, adultos, edades, noches, cod) {
+    var q = req_('HBK', '2026-09-01', noches || '2026-09-03',
+                 [lin_(cod || 'BAS_DBL', adultos, edades)]);
+    q.extras = extras;
+    return q;
+  };
+
+  r = M.calcular(cat, reqExtra([], 2));
+  var baseSinExtras = r.total;
+  t.eq(r.extras.length, 0, 'Sin marcar nada, no hay extras');
+  t.eq(r.totalExtras, 0, 'Ni monto de extras');
+
+  r = M.calcular(cat, reqExtra(['EARLY'], 2));
+  t.eq(r.extras.length, 1, 'Early check-in marcado');
+  t.eq(r.extras[0].monto, 40, '2 personas x $20');
+  t.eq(r.total, baseSinExtras + 40, 'Y entra en el total');
+
+  // Una vez por estadia: dos noches o cinco cuestan lo mismo
+  r = M.calcular(cat, reqExtra(['EARLY'], 2, [], '2026-09-06'));
+  t.eq(r.extras[0].monto, 40, 'El early no se multiplica por las noches');
+
+  r = M.calcular(cat, reqExtra(['EARLY', 'LATE'], 2));
+  t.eq(r.extras.length, 2, 'Los dos a la vez');
+  t.eq(r.totalExtras, 110, '2 x 20 mas 2 x 35');
+  t.eq(r.total, baseSinExtras + 110, 'Total con los dos');
+
+  // Los menores pagan segun su factor: en Morrocoy un nino de 7 va al 50%
+  r = M.calcular(cat, reqExtra(['EARLY'], 2, [7], null, 'BAS_QUA'));
+  t.ok(r.ok, 'Cuadruple con 2 adultos y un nino', (r.errores || []).join('; '));
+  t.eq(r.lineas[0].paxPagos, 2.5, 'El nino cuenta como medio pax');
+  t.eq(r.extras[0].monto, 50, '2,5 pax x $20: el nino paga la mitad');
+
+  // Un infante no paga nada
+  r = M.calcular(cat, reqExtra(['EARLY'], 2, [1], null, 'BAS_QUA'));
+  t.eq(r.extras[0].monto, 40, 'El infante no suma al early check-in');
+
+  // El brazalete VIP es por dia, no por estadia
+  r = M.calcular(cat, reqExtra(['VIP'], 2));
+  t.eq(r.extras[0].monto, 140, '2 personas x $35 x 2 noches');
+  t.eq(r.extras[0].tipo, 'POR_PERSONA_DIA', 'Y se marca como cobro por dia');
+
+  // Varias habitaciones: el servicio se cobra a todo el grupo
+  var qMulti = req_('HBK', '2026-09-01', '2026-09-03',
+                    [lin_('BAS_DBL', 2), lin_('BAS_TPL', 3)]);
+  qMulti.extras = ['EARLY'];
+  r = M.calcular(cat, qMulti);
+  t.eq(r.extras[0].monto, 100, '5 personas de dos habitaciones x $20');
+
+  // Y la cantidad de habitaciones iguales tambien cuenta
+  var qCant = req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_DBL', 2, [], 3)]);
+  qCant.extras = ['EARLY'];
+  r = M.calcular(cat, qCant);
+  t.eq(r.extras[0].monto, 120, '3 habitaciones dobles son 6 personas x $20');
+
+  // El mensaje distingue lo contratado de lo que sigue en oferta
+  r = M.calcular(cat, reqExtra(['EARLY'], 2));
+  txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  t.eq(M.marcadoresNoResueltos(txt).length, 0, 'Sin marcadores pendientes');
+  t.contiene(txt, 'SERVICIOS ADICIONALES INCLUIDOS EN EL TOTAL', 'Lo contratado va aparte');
+  t.contiene(txt, 'EARLY CHECK IN', 'Con su nombre');
+  t.contiene(txt, '$40', 'Y su monto');
+  t.contiene(txt, '(Opcionales)', 'Lo no contratado se sigue ofreciendo');
+  t.contiene(txt, 'LATE CHECK OUT', 'Como el late check-out');
+
+  // Sin nada marcado, el mensaje se ve como siempre se vio
+  r = M.calcular(cat, reqExtra([], 2));
+  txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
+  t.noContiene(txt, 'INCLUIDOS EN EL TOTAL', 'Sin extras no aparece la seccion de cobrados');
+  t.contiene(txt, '(Opcionales)', 'Pero si la oferta');
+
+  // Los hoteles de ciudad no ofrecen ninguno
+  var qCiudad = req_('WTC', '2026-09-01', '2026-09-03', [lin_('DLX_KING', 2)]);
+  qCiudad.extras = ['EARLY'];
+  r = M.calcular(cat, qCiudad);
+  t.eq(r.totalExtras, 0, 'Valencia no cobra extras');
+  t.ok(r.advertencias.join(' ').indexOf('EARLY') !== -1,
+       'Y avisa que ese servicio no existe aqui', r.advertencias.join(' | '));
+
   // ---- T25. Cobertura de hoteles activos -----------------------------------
   t.caso('T25 Cobertura de hoteles');
   [['HBK', 'BAS_DBL'], ['HIM', 'DLX_VMON'], ['HPA', 'HOL_GARD']].forEach(function (par) {

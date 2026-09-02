@@ -12,7 +12,7 @@ var Catalogo = (function () {
 
   var TABLAS = ['config', 'hoteles', 'habitaciones', 'temporadas', 'tarifas',
                 'stop-sales', 'politica-ninos', 'promociones', 'cargos-fecha',
-                'plantillas', 'adicionales'];
+                'plantillas', 'adicionales', 'extras'];
 
   // ==========================================================================
   // NORMALIZADORES
@@ -89,8 +89,7 @@ var Catalogo = (function () {
           modoTarifa: String(r.modo_tarifa || 'POR_PERSONA').trim().toUpperCase(),
           formatoOcupantes: String(r.formato_ocupantes || 'INLINE').trim().toUpperCase(),
           deposito: Number(r.deposito_toallas), labelDeposito: r.label_deposito,
-          earlyPP: Number(r.early_checkin_pp), latePP: Number(r.late_checkout_pp),
-          horaLate: r.hora_late_checkout, vipDia: Number(r.brazalete_vip_dia)
+          horaLate: r.hora_late_checkout
         };
       });
 
@@ -239,6 +238,31 @@ var Catalogo = (function () {
       };
     });
 
+    /**
+     * hotel -> [ servicios que se pueden agregar a la cotizacion ]
+     *
+     * Early check-in, late check-out y el brazalete VIP eran columnas de la
+     * tabla de hoteles y solo salian como texto informativo. Son servicios que
+     * se venden, no atributos del hotel: como tabla se pueden cobrar, activar
+     * y desactivar sin tocar el codigo, y agregar uno nuevo es una fila.
+     */
+    var extras = {};
+    (crudo.extras || [])
+      .filter(function (r) { return siNo(r.activo); })
+      .slice()
+      .sort(function (a, b) { return Number(a.orden) - Number(b.orden); })
+      .forEach(function (r) {
+        if (!extras[r.hotel]) extras[r.hotel] = [];
+        extras[r.hotel].push({
+          hotel: r.hotel, cod: r.cod_extra, nombre: r.nombre,
+          detalle: String(r.detalle || '').trim(),
+          tipo: String(r.tipo || 'POR_PERSONA_ESTADIA').trim().toUpperCase(),
+          monto: Number(r.monto) || 0,
+          aplicaFactorNinos: siNo(r.aplica_factor_ninos),
+          orden: Number(r.orden) || 0
+        });
+      });
+
     var plantillas = {};
     (crudo.plantillas || []).forEach(function (r) { plantillas[r.hotel] = r.plantilla; });
 
@@ -246,7 +270,7 @@ var Catalogo = (function () {
       config: config, hoteles: hoteles, habitaciones: habitaciones,
       temporadas: temporadas, tarifas: tarifas, stopSales: stopSales,
       politica: politica, promociones: promociones, cargos: cargos,
-      plantillas: plantillas, adicionales: adicionales,
+      plantillas: plantillas, adicionales: adicionales, extras: extras,
       generado: new Date().toISOString()
     };
   }

@@ -531,6 +531,59 @@ function setVal(el, v, ev) {
   ok(!!doc.getElementById('calc'), 'al cerrar, el panel vuelve a la pagina');
   eq($('btnCalc').getAttribute('aria-expanded'), 'false', 'y el boton se desmarca');
 
+  // 17. Servicios adicionales: se marcan y suben el total
+  setVal($('checkin'), '2026-09-20');
+  setVal($('checkout'), '2026-09-23');
+  await esperar(160);
+  const totalBase = $('barraMonto').textContent;
+  ok(!$('seccionExtras').classList.contains('oculto'),
+     'Morrocoy ofrece servicios adicionales');
+  const opcExtras = doc.querySelectorAll('#extras .promo-op');
+  ok(opcExtras.length >= 2, 'se listan los servicios del hotel',
+     'encontrados=' + opcExtras.length);
+
+  const early = [...opcExtras].find((b) => b.dataset.extra === 'EARLY');
+  ok(!!early, 'esta el early check-in');
+  if (early) {
+    eq(early.getAttribute('aria-checked'), 'false', 'arranca sin marcar');
+    click(early);
+    await esperar(140);
+    const marcado = doc.querySelector('#extras [data-extra=EARLY]');
+    eq(marcado.getAttribute('aria-checked'), 'true', 'al pulsarlo queda marcado');
+    ok($('barraMonto').textContent !== totalBase,
+       'y el total sube', totalBase + ' -> ' + $('barraMonto').textContent);
+    ok($('burbuja').textContent.indexOf('INCLUIDOS EN EL TOTAL') !== -1,
+       'el mensaje lo muestra como contratado');
+
+    // Se desmarca igual de facil
+    click(doc.querySelector('#extras [data-extra=EARLY]'));
+    await esperar(140);
+    eq($('barraMonto').textContent, totalBase, 'al desmarcarlo el total vuelve');
+  }
+
+  // 18. Al cambiar de hotel no se arrastran los servicios del anterior
+  click(doc.querySelector('#extras [data-extra=EARLY]'));
+  await esperar(120);
+  const hpa = [...$('hoteles').querySelectorAll('*')].find(
+    (e) => e.getAttribute && e.getAttribute('data-hotel') === 'HPA');
+  if (hpa) {
+    click(hpa);
+    await esperar(200);
+    const marcados = [...doc.querySelectorAll('#extras .promo-op')]
+      .filter((b) => b.getAttribute('aria-checked') === 'true');
+    eq(marcados.length, 0, 'al cambiar de hotel los servicios quedan sin marcar');
+  }
+
+  // Los hoteles de ciudad no ofrecen ninguno: la seccion desaparece
+  const wtc = [...$('hoteles').querySelectorAll('*')].find(
+    (e) => e.getAttribute && e.getAttribute('data-hotel') === 'WTC');
+  if (wtc) {
+    click(wtc);
+    await esperar(200);
+    ok($('seccionExtras').classList.contains('oculto'),
+       'Valencia no ofrece servicios y la seccion se oculta');
+  }
+
   // ---------- Reporte ----------
   console.log('========================================');
   console.log(`SPA en jsdom -> ${total} chequeos | fallan: ${fallos.length}`);

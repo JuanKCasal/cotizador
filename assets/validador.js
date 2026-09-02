@@ -344,6 +344,53 @@ var Validador = (function () {
       }
     });
 
+    // --- Servicios adicionales ------------------------------------------------
+    var TIPOS_EXTRA = ['POR_PERSONA_ESTADIA', 'POR_PERSONA_DIA'];
+    Object.keys(cat.extras || {}).forEach(function (h) {
+      if (!cat.hoteles[h]) {
+        add('ADVERTENCIA', 'extras', 'HOTEL_INACTIVO',
+            'Hay servicios cargados para ' + h + ', que no esta activo.');
+        return;
+      }
+      var vistos = {};
+      cat.extras[h].forEach(function (x) {
+        if (vistos[x.cod]) {
+          add('ERROR', 'extras', 'EXTRA_DUPLICADO',
+              h + ' / ' + x.cod + ': hay dos servicios con el mismo codigo.');
+        }
+        vistos[x.cod] = true;
+
+        if (TIPOS_EXTRA.indexOf(x.tipo) === -1) {
+          add('ERROR', 'extras', 'TIPO_DESCONOCIDO',
+              h + ' / ' + x.cod + ': tipo "' + x.tipo + '" no reconocido. Use ' +
+              TIPOS_EXTRA.join(' o ') + '.');
+        }
+        // Un servicio en cero se marca y no cobra nada: la asesora lo ofrece y
+        // el cliente no lo ve en el total. Mejor darlo de baja.
+        if (!(x.monto > 0)) {
+          add('ERROR', 'extras', 'MONTO_INVALIDO',
+              h + ' / ' + x.cod + ': el monto es ' + x.monto +
+              '. Un servicio activo tiene que cobrar algo.');
+        }
+        if (!x.nombre) {
+          add('ERROR', 'extras', 'SIN_NOMBRE',
+              h + ' / ' + x.cod + ': sin nombre, saldria en blanco en el mensaje.');
+        }
+      });
+    });
+
+    // Una plantilla sin el marcador de servicios los cobra sin mencionarlos:
+    // el cliente ve un total mas alto y ninguna explicacion.
+    Object.keys(cat.extras || {}).forEach(function (h) {
+      if (!cat.hoteles[h] || !cat.extras[h].length) return;
+      var pl = cat.plantillas[h] || cat.plantillas['*'] || '';
+      if (pl && pl.indexOf('{{BLOQUE_EXTRAS}}') === -1) {
+        add('ADVERTENCIA', 'plantillas', 'SIN_BLOQUE_EXTRAS',
+            h + ': tiene servicios adicionales pero su plantilla no incluye ' +
+            '{{BLOQUE_EXTRAS}}. Se cobrarian sin aparecer en el mensaje.');
+      }
+    });
+
     if (!out.length) add('OK', '-', 'SIN_HALLAZGOS', 'El catalogo no presenta problemas.');
     return out;
   }

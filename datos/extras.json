@@ -1,0 +1,101 @@
+[
+  {
+    "hotel": "HBK",
+    "cod_extra": "EARLY",
+    "nombre": "EARLY CHECK IN",
+    "detalle": "Desde las 11:00 AM",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 20,
+    "aplica_factor_ninos": true,
+    "orden": 1,
+    "activo": true
+  },
+  {
+    "hotel": "HBK",
+    "cod_extra": "LATE",
+    "nombre": "LATE CHECK OUT",
+    "detalle": "Hasta las 5:00 PM",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 35,
+    "aplica_factor_ninos": true,
+    "orden": 2,
+    "activo": true
+  },
+  {
+    "hotel": "HBK",
+    "cod_extra": "VIP",
+    "nombre": "Brazalete VIP",
+    "detalle": "consumo de bebidas alcohólicas PREMIUM",
+    "tipo": "POR_PERSONA_DIA",
+    "monto": 35,
+    "aplica_factor_ninos": true,
+    "orden": 3,
+    "activo": true
+  },
+  {
+    "hotel": "HIM",
+    "cod_extra": "EARLY",
+    "nombre": "EARLY CHECK IN",
+    "detalle": "Desde las 11:00 AM",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 20,
+    "aplica_factor_ninos": true,
+    "orden": 1,
+    "activo": true
+  },
+  {
+    "hotel": "HIM",
+    "cod_extra": "LATE",
+    "nombre": "LATE CHECK OUT",
+    "detalle": "Hasta las 6:00 PM",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 35,
+    "aplica_factor_ninos": true,
+    "orden": 2,
+    "activo": true
+  },
+  {
+    "hotel": "HIM",
+    "cod_extra": "VIP",
+    "nombre": "Brazalete VIP",
+    "detalle": "consumo de bebidas alcohólicas PREMIUM",
+    "tipo": "POR_PERSONA_DIA",
+    "monto": 30,
+    "aplica_factor_ninos": true,
+    "orden": 3,
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_extra": "EARLY",
+    "nombre": "EARLY CHECK IN",
+    "detalle": "Desde las 11:00 AM (La habitación se entregará sólo si está disponible)",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 20,
+    "aplica_factor_ninos": true,
+    "orden": 1,
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_extra": "LATE",
+    "nombre": "LATE CHECK OUT",
+    "detalle": "Hasta las 6:00 PM",
+    "tipo": "POR_PERSONA_ESTADIA",
+    "monto": 35,
+    "aplica_factor_ninos": true,
+    "orden": 2,
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_extra": "VIP",
+    "nombre": "Brazalete VIP",
+    "detalle": "consumo de bebidas alcohólicas PREMIUM",
+    "tipo": "POR_PERSONA_DIA",
+    "monto": 30,
+    "aplica_factor_ninos": true,
+    "orden": 3,
+    "activo": true
+  }
+]
