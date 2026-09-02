@@ -33,8 +33,23 @@ if (pendientes) { console.log('ASSETS SIN RESOLVER:', pendientes); process.exit(
 
 // ---------- Errores capturados ----------
 const errores = [];
+
+// jsdom no implementa window.open y lo reporta como error suyo, con su rastro
+// completo. El codigo ya contempla ese caso -es el del bloqueador de
+// emergentes- asi que ese aviso es ruido del arnes y no un fallo: se filtra
+// para que la salida siga siendo legible. Cualquier OTRO error de jsdom si se
+// cuenta, y los del propio codigo se capturan en beforeParse.
+const consolaVirtual = new (require('jsdom').VirtualConsole)();
+['log', 'info', 'warn', 'error', 'dir'].forEach((nivel) => {
+  consolaVirtual.on(nivel, (...a) => console[nivel](...a));
+});
+consolaVirtual.on('jsdomError', (e) => {
+  if (!/Not implemented/.test(e.message)) errores.push('jsdom: ' + e.message);
+});
+
 const dom = new JSDOM(pagina, {
   runScripts: 'dangerously',
+  virtualConsole: consolaVirtual,
   pretendToBeVisual: true,
   url: 'https://juankcasal.github.io/cotizador/',
   beforeParse(w) {
@@ -348,9 +363,17 @@ function setVal(el, v, ev) {
   ok(!!btnCalc, 'existe el boton de la calculadora');
   if (btnCalc) {
     ok($('calc').classList.contains('oculto'), 'la calculadora arranca cerrada');
+
+    // Un bloqueador de emergentes devuelve null: es el caso real que fuerza el
+    // tercer nivel. Se simula asi en vez de dejar que jsdom falle con su
+    // "not implemented", que ensucia la salida y no representa a ningun
+    // navegador de verdad.
+    window.open = () => null;
     click(btnCalc);
     await esperar(60);
-    ok(!$('calc').classList.contains('oculto'), 'el boton la abre');
+    ok(!$('calc').classList.contains('oculto'),
+       'sin ventana disponible cae al panel en la pagina');
+    eq(btnCalc.getAttribute('aria-expanded'), 'true', 'el boton queda marcado como abierto');
 
     // Hereda lo que ya estaba cargado en el panel grande
     eq($('calcHotel').value, 'HBK', 'hereda el hotel ya elegido');
@@ -403,6 +426,18 @@ function setVal(el, v, ev) {
     click($('btnCalcCerrar'));
     await esperar(60);
     ok($('calc').classList.contains('oculto'), 'se cierra con la X');
+    eq(btnCalc.getAttribute('aria-expanded'), 'false', 'y el boton se desmarca');
+
+    // Al cerrarse vuelve a su hueco de la pagina, junto al ancla. Si no
+    // volviera, la segunda apertura no encontraria el panel.
+    const ancla = $('calcAncla');
+    ok(ancla && ancla.parentNode === $('calc').parentNode,
+       'el panel vuelve a su hueco de la pagina');
+    click(btnCalc);
+    await esperar(60);
+    ok(!$('calc').classList.contains('oculto'), 'y se puede volver a abrir');
+    click($('btnCalcCerrar'));
+    await esperar(60);
   }
 
   // 13. Un cierre de venta se ve distinto de un error de datos
@@ -428,6 +463,73 @@ function setVal(el, v, ev) {
   await esperar(140);
   ok(!$('burbuja').classList.contains('burbuja-sincupo'),
      'quien sale el 15 no ocupa la noche del 15');
+
+  // 14. La severidad se dice con palabras, no solo con color, y el total se
+  //     apaga: es imposible copiar un precio que no existe.
+  setVal($('checkin'), '2026-10-14');
+  setVal($('checkout'), '2026-10-17');
+  await esperar(140);
+  ok($('barraMonto').textContent.indexOf('—') !== -1,
+     'sin cotizacion valida el total muestra un guion', $('barraMonto').textContent);
+  ok($('barraMonto').classList.contains('apagado'),
+     'y se pinta apagado, no como un total real');
+  const sev = doc.querySelector('#burbuja .sev');
+  ok(!!sev, 'el aviso lleva etiqueta de severidad');
+  if (sev) {
+    ok(sev.classList.contains('sev-aviso'),
+       'un cierre de venta es advertencia, no error', 'clases=' + sev.className);
+    ok(sev.textContent.toLowerCase().indexOf('disponibilidad') !== -1,
+       'y la palabra lo dice sin depender del color', sev.textContent);
+  }
+
+  // 16. El mini cotizador en una ventana de verdad.
+  //
+  //     Este es el camino que jsdom NO ejercitaba y que rompio en Chrome: al
+  //     mover el panel a otra ventana, sus campos dejan de pertenecer a este
+  //     documento y document.getElementById devuelve null. Aqui se le da una
+  //     ventana real -otro documento jsdom- para que el fallo no pueda volver.
+  const { JSDOM: JSDOM2 } = require('jsdom');
+  const domAparte = new JSDOM2('<!doctype html><html><head></head><body></body></html>');
+  const ventana = domAparte.window;
+  // jsdom no implementa focus() y lo reporta como error suyo, con su rastro
+  // completo, sin lanzar -asi que un try/catch no lo evita-. Una ventana de
+  // verdad si lo tiene.
+  ventana.focus = () => {};
+  ventana.close = () => { ventana.__cerrada = true; };
+  Object.defineProperty(ventana, 'closed', { get: () => !!ventana.__cerrada });
+  window.open = () => ventana;
+
+  click($('btnCalc'));
+  await esperar(120);
+  const panel = ventana.document.querySelector('#calc');
+  ok(!!panel, 'el panel se mueve a la ventana nueva');
+  ok(!doc.getElementById('calc'), 'y deja de estar en la pagina principal');
+
+  if (panel) {
+    // Los escuchadores viajan con el nodo: sigue calculando desde alla.
+    const selHotel = panel.querySelector('#calcHotel');
+    const selHab = panel.querySelector('#calcHab');
+    selHotel.value = 'WTC';
+    selHotel.dispatchEvent(new ventana.Event('change', { bubbles: true }));
+    await esperar(60);
+    selHab.value = 'DLX_KING';
+    selHab.dispatchEvent(new ventana.Event('change', { bubbles: true }));
+    panel.querySelector('#calcIn').value = '2026-09-01';
+    panel.querySelector('#calcOut').value = '2026-09-03';
+    panel.querySelector('#calcOut').dispatchEvent(new ventana.Event('change', { bubbles: true }));
+    panel.querySelector('#calcAdultos').value = '2';
+    panel.querySelector('#calcAdultos').dispatchEvent(new ventana.Event('input', { bubbles: true }));
+    await esperar(80);
+    const salida = panel.querySelector('#calcSalida').textContent;
+    ok(salida.indexOf('360') !== -1,
+       'calcula desde la ventana aparte: 2 noches de King a 180', 'salida=' + salida);
+  }
+
+  // Al cerrar vuelve a su hueco, listo para la proxima
+  click($('btnCalc'));
+  await esperar(120);
+  ok(!!doc.getElementById('calc'), 'al cerrar, el panel vuelve a la pagina');
+  eq($('btnCalc').getAttribute('aria-expanded'), 'false', 'y el boton se desmarca');
 
   // ---------- Reporte ----------
   console.log('========================================');

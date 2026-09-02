@@ -341,3 +341,61 @@ de la pantalla.
 - **Probar en un celular real.** Al salir del iframe de Apps Script, el copiado en tres
   niveles puede simplificarse — pero eso se comprueba en un teléfono, no en jsdom
 - Revisar `README.md`, que todavía describe la arquitectura de Apps Script
+
+
+---
+
+## 12. Sistema visual aplicado — 02/09/2026
+
+Marla definió el sistema con Claude Design y `assets/tokens.css` es el entregable tal
+cual: los colores, la tipografía, las alturas de lo táctil, los radios, los espacios y
+el foco de teclado viven ahí. `estilos.css` solo los consume — si un color cambia, se
+cambia en un sitio.
+
+### Lo que cambió respecto de lo que había
+
+- **`--tinta-45` pasó de `#7D8CA0` a `#64758C`.** El anterior daba 3.3:1 sobre blanco:
+  no cumplía AA y desaparecía al sol, que es justo donde se usa la app.
+- **Ámbar de advertencia** (`--aviso` `#9A5B08`). Antes las advertencias se veían
+  iguales que los errores rojos, y no son lo mismo.
+- **Acentos de hotel reasignados:** Morrocoy verde mar, Isla Margarita mostaza, Playa
+  el Agua azul agua, **Valencia vino** y **Maracay naranja** — los dos que faltaban.
+- **La mostaza y el naranja no sirven para texto** (2.1:1 y 3.5:1). Como relleno con
+  letra blanca funcionan; como color de letra hay `--acento-texto`.
+- **El botón principal es tinta, no el acento.** El botón más importante de la
+  aplicación no puede cambiar de color según lo que se cotice: se busca con el pulgar
+  sin mirar.
+- **El foco de teclado ya no depende del hotel.** Si el indicador cambia de color en
+  cada pantalla, deja de ser una señal fija.
+- **El color nunca informa solo:** el acento viaja con la sigla del hotel, y los avisos
+  llevan la palabra ERROR o SIN DISPONIBILIDAD además del color.
+- **El total se apaga a `$ —`** cuando no se puede cotizar. Es imposible copiar un
+  precio que no existe.
+- **En escritorio el copiar sube a la cabecera** del panel de vista previa. En el
+  celular sigue al pie, donde cae el pulgar.
+
+### El mini cotizador ahora es una ventana, no un modal
+
+Decisión del diseño, y es mejor: cuando hace falta un precio suelto el navegador suele
+estar detrás de otra cosa. Tres niveles, como el copiado:
+
+1. **Ventana de documento** (Chrome y Edge de escritorio): flota sobre cualquier
+   aplicación, incluso con el cotizador cerrado.
+2. **Ventana emergente:** propia, pero se va detrás al hacer clic fuera.
+3. **Panel dentro de la página:** cuando un bloqueador de emergentes impide las dos
+   anteriores. Es mejor que un botón que no hace nada.
+
+**Ya no existe en el celular**, también por decisión del diseño: allí no hay ventanas
+flotantes y la asesora tiene la aplicación entera a mano.
+
+### Un bug que solo apareció en un navegador de verdad
+
+Al mover el panel a la otra ventana, sus campos dejan de pertenecer al documento
+principal y `document.getElementById` devuelve `null`. Las pruebas en jsdom no lo veían
+porque jsdom nunca abría la ventana: se descubrió abriendo la página en Chromium.
+
+Arreglado buscando los campos dentro del propio panel, que viaja entero con sus hijos.
+El arnés ahora le da una ventana de verdad —otro documento jsdom— para que no vuelva.
+
+Es el cuarto caso del patrón que este proyecto ya conocía: **las pruebas validan la
+lógica, la plataforma solo la valida la plataforma.**

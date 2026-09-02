@@ -1,0 +1,74 @@
+/* Sistema visual — Cotizador Hesperia Venezuela
+   Aprobado: paleta, tipografía, componentes, pantallas.
+   Móvil primero. Todo lo táctil >= 44px. Texto normal >= 4.5:1. */
+
+:root {
+  /* Tinta y texto */
+  --tinta: #0B2545;        /* texto principal, marca — 15.6:1 */
+  --tinta-70: #4A6079;     /* texto secundario — 6.4:1 */
+  --tinta-45: #64758C;     /* etiquetas y pistas — 4.7:1 (antes #7D8CA0, 3.3:1) */
+
+  /* Superficies y bordes */
+  --sal: #EEF2F5;          /* fondo de página */
+  --papel: #FFFFFF;        /* fondo de tarjetas y campos */
+  --arena: #DCE3E9;        /* borde estándar 1px */
+  --arena-sut: #EDF1F4;    /* separadores, filas alternas */
+
+  /* Estado */
+  --alerta: #B3382F;       /* error que detiene — 5.9:1 */
+  --alerta-sut: #FDF1F0;
+  --aviso: #9A5B08;        /* advertencia que deja seguir — 5.3:1 */
+  --aviso-sut: #FDF6E7;
+  --exito: #1B7A5A;        /* confirmación — 5.3:1 */
+
+  /* Vista previa de WhatsApp — cita literal, no tocar */
+  --wa-fondo: #E4DDD5;
+  --wa-burbuja: #E8FDD8;
+  --wa-texto: #10241C;
+
+  /* Formas */
+  --r-chico: 8px;
+  --r-medio: 12px;
+  --r-grande: 18px;
+  --r-chip: 999px;
+
+  /* Alturas de lo que se toca */
+  --h-boton: 48px;
+  --h-campo: 48px;
+  --h-contador: 44px;
+  --h-chip: 44px;
+  --h-copiar: 56px;        /* el más alto de la app, solo en móvil */
+  --h-barra-total: 68px;
+  --h-fila-tabla: 40px;    /* administración: es ratón, no pulgar */
+
+  /* Espacios */
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e5: 24px; --e6: 32px;
+
+  /* Foco de teclado — igual en todos los controles, nunca se quita */
+  --foco: 3px solid #0B2545;
+  --foco-offset: 2px;
+
+  /* Corte móvil / escritorio */
+  --corte: 900px;
+}
+
+/* Acento por hotel — se fija en <body data-hotel="..."> */
+body[data-hotel="HBK"] { --acento:#17796E; --acento-sut:#E9F5F3; --acento-texto:#17796E; } /* Morrocoy · verde mar */
+body[data-hotel="HIM"] { --acento:#D9AE2B; --acento-sut:#FBF2DA; --acento-texto:#7D5E06; } /* Isla Margarita · mostaza (2.1:1: solo relleno) */
+body[data-hotel="HPA"] { --acento:#12688C; --acento-sut:#E8F2F7; --acento-texto:#12688C; } /* Playa el Agua · azul agua */
+body[data-hotel="WTC"] { --acento:#8C2F55; --acento-sut:#FAEBF0; --acento-texto:#8C2F55; } /* Valencia · vino ciudad */
+body[data-hotel="HMC"] { --acento:#D96A22; --acento-sut:#FDF2EA; --acento-texto:#A84D0F; } /* Maracay · naranja (3.5:1: solo relleno) */
+
+/* Tipografía */
+/* Bricolage Grotesque 600/800 — marca y títulos
+   Instrument Sans 400/500/600 — interfaz
+   IBM Plex Mono 400/500/600 — cifras, con font-variant-numeric: tabular-nums */
+.t-titulo-grande  { font: 800 28px/1.15 'Bricolage Grotesque'; letter-spacing:-0.02em; }
+.t-titulo-tarjeta { font: 600 20px/1.25 'Bricolage Grotesque'; }
+.t-seccion        { font: 600 11px/1.4 'Instrument Sans'; text-transform:uppercase; letter-spacing:0.14em; color:var(--tinta-45); }
+.t-normal         { font: 400 16px/1.5 'Instrument Sans'; }
+.t-campo          { font: 500 16px/1.5 'Instrument Sans'; }  /* nunca <16px en móvil: iOS haría zoom */
+.t-pista          { font: 400 12.5px/1.45 'Instrument Sans'; color:var(--tinta-70); }
+.t-precio         { font: 500 15px/1.45 'IBM Plex Mono'; font-variant-numeric:tabular-nums; }
+.t-total          { font: 600 21px/1.25 'IBM Plex Mono'; font-variant-numeric:tabular-nums; }
+.t-total-mini     { font: 600 30px/1.2 'IBM Plex Mono'; font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }

@@ -92,7 +92,7 @@
     $('version').textContent = 'Tarifas ' + (CAT.config.VERSION_TARIFAS || '');
     renderHoteles();
     conectarEventos();
-    calcMontar();
+    if (window.innerWidth >= 900) calcMontar();
     $('cargando').classList.add('oculto');
     $('app').classList.remove('oculto');
   }
@@ -476,7 +476,8 @@
     $('burbuja').className = 'burbuja';
     $('burbuja').innerHTML = '<p class="burbuja-vacio">' + esc(msg) + '</p>';
     $('barraEtiqueta').textContent = 'Sin cotizar';
-    $('barraMonto').textContent = '—';
+    $('barraMonto').textContent = '$ —';
+    $('barraMonto').className = 'barra-monto apagado';
     habilitar(false);
     botonPanel('vacio');
   }
@@ -484,12 +485,15 @@
   function pintarErrores(errores) {
     $('burbuja').className = 'burbuja burbuja-error';
     $('burbuja').innerHTML =
+      '<p class="sev sev-error"><span class="sev-marca" aria-hidden="true">!</span>' +
+      'Error · no se puede cotizar</p>' +
       '<p class="burbuja-titulo">Falta resolver esto:</p><ul>' +
       errores.map(function (e) { return '<li>' + esc(e) + '</li>'; }).join('') +
       '</ul>';
     $('barraEtiqueta').textContent = errores.length === 1
       ? '1 cosa por corregir' : errores.length + ' cosas por corregir';
-    $('barraMonto').textContent = '—';
+    $('barraMonto').textContent = '$ —';
+    $('barraMonto').className = 'barra-monto apagado';
     habilitar(false);
     botonPanel('error');
   }
@@ -519,11 +523,14 @@
 
     $('burbuja').className = 'burbuja burbuja-sincupo';
     $('burbuja').innerHTML =
+      '<p class="sev sev-aviso"><span class="sev-marca" aria-hidden="true">!</span>' +
+      'Sin disponibilidad</p>' +
       '<p class="burbuja-titulo">No hay disponibilidad</p><ul>' + filas.join('') +
       '</ul><p class="burbuja-pie">Prueba con otras fechas o con otro tipo de ' +
       'habitación. El precio no es el problema.</p>';
     $('barraEtiqueta').textContent = 'Sin disponibilidad';
-    $('barraMonto').textContent = '—';
+    $('barraMonto').textContent = '$ —';
+    $('barraMonto').className = 'barra-monto apagado';
     habilitar(false);
     botonPanel('error');
   }
@@ -556,6 +563,7 @@
       res.nNoches + (res.nNoches === 1 ? ' noche' : ' noches') + ' · ' +
       res.totalHabitaciones + (res.totalHabitaciones === 1 ? ' habitación' : ' habitaciones');
     $('barraMonto').textContent = '$' + Motor.fmtMoney(CAT, res.total);
+    $('barraMonto').className = 'barra-monto';
     habilitar(true);
     botonPanel('ok');
   }
@@ -877,27 +885,63 @@
   }
 
   // ==========================================================================
-  // CALCULADORA RAPIDA
+  // MINI COTIZADOR
   //
-  // Un precio suelto, sin armar la cotizacion. La asesora la necesita mientras
-  // habla por telefono: alguien pregunta "y cuanto sale la Junior Suite dos
-  // noches", y ella no puede perder la cotizacion de tres habitaciones que ya
-  // lleva media hora armando. Por eso es una ventana aparte con su propio
-  // estado, y no reutiliza `estado` ni toca `ULTIMO`.
+  // Un precio suelto, sin armar la cotizacion. La asesora esta hablando por
+  // telefono, alguien pregunta "y cuanto sale la Junior Suite dos noches", y
+  // ella no puede perder la cotizacion de tres habitaciones que lleva media
+  // hora armando. Por eso tiene su propio estado y no toca `estado` ni
+  // `ULTIMO`. Lo unico que comparte es el Motor: si diera un precio distinto
+  // al del panel grande seria un error de este archivo, no de dos calculos
+  // que compiten.
   //
-  // Usa el mismo Motor: si algun dia diera un precio distinto al del panel
-  // grande, seria un error de este archivo, no de dos calculos que compiten.
+  // Vive en su PROPIA ventana, no en un modal, porque el navegador suele
+  // estar detras de otra cosa cuando hace falta. Tres niveles, de mejor a
+  // peor, como el copiado:
+  //
+  //   1. Ventana de documento (Chrome y Edge de escritorio): flota sobre
+  //      cualquier aplicacion, incluso con el cotizador cerrado.
+  //   2. Ventana emergente: propia, pero se va detras al hacer clic fuera.
+  //   3. Panel dentro de la pagina: cuando un bloqueador de emergentes
+  //      impide las dos anteriores. Sigue siendo util, y es mejor que un
+  //      boton que no hace nada.
+  //
+  // Solo en escritorio. En el celular no existen las ventanas flotantes y la
+  // asesora ya tiene la aplicacion entera a mano.
   // ==========================================================================
+  /**
+   * El panel del mini cotizador, este donde este.
+   *
+   * Cuando viaja a su propia ventana deja de pertenecer a este documento y
+   * document.getElementById devuelve null. Por eso se guarda la referencia al
+   * montar y sus campos se buscan dentro de el: el nodo se mueve entero, con
+   * sus hijos y sus escuchadores.
+   */
+  var _calcCaja = null;
+  function calcCaja() {
+    if (!_calcCaja) _calcCaja = document.getElementById('calc');
+    return _calcCaja;
+  }
+  function $c(id) {
+    var caja = calcCaja();
+    return caja ? caja.querySelector('#' + id) : document.getElementById(id);
+  }
+
+  var CALC_ANCHO = 382;
+  var CALC_ALTO = 461;      // por debajo de 459 de contenido se corta el total
+
   var calcAbierta = false;
+  var calcVentana = null;   // la ventana externa, si se pudo abrir
+  var calcNivel = 0;        // 1 = ventana de documento, 2 = emergente, 3 = en pagina
 
   function calcMontar() {
-    var selH = $('calcHotel');
+    var selH = $c('calcHotel');
     selH.innerHTML = '<option value="">Elige…</option>' +
       Object.keys(CAT.hoteles).map(function (c) {
         return '<option value="' + c + '">' + esc(CAT.hoteles[c].nombre) + '</option>';
       }).join('');
 
-    $('calcHotel').addEventListener('change', function () {
+    $c('calcHotel').addEventListener('change', function () {
       calcLlenarHabs();
       calcCalcular();
     });
@@ -908,7 +952,7 @@
     ['calcAdultos', 'calcNinos'].forEach(function (id) {
       $(id).addEventListener('input', function () { calcEdades(); calcCalcular(); });
     });
-    $('calcEdades').addEventListener('input', calcCalcular);
+    $c('calcEdades').addEventListener('input', calcCalcular);
 
     $('btnCalc').addEventListener('click', function () {
       calcAbierta ? calcCerrar() : calcAbrir();
@@ -916,39 +960,145 @@
     $('btnCalcCerrar').addEventListener('click', calcCerrar);
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && calcAbierta) calcCerrar();
+      if (e.key === 'Escape' && calcAbierta && calcNivel === 3) calcCerrar();
+    });
+
+    // Si el navegador se lleva la pagina, la ventana se va con ella.
+    window.addEventListener('pagehide', function () {
+      if (calcVentana && !calcVentana.closed) calcVentana.close();
     });
   }
 
-  function calcAbrir() {
-    calcAbierta = true;
-    $('calc').classList.remove('oculto');
-    $('btnCalc').setAttribute('aria-expanded', 'true');
-
-    // Arranca con lo que la asesora ya tiene cargado: casi siempre quiere
-    // variar sobre eso, no empezar de cero.
-    if (!$('calcHotel').value && estado.hotel) {
-      $('calcHotel').value = estado.hotel;
-      calcLlenarHabs();
+  /** Copia las hojas de estilo a la ventana nueva, con rutas absolutas. */
+  function calcVestir(doc) {
+    doc.title = 'Mini cotizador · Hesperia';
+    var enlaces = document.querySelectorAll('link[rel="stylesheet"]');
+    for (var i = 0; i < enlaces.length; i++) {
+      var l = doc.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = new URL(enlaces[i].getAttribute('href'), location.href).href;
+      doc.head.appendChild(l);
     }
-    if (!$('calcIn').value && estado.checkin) $('calcIn').value = estado.checkin;
-    if (!$('calcOut').value && estado.checkout) $('calcOut').value = estado.checkout;
+    var meta = doc.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1';
+    doc.head.appendChild(meta);
 
+    // El acento del hotel se hereda del cuerpo principal.
+    doc.body.setAttribute('data-hotel', document.body.getAttribute('data-hotel') || '');
+    doc.body.className = 'calc-suelta';
+  }
+
+  function calcAbrir() {
+    var caja = calcCaja();
+    caja.classList.remove('oculto');
+
+    calcSembrar();
+
+    // --- Nivel 1: ventana de documento, siempre encima ---------------------
+    if (window.documentPictureInPicture && documentPictureInPicture.requestWindow) {
+      documentPictureInPicture
+        .requestWindow({ width: CALC_ANCHO, height: CALC_ALTO })
+        .then(function (win) {
+          calcVentana = win;
+          calcNivel = 1;
+          calcVestir(win.document);
+          win.document.body.appendChild(caja);   // se MUEVE, conserva eventos
+          win.addEventListener('pagehide', calcDevolver);
+          calcMarcarAbierta();
+        })
+        .catch(function () { calcAbrirEmergente(caja); });
+      return;
+    }
+    calcAbrirEmergente(caja);
+  }
+
+  /** Nivel 2: ventana emergente. Nivel 3 si el navegador la bloquea. */
+  function calcAbrirEmergente(caja) {
+    var win = null;
+    try {
+      win = window.open('', 'minicotizador',
+                        'width=' + CALC_ANCHO + ',height=' + (CALC_ALTO + 40) +
+                        ',menubar=no,toolbar=no,location=no,status=no');
+    } catch (e) { win = null; }
+
+    if (!win || !win.document) {           // bloqueador de emergentes
+      calcNivel = 3;
+      calcVentana = null;
+      calcMarcarAbierta();
+      return;
+    }
+
+    calcVentana = win;
+    calcNivel = 2;
+    try {
+      win.document.body.innerHTML = '';
+      calcVestir(win.document);
+      win.document.body.appendChild(caja);
+      win.addEventListener('pagehide', calcDevolver);
+      try { win.focus(); } catch (e) { /* el navegador puede negar el foco */ }
+    } catch (e) {
+      // Si algo falla a mitad de camino, el panel vuelve a la pagina antes
+      // que dejar a la asesora con una ventana en blanco.
+      try { win.close(); } catch (e2) { /* ya se cerro */ }
+      calcNivel = 3;
+      calcVentana = null;
+      calcDevolverNodo();
+    }
+    calcMarcarAbierta();
+  }
+
+  function calcMarcarAbierta() {
+    calcAbierta = true;
+    $('btnCalc').setAttribute('aria-expanded', 'true');
+    $('btnCalc').classList.add('activo');
     calcCalcular();
-    $('calcHotel').focus();
+    try { $c('calcHotel').focus(); } catch (e) { /* la ventana aun no tiene foco */ }
+  }
+
+  /** Devuelve el panel a su hueco en la pagina. */
+  function calcDevolverNodo() {
+    var caja = calcCaja();
+    var ancla = document.getElementById('calcAncla');
+    if (caja && ancla && caja.parentNode !== ancla.parentNode) {
+      ancla.parentNode.insertBefore(caja, ancla.nextSibling);
+    }
+  }
+
+  /** La ventana se cerro: desde su boton, desde la X del sistema o al navegar. */
+  function calcDevolver() {
+    calcDevolverNodo();
+    calcCaja().classList.add('oculto');
+    calcVentana = null;
+    calcNivel = 0;
+    calcAbierta = false;
+    var b = $('btnCalc');
+    if (b) { b.setAttribute('aria-expanded', 'false'); b.classList.remove('activo'); }
   }
 
   function calcCerrar() {
-    calcAbierta = false;
-    $('calc').classList.add('oculto');
-    $('btnCalc').setAttribute('aria-expanded', 'false');
-    $('btnCalc').focus();
+    if (calcVentana && !calcVentana.closed) {
+      try { calcVentana.close(); } catch (e) { /* ya no existe */ }
+    }
+    calcDevolver();
+    var b = $('btnCalc');
+    if (b) b.focus();
+  }
+
+  /** Arranca con lo que ya esta cargado: casi siempre se quiere variar sobre eso. */
+  function calcSembrar() {
+    if (!$c('calcHotel').value && estado.hotel) {
+      $c('calcHotel').value = estado.hotel;
+      calcLlenarHabs();
+    }
+    if (!$c('calcIn').value && estado.checkin) $c('calcIn').value = estado.checkin;
+    if (!$c('calcOut').value && estado.checkout) $c('calcOut').value = estado.checkout;
   }
 
   function calcLlenarHabs() {
-    var hotel = $('calcHotel').value;
+    var hotel = $c('calcHotel').value;
     var habs = hotel ? habsDe(hotel) : [];
-    $('calcHab').innerHTML = '<option value="">Elige…</option>' +
+    $c('calcHab').innerHTML = '<option value="">Elige…</option>' +
       habs.map(function (h) {
         return '<option value="' + esc(h.cod) + '">' + esc(h.nombre) + '</option>';
       }).join('');
@@ -956,8 +1106,8 @@
 
   /** Un campo de edad por cada nino declarado, conservando lo ya escrito. */
   function calcEdades() {
-    var n = Math.max(0, Math.min(6, Number($('calcNinos').value) || 0));
-    var cont = $('calcEdades');
+    var n = Math.max(0, Math.min(6, Number($c('calcNinos').value) || 0));
+    var cont = $c('calcEdades');
     var previos = [].slice.call(cont.querySelectorAll('input'))
                     .map(function (i) { return i.value; });
 
@@ -974,30 +1124,30 @@
   }
 
   function calcSalida(html, hayError) {
-    var s = $('calcSalida');
+    var s = $c('calcSalida');
     s.innerHTML = html;
     s.className = 'calc-salida' + (hayError ? ' con-error' : '');
   }
 
   function calcCalcular() {
-    var hotel = $('calcHotel').value;
-    var cod = $('calcHab').value;
-    var ci = $('calcIn').value;
-    var co = $('calcOut').value;
+    var hotel = $c('calcHotel').value;
+    var cod = $c('calcHab').value;
+    var ci = $c('calcIn').value;
+    var co = $c('calcOut').value;
 
     if (!hotel || !cod || !ci || !co) {
       calcSalida('<span class="calc-espera">Elige hotel, habitación y fechas.</span>', false);
       return;
     }
 
-    var edades = [].slice.call($('calcEdades').querySelectorAll('input'))
+    var edades = [].slice.call($c('calcEdades').querySelectorAll('input'))
       .map(function (i) { return Number(i.value); })
-      .filter(function (e) { return !isNaN(e) && edadDeMenor(e); });
+      .filter(edadDeMenor);
 
     var req = {
       hotel: hotel, checkin: ci, checkout: co, promos: [],
       lineas: [{ cod_hab: cod, cantidad: 1,
-                 adultos: Math.max(1, Number($('calcAdultos').value) || 1),
+                 adultos: Math.max(1, Number($c('calcAdultos').value) || 1),
                  edades: edades }]
     };
 
@@ -1011,7 +1161,10 @@
     }
 
     if (!r.ok) {
-      calcSalida('<span class="calc-error">' +
+      var titulo = (r.sinCupo && r.sinCupo.length)
+        ? 'Sin disponibilidad esas noches'
+        : 'No se puede cotizar';
+      calcSalida('<span class="calc-error"><strong>' + titulo + '</strong><br>' +
                  r.errores.map(esc).join('<br>') + '</span>', true);
       return;
     }
@@ -1026,7 +1179,7 @@
   }
 
   /** Una edad de menor: 0 a 17. Un "18" aqui seria un adulto mal contado. */
-  function edadDeMenor(e) { return e >= 0 && e <= 17; }
+  function edadDeMenor(e) { return !isNaN(e) && e >= 0 && e <= 17; }
 
   // ==========================================================================
   iniciar();

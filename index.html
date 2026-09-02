@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="assets/tokens.css">
   <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body data-hotel="">
@@ -28,8 +29,16 @@
       <span class="marca-nombre">Cotizador</span>
       <span class="marca-hotel" id="marcaHotel">Hesperia</span>
     </div>
-    <button type="button" class="btn-icono" id="btnReiniciar" title="Empezar de nuevo"
-            aria-label="Empezar de nuevo">↺</button>
+    <div class="cabecera-acciones">
+      <button type="button" class="btn-cabecera solo-pc" id="btnCalc"
+              title="Abrir el mini cotizador en su propia ventana"
+              aria-expanded="false">
+        <span class="btn-cabecera-icono" aria-hidden="true"></span>
+        Mini cotizador
+      </button>
+      <button type="button" class="btn-icono" id="btnReiniciar" title="Empezar de nuevo"
+              aria-label="Empezar de nuevo">↺</button>
+    </div>
   </header>
 
   <main class="lienzo">
@@ -125,21 +134,22 @@
   </div>
 </div>
 
-<!-- ====================== CALCULADORA RAPIDA ====================== -->
-<!-- Un precio suelto, sin armar la cotizacion. La asesora lo necesita
-     mientras habla por telefono: no puede perder lo que ya tiene cargado. -->
-<button type="button" class="fab" id="btnCalc" title="Calculadora rápida"
-        aria-label="Abrir calculadora rápida" aria-expanded="false">
-  <span class="fab-icono" aria-hidden="true">$</span>
-  <span class="fab-texto">Calcular</span>
-</button>
+<!-- ====================== MINI COTIZADOR ======================
+     Un precio suelto, sin armar la cotizacion. Vive en su PROPIA ventana:
+     la asesora esta hablando por telefono, con el navegador detras de otra
+     cosa, y necesita el precio delante. Solo en escritorio.
+
+     Este nodo se MUEVE a la ventana nueva, no se copia: asi conserva sus
+     escuchadores y no hay dos calculadoras que puedan discrepar. El hueco
+     que deja lo marca #calcAncla para devolverlo al cerrar.              -->
+<span id="calcAncla" hidden></span>
 
 <div id="calc" class="calc oculto" role="dialog" aria-modal="false"
      aria-labelledby="calcTitulo">
   <div class="calc-cabecera">
-    <h3 id="calcTitulo" class="calc-titulo">Calculadora rápida</h3>
+    <h3 id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
     <button type="button" class="btn-cerrar" id="btnCalcCerrar"
-            aria-label="Cerrar calculadora">✕</button>
+            aria-label="Cerrar el mini cotizador">✕</button>
   </div>
 
   <div class="calc-cuerpo">

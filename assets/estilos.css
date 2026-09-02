@@ -4,39 +4,17 @@
    la asesora sepa de un vistazo qué está cotizando.
    ========================================================================== */
 
+/* Las variables del sistema visual viven en tokens.css, que es el entregable
+   del diseno tal cual. Este archivo solo las consume: si un color cambia, se
+   cambia alli y no hay que buscarlo repartido por aqui.
+
+   Lo que si queda aqui son las familias tipograficas, porque incluyen las
+   alternativas de respaldo que dependen del sistema operativo. */
 :root {
-  --tinta:      #0B2545;
-  --tinta-70:   #4A6079;
-  --tinta-45:   #7D8CA0;
-  --sal:        #EEF2F5;
-  --papel:      #FFFFFF;
-  --arena:      #DCE3E9;
-  --arena-sut:  #EDF1F4;
-  --alerta:     #B3382F;
-  --alerta-sut: #FDF1F0;
-  --exito:      #1B7A5A;
-
-  --acento:     #0B2545;
-  --acento-sut: #EEF2F5;
-
-  --wa-fondo:   #E4DDD5;
-  --wa-burbuja: #E8FDD8;
-  --wa-texto:   #10241C;
-
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 18px;
-
   --display: 'Bricolage Grotesque', Georgia, serif;
   --cuerpo:  'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-
-  --barra-alto: 68px;
 }
-
-body[data-hotel="HBK"] { --acento: #D96A22; --acento-sut: #FDF2EA; }
-body[data-hotel="HIM"] { --acento: #17796E; --acento-sut: #E9F5F3; }
-body[data-hotel="HPA"] { --acento: #12688C; --acento-sut: #E8F2F7; }
 
 * { box-sizing: border-box; }
 
@@ -92,7 +70,7 @@ html, body {
 }
 .marca-hotel {
   font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
-  color: var(--acento);
+  color: var(--acento-texto);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   transition: color .2s ease;
 }
@@ -106,14 +84,14 @@ html, body {
 
 /* ---------------------------------------------------------------- Lienzo */
 .lienzo {
-  max-width: 1120px; margin: 0 auto; padding: 16px 16px calc(var(--barra-alto) + 20px);
+  max-width: 1120px; margin: 0 auto; padding: 16px 16px calc(var(--h-barra-total) + 20px);
 }
 .columna-form { display: flex; flex-direction: column; gap: 12px; }
 
 .tarjeta {
   background: var(--papel);
   border: 1px solid var(--arena);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-grande);
   padding: 16px;
 }
 .seccion-cabecera {
@@ -129,7 +107,7 @@ html, body {
 .btn-texto {
   border: none; background: none; padding: 4px 2px;
   font-family: inherit; font-size: 14px; font-weight: 600;
-  color: var(--acento); cursor: pointer;
+  color: var(--acento-texto); cursor: pointer;
 }
 .btn-texto:hover { text-decoration: underline; }
 
@@ -138,7 +116,7 @@ html, body {
 .hotel-op {
   display: flex; align-items: center; gap: 12px;
   padding: 13px 14px; text-align: left;
-  border: 1.5px solid var(--arena); border-radius: var(--r-md);
+  border: 1.5px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel); cursor: pointer;
   font-family: inherit; font-size: 15px; color: var(--tinta);
   transition: border-color .15s ease, background .15s ease;
@@ -148,9 +126,9 @@ html, body {
   border-color: var(--acento); background: var(--acento-sut);
 }
 .hotel-sigla {
-  flex: none; width: 40px; height: 40px; border-radius: var(--r-sm);
+  flex: none; width: 40px; height: 40px; border-radius: var(--r-chico);
   display: grid; place-items: center;
-  font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; letter-spacing: .04em;
   background: var(--sal); color: var(--tinta-70);
 }
 .hotel-op[aria-checked="true"] .hotel-sigla { background: var(--acento); color: #fff; }
@@ -166,13 +144,13 @@ html, body {
   width: 100%; padding: 11px 12px;
   font-family: inherit; font-size: 16px; color: var(--tinta);
   background: var(--papel);
-  border: 1.5px solid var(--arena); border-radius: var(--r-sm);
+  border: 1.5px solid var(--arena); border-radius: var(--r-chico);
   appearance: none; -webkit-appearance: none;
 }
 .input:focus-visible, .select:focus-visible, .hotel-op:focus-visible,
 .btn:focus-visible, .btn-texto:focus-visible, .btn-icono:focus-visible,
 .paso-btn:focus-visible, .promo-op:focus-visible {
-  outline: 2px solid var(--acento); outline-offset: 2px;
+  outline: var(--foco); outline-offset: var(--foco-offset);
 }
 .select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%237D8CA0' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -184,7 +162,7 @@ input[type="date"] { min-height: 44px; }
 .fechas { display: flex; align-items: flex-end; gap: 10px; }
 .fechas-puente {
   flex: none; padding: 0 2px 12px;
-  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 500;
   color: var(--tinta-45); white-space: nowrap;
 }
 .pista { margin: 9px 0 0; font-size: 12.5px; color: var(--tinta-45); }
@@ -197,7 +175,7 @@ input[type="date"] { min-height: 44px; }
 .lineas { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 
 .hab {
-  border: 1px solid var(--arena); border-radius: var(--r-md);
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
   background: var(--arena-sut);
   padding: 13px;
 }
@@ -206,7 +184,7 @@ input[type="date"] { min-height: 44px; }
   gap: 10px; margin-bottom: 11px;
 }
 .hab-indice {
-  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600;
   letter-spacing: .06em; color: var(--tinta-45); text-transform: uppercase;
 }
 .hab-quitar {
@@ -253,7 +231,7 @@ input[type="date"] { min-height: 44px; }
 .paso-btn:disabled { color: var(--arena); cursor: default; }
 .paso-valor {
   min-width: 26px; text-align: center;
-  font-family: var(--mono); font-size: 15px; font-weight: 600;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .paso-valor[data-cero="si"] { color: var(--tinta-45); }
@@ -263,7 +241,7 @@ input[type="date"] { min-height: 44px; }
 .promo-op {
   display: flex; align-items: flex-start; gap: 11px;
   padding: 12px 13px; text-align: left;
-  border: 1.5px solid var(--arena); border-radius: var(--r-md);
+  border: 1.5px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel); cursor: pointer; font-family: inherit;
 }
 .promo-op[aria-checked="true"] { border-color: var(--acento); background: var(--acento-sut); }
@@ -325,11 +303,14 @@ input[type="date"] { min-height: 44px; }
 .btn {
   flex: 1; min-height: 46px; padding: 12px 16px;
   font-family: inherit; font-size: 15px; font-weight: 600;
-  border-radius: var(--r-sm); border: 1.5px solid transparent; cursor: pointer;
+  border-radius: var(--r-chico); border: 1.5px solid transparent; cursor: pointer;
   transition: opacity .15s ease, background .15s ease;
 }
 .btn:disabled { opacity: .42; cursor: default; }
-.btn-primario { background: var(--acento); color: #fff; }
+/* Tinta, no el acento del hotel. El boton mas importante de la aplicacion no
+   puede cambiar de color segun lo que se este cotizando: se busca con el
+   pulgar sin mirar, y para eso tiene que estar siempre igual. */
+.btn-primario { background: var(--tinta); color: #fff; }
 .btn-primario:hover:not(:disabled) { filter: brightness(.93); }
 .btn-secundario {
   background: var(--papel); color: var(--tinta); border-color: var(--arena);
@@ -351,7 +332,7 @@ input[type="date"] { min-height: 44px; }
 }
 .barra-monto {
   display: block;
-  font-family: var(--mono); font-size: 21px; font-weight: 600;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 21px; font-weight: 600;
   font-variant-numeric: tabular-nums; letter-spacing: -.01em;
   color: var(--tinta);
 }
@@ -366,7 +347,7 @@ input[type="date"] { min-height: 44px; }
 }
 .modal-caja {
   width: 100%; max-width: 520px;
-  background: var(--papel); border-radius: var(--r-lg);
+  background: var(--papel); border-radius: var(--r-grande);
   padding: 18px;
   display: flex; flex-direction: column; gap: 11px;
   max-height: 88vh;
@@ -377,15 +358,15 @@ input[type="date"] { min-height: 44px; }
 .modal-pista { margin: 0; font-size: 13.5px; color: var(--tinta-70); }
 .modal-texto {
   width: 100%; flex: 1; min-height: 190px; resize: none;
-  font-family: var(--mono); font-size: 12.5px; line-height: 1.45;
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; line-height: 1.45;
   padding: 11px; color: var(--tinta);
-  border: 1.5px solid var(--arena); border-radius: var(--r-sm);
+  border: 1.5px solid var(--arena); border-radius: var(--r-chico);
   background: var(--sal);
 }
 
 /* ---------------------------------------------------------------- Aviso */
 .aviso {
-  position: fixed; left: 50%; bottom: calc(var(--barra-alto) + 16px); z-index: 70;
+  position: fixed; left: 50%; bottom: calc(var(--h-barra-total) + 16px); z-index: 70;
   transform: translate(-50%, 14px);
   padding: 11px 17px; border-radius: 999px;
   background: var(--tinta); color: #fff;
@@ -401,7 +382,7 @@ input[type="date"] { min-height: 44px; }
 
 .version {
   margin: 2px 0 0; text-align: center;
-  font-family: var(--mono); font-size: 11px; color: var(--tinta-45);
+  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--tinta-45);
 }
 
 /* El botón de la barra cambia de rol cuando hay errores: deja de ofrecer el
@@ -440,7 +421,7 @@ input[type="date"] { min-height: 44px; }
   .columna-vista {
     position: sticky; top: 78px;
     height: calc(100vh - 96px);
-    border: 1px solid var(--arena); border-radius: var(--r-lg);
+    border: 1px solid var(--arena); border-radius: var(--r-grande);
     overflow: hidden; background: var(--papel);
   }
   .btn-cerrar { display: none; }
@@ -462,70 +443,109 @@ input[type="date"] { min-height: 44px; }
 }
 
 /* ==========================================================================
-   CALCULADORA RAPIDA
-   Un precio suelto sin tocar la cotizacion que ya esta armada. En PC es un
-   panel chico anclado a una esquina, para poder mirarlo mientras se habla por
-   telefono; en el celular no cabe algo asi, y se comporta como una hoja que
-   sube desde abajo.
+   MINI COTIZADOR
+   Vive en su propia ventana de 382x461, no en un modal: cuando hace falta, el
+   navegador suele estar detras de otra cosa. Si el navegador no da una ventana
+   -un bloqueador de emergentes, por ejemplo- el mismo panel se muestra dentro
+   de la pagina, anclado abajo a la derecha.
+   Solo en escritorio.
    ========================================================================== */
 
-.fab {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 70;
+.cabecera-acciones { display: flex; align-items: center; gap: 8px; }
+
+.btn-cabecera {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 48px;
-  padding: 0 20px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--acento);
-  color: #fff;
+  height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid var(--tinta);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--tinta);
   font-family: var(--cuerpo);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(11, 37, 69, .28);
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-.fab:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(11, 37, 69, .34); }
-.fab:active { transform: translateY(0); }
-.fab:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
-
-.fab-icono {
-  display: grid;
-  place-items: center;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .22);
-  font-family: var(--mono);
   font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
 }
+.btn-cabecera:hover  { background: var(--sal); }
+.btn-cabecera.activo { background: var(--tinta); color: var(--papel); }
+.btn-cabecera:focus-visible { outline: var(--foco); outline-offset: var(--foco-offset); }
 
-/* Con la barra del total ocupando el borde inferior en movil, el boton se
-   sube para no quedar debajo de ella. */
-@media (max-width: 900px) {
-  .fab { bottom: calc(var(--barra-alto) + 14px); right: 14px; padding: 0 16px; }
-  .fab-texto { display: none; }
-  .fab { padding: 0; width: 52px; height: 52px; justify-content: center; }
+/* Ventana chica sobre ventana grande: dice "se abre aparte" sin texto. */
+.btn-cabecera-icono {
+  position: relative;
+  width: 15px; height: 14px;
+  flex-shrink: 0;
 }
+.btn-cabecera-icono::before,
+.btn-cabecera-icono::after { content: ''; position: absolute; }
+.btn-cabecera-icono::before {
+  left: 0; top: 0;
+  width: 11px; height: 9px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  opacity: .5;
+}
+.btn-cabecera-icono::after {
+  right: 0; bottom: 0;
+  width: 9px; height: 7px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  background: var(--papel);
+}
+.btn-cabecera.activo .btn-cabecera-icono::after { background: var(--tinta); }
+
+/* No existe en el celular: alli no hay ventanas flotantes y la asesora ya
+   tiene la aplicacion entera a mano. */
+.solo-pc { display: none; }
+@media (min-width: 900px) { .solo-pc { display: inline-flex; } }
 
 .calc {
+  width: 380px;
+  background: var(--papel);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Cuando el panel viaja a su propia ventana, ocupa todo el documento.
+
+   El total va anclado abajo y el resto se desplaza: la ventana mide 461 de
+   alto y basta un nino con su edad para empujar el precio fuera de la vista.
+   El precio es lo unico que la asesora esta mirando. */
+body.calc-suelta { margin: 0; background: var(--papel); }
+body.calc-suelta .calc {
+  width: auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.calc-suelta .calc-cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-content: start;
+}
+body.calc-suelta .calc-salida {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  box-shadow: 0 -6px 14px var(--papel);
+}
+
+/* Respaldo dentro de la pagina, si el navegador no dio ventana. */
+body:not(.calc-suelta) .calc {
   position: fixed;
   right: 20px;
   bottom: 20px;
   z-index: 80;
-  width: 330px;
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  background: var(--papel);
   border: 1px solid var(--arena);
-  border-radius: var(--r-lg);
-  box-shadow: 0 18px 48px rgba(11, 37, 69, .26);
+  box-shadow: 0 18px 44px rgba(11, 37, 69, .34);
 }
 
 .calc-cabecera {
@@ -535,29 +555,28 @@ input[type="date"] { min-height: 44px; }
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 16px;
-  background: var(--acento);
-  color: #fff;
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  height: 40px;
+  padding: 0 12px 0 16px;
+  background: var(--tinta);
+  color: var(--papel);
 }
 
 .calc-titulo {
   margin: 0;
   font-family: var(--display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: .01em;
 }
 
 .calc-cabecera .btn-cerrar {
-  color: #fff;
+  color: var(--papel);
   background: rgba(255, 255, 255, .16);
 }
 
-.calc-cuerpo { display: grid; gap: 12px; padding: 16px; }
+.calc-cuerpo { display: grid; gap: var(--e3); padding: var(--e4); }
 .calc-fechas,
 .calc-pax    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.calc-edades { display: flex; flex-wrap: wrap; gap: 8px; }
+.calc-edades { display: flex; flex-wrap: wrap; gap: var(--e2); }
 
 .calc-salida {
   min-height: 74px;
@@ -565,7 +584,7 @@ input[type="date"] { min-height: 44px; }
   align-content: center;
   gap: 2px;
   padding: 14px 16px;
-  border-radius: var(--r-md);
+  border-radius: var(--r-medio);
   background: var(--acento-sut);
   border: 1px solid var(--arena);
   text-align: center;
@@ -575,9 +594,11 @@ input[type="date"] { min-height: 44px; }
 
 .calc-total {
   font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   font-size: 30px;
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.2;
+  letter-spacing: -.01em;
   color: var(--tinta);
 }
 
@@ -589,35 +610,100 @@ input[type="date"] { min-height: 44px; }
   text-align: left;
   line-height: 1.45;
 }
+.calc-error strong { display: block; margin-bottom: 3px; }
 
 .calc-salida.con-error { background: var(--alerta-sut); border-color: var(--alerta); }
-
-/* En el celular ocupa el ancho y sube desde abajo: un panel flotante de 330px
-   en una pantalla de 360 no es un panel, es la pantalla entera mal puesta. */
-@media (max-width: 900px) {
-  .calc {
-    right: 0; left: 0; bottom: 0;
-    width: auto;
-    max-width: none;
-    max-height: 88vh;
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
-    border-left: 0; border-right: 0; border-bottom: 0;
-  }
-}
 
 /* --------------------------------------------------------- Sin disponibilidad
    Un cierre de venta no es un error de datos y no se pinta como tal: no hay
    nada que corregir, hay que ofrecer otra cosa. */
 .burbuja-sincupo {
-  background: #FFF7E8;
-  border: 1px solid #E0A93B;
+  background: var(--aviso-sut);
+  border: 1.5px solid var(--aviso);
   color: var(--tinta);
 }
-.burbuja-sincupo .burbuja-titulo { color: #8A5D07; }
+.burbuja-sincupo .burbuja-titulo { color: var(--aviso); }
 .burbuja-sincupo ul { margin: 8px 0 0; padding-left: 18px; }
 .burbuja-sincupo li { margin-bottom: 4px; }
 .burbuja-pie {
   margin: 10px 0 0;
   font-size: 13px;
   color: var(--tinta-70);
+}
+
+/* --------------------------------------------------- Etiquetas de severidad
+   El color nunca informa solo. Quien no distingue rojo de ambar tiene que
+   poder separar "no se puede cotizar" de "revisa esto" leyendo la palabra. */
+.sev {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.sev-marca {
+  display: grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.sev-error            { color: var(--alerta); }
+.sev-error .sev-marca { background: var(--alerta); border-radius: 50%; }
+.sev-aviso            { color: var(--aviso); }
+.sev-aviso .sev-marca { background: var(--aviso); border-radius: 4px; }
+
+/* El total apagado cuando no se puede cotizar. Un guion suelto se lee como
+   "todavia no calculo"; "$ —" en gris se lee como "no hay precio". */
+.barra-monto.apagado { color: #9FAEC0; }
+
+/* ------------------------------------------- El copiar, arriba en escritorio
+   En el celular el copiar vive al pie, donde cae el pulgar. En la computadora
+   no hay pulgar y si hay una esquina inferior derecha ocupada por el mini
+   cotizador: alli el boton sube a la cabecera del panel, donde nada lo tapa
+   y se ve sin desplazar el mensaje. */
+@media (min-width: 900px) {
+  .columna-vista { display: flex; flex-direction: column; }
+
+  .vista-encabezado {
+    order: -1;
+    gap: 12px;
+  }
+  .vista-encabezado .titulo-seccion { flex: 1; }
+
+  .vista-acciones {
+    display: contents;
+  }
+
+  .vista-acciones .btn {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 18px;
+    font-size: 14px;
+    align-self: center;
+  }
+
+  /* El boton se coloca dentro de la cabecera moviendolo con grid: el marcado
+     no cambia, asi que en el celular sigue estando al pie sin duplicar nodos. */
+  .columna-vista {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr auto;
+  }
+  .vista-encabezado { grid-row: 1; grid-column: 1; border-right: 0; }
+  .vista-acciones   { grid-row: 1; grid-column: 2; }
+  .chat             { grid-row: 2; grid-column: 1 / -1; }
+
+  .vista-acciones {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px 10px 0;
+    border-top: 0;
+    border-bottom: 1px solid var(--arena);
+  }
 }
