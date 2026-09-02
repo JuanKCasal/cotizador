@@ -384,13 +384,27 @@ function paso(ficha, campo, signo) {
   click($('calc').querySelector('[data-calcpaso="adultos"][data-delta="1"]'));
   await esperar(140);
 
-  // Un niño sin edad bloquea, igual que en la app
+  // Un niño sin edad bloquea, igual que en la app.
+  // Se baja a un adulto primero: la habitacion elegida es una doble y tres
+  // huespedes la exceden, con lo que el precio se apagaria por otra razon.
+  click($('calc').querySelector('[data-calcpaso="adultos"][data-delta="-1"]'));
+  await esperar(140);
   click($('calc').querySelector('[data-calcpaso="ninos"][data-delta="1"]'));
   await esperar(140);
   eq(qa('#calcEdades .campo-edad').length, 1, 'aparece el campo de edad');
   eq($('calcTotal').textContent, '$ —', 'y el precio se apaga hasta declararla');
   ok($('calcCopiar').disabled, 'sin la edad no se puede copiar');
+  // Al declarar la edad, el campo deja de estar marcado y vuelve el precio
+  setVal(q('#calcEdades select'), '6');
+  await esperar(160);
+  ok(!q('#calcEdades .campo-edad').classList.contains('falta'),
+     'con la edad puesta el campo deja de faltar');
+  ok($('calcTotal').textContent !== '$ —', 'y vuelve el precio',
+     $('calcTotal').textContent);
+
   click($('calc').querySelector('[data-calcpaso="ninos"][data-delta="-1"]'));
+  await esperar(140);
+  click($('calc').querySelector('[data-calcpaso="adultos"][data-delta="1"]'));
   await esperar(140);
 
   // Copiar desde el mini: su propio mensaje, no el de la app

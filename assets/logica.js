@@ -1142,6 +1142,10 @@
       var sel = e.target.closest('[data-edad]');
       if (!sel) return;
       calcEstado.edades[Number(sel.dataset.edad)] = sel.value;
+      // Se marca solo este campo: repintarlos todos cerraria el desplegable
+      // que se acaba de usar.
+      var caja = sel.closest('.campo-edad');
+      if (caja) caja.classList.toggle('falta', sel.value === '');
       calcCalcular();
     });
 
