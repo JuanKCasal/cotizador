@@ -115,11 +115,10 @@ ya no se lee como un error de datos: tiene su propio aviso, con el motivo y las 
 afectadas, y las fechas avisan antes de terminar de armar la cotización. **Falta cargar
 los cierres reales** — la tabla sigue vacía.
 
-**Fase 4 — Extras cobrables.** `extras.json` + casilla en la interfaz + suma en el motor
-+ línea en el mensaje de WhatsApp + casos de prueba nuevos. Early Check-In y Late
-Check-Out se cobran **por persona, una vez por estadía**, y los menores pagan según
-`factor_pago` de la política de niños. El brazalete VIP es el mismo patrón pero por día:
-conviene dejar el modelo preparado aunque no se active todavía.
+**Fase 4 — Extras cobrables.** ✅ hecho (02/09/2026). `extras.json`, casilla en la
+interfaz, suma en el motor, `{{BLOQUE_EXTRAS}}` en el mensaje y 27 aserciones nuevas.
+El brazalete VIP quedó modelado como `POR_PERSONA_DIA` aunque nadie lo active todavía:
+así activarlo es marcar una fila, no tocar el motor.
 
 **Fase 5 — Pantalla de administración.** Edita el catálogo, corre el validador antes de
 dejar guardar, y descarga el JSON listo para subir.
@@ -399,3 +398,38 @@ El arnés ahora le da una ventana de verdad —otro documento jsdom— para que 
 
 Es el cuarto caso del patrón que este proyecto ya conocía: **las pruebas validan la
 lógica, la plataforma solo la valida la plataforma.**
+
+
+---
+
+## 13. Listo para publicar — 02/09/2026
+
+Ocho commits locales. **Falta el push**, que necesita las credenciales de GitHub del
+usuario y no se puede hacer desde el entorno de trabajo.
+
+```powershell
+cd C:\dev\cotizador
+git push -u origin main
+```
+
+Después, en GitHub: **Settings › Pages › Source: Deploy from a branch › main / (root)**.
+La URL queda en `https://juankcasal.github.io/cotizador/`. Cada push publica.
+
+### Estado
+
+| | |
+|---|---|
+| Aserciones | **309** |
+| Chequeos de interfaz | **95** |
+| Validador sobre el catálogo real | 0 errores, 2 advertencias |
+
+Las dos advertencias son el horizonte de Valencia y Maracay, que termina el 20/12/2026.
+
+### Lo que queda
+
+- **Probarlo en el celular de Marla.** Cinco de los fallos históricos aparecieron en
+  dispositivos reales; ninguna suite los habría visto.
+- **Cargar los cierres de venta reales.** La tabla sigue vacía.
+- **Pantalla de administración** (Fase 5), para que la gerencia edite el catálogo sin
+  pasar por un programador. Aplazada hasta ver el uso real.
+- **Cargar las temporadas de 2027**, y las de fin de año de los hoteles de ciudad.
