@@ -388,7 +388,7 @@
     "cod_hab": "DLX_KING",
     "cod_temp": "BAJA_26",
     "pax": 1,
-    "tarifa_pp_noche": 160,
+    "tarifa_pp_noche": 180,
     "tarifa_nino_override": ""
   },
   {
@@ -396,7 +396,7 @@
     "cod_hab": "DLX_KING",
     "cod_temp": "BAJA_26",
     "pax": 2,
-    "tarifa_pp_noche": 180,
+    "tarifa_pp_noche": 200,
     "tarifa_nino_override": ""
   },
   {

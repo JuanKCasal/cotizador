@@ -471,8 +471,8 @@ function paso(ficha, campo, signo) {
     cOut.dispatchEvent(new ventana.Event('change', { bubbles: true }));
     await esperar(160);
     const salida = panel.querySelector('#calcTotal').textContent;
-    ok(salida.indexOf('360') !== -1,
-       'calcula desde la ventana aparte: 2 noches de King a 180', 'salida=' + salida);
+    ok(salida.indexOf('400') !== -1,
+       'calcula desde la ventana aparte: 2 noches de King a 200', 'salida=' + salida);
   }
 
   click($('btnCalc'));

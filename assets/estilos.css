@@ -218,13 +218,35 @@ html, body {
   font-size: 16px; font-weight: 600; color: var(--tinta);
   appearance: none; cursor: pointer;
 }
-.campo-caja:focus-within { border-color: var(--tinta); }
-
 /* Foco de teclado idéntico en todos los controles. Si cambiara de forma o de
    color según el sitio, dejaría de ser una señal fija. */
-select:focus-visible, input:focus-visible, button:focus-visible,
-textarea:focus-visible, [role="checkbox"]:focus-visible {
+button:focus-visible, textarea:focus-visible, [role="checkbox"]:focus-visible,
+select:focus-visible, input:focus-visible {
   outline: var(--foco); outline-offset: var(--foco-offset);
+}
+
+/* Un campo con etiqueta es UN control, aunque por dentro sean dos elementos.
+   El input y el select de adentro no llevan su propio anillo: quedaban dos
+   recuadros de formas distintas, uno cuadrado dentro de uno redondeado, y se
+   veia mal. El indicador va en la caja, que es lo que la persona ve como el
+   campo.
+
+   El anillo grueso solo con teclado; con el raton basta el borde en tinta,
+   porque quien hace clic ya sabe donde esta. */
+.campo-caja input:focus,
+.campo-caja select:focus,
+.campo-select select:focus,
+.campo-caja input:focus-visible,
+.campo-caja select:focus-visible,
+.campo-select select:focus-visible { outline: none; }
+
+.campo-caja:focus-within,
+.campo-select:focus-within { border-color: var(--tinta); }
+
+.campo-caja:has(:focus-visible),
+.campo-select:has(:focus-visible) {
+  outline: var(--foco);
+  outline-offset: var(--foco-offset);
 }
 
 .caja-noches {

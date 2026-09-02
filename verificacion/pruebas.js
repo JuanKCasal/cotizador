@@ -449,21 +449,21 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
   t.ok(r.ok, 'Calculo sin errores', (r.errores || []).join('; '));
   t.eq(r.nNoches, 3, '3 noches');
   t.eq(r.lineas[0].aplicoSingle, false, 'POR_HABITACION no aplica suplemento single');
-  t.eq(r.lineas[0].costoUniforme, 160, 'Deluxe King con 1 huesped: 160');
-  t.eq(r.total, 480, 'Total 480');
+  t.eq(r.lineas[0].costoUniforme, 180, 'Deluxe King con 1 huesped: 180');
+  t.eq(r.total, 540, 'Total 540');
 
   r2 = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-25', [lin_('DLX_KING', 2)]));
-  t.eq(r2.lineas[0].costoUniforme, 180, 'Deluxe King con 2 huespedes: 180');
-  t.eq(r2.total, 540, 'Total 540: la ocupacion cambia el precio');
+  t.eq(r2.lineas[0].costoUniforme, 200, 'Deluxe King con 2 huespedes: 200');
+  t.eq(r2.total, 600, 'Total 600: la ocupacion cambia el precio');
 
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
   t.eq(M.marcadoresNoResueltos(txt).length, 0, 'Sin marcadores pendientes');
   t.contiene(txt, 'CHECK IN 3:00 PM: 22/08/2026', 'Fecha en formato dd/MM/yyyy');
-  t.contiene(txt, 'Total, por noche: $160', 'Renglon de precio sin desglose');
+  t.contiene(txt, 'Total, por noche: $180', 'Renglon de precio sin desglose');
   t.noContiene(txt, 'IVA', 'El mensaje no menciona impuestos en ningun hotel');
   t.contiene(txt, 'Adultos: 1', 'Ocupantes en renglones separados');
   t.contiene(txt, 'Ni\u00F1os:', 'Renglon de ninos aunque este vacio');
-  t.contiene(txt, '*TOTAL: $480 (3 NOCHES)*', 'Total con la palabra en plural');
+  t.contiene(txt, '*TOTAL: $540 (3 NOCHES)*', 'Total con la palabra en plural');
 
   r = M.calcular(cat, req_('WTC', '2026-08-22', '2026-08-23', [lin_('DLX_KING', 1, [8])]));
   txt = M.render(cat, r, { asesorIniciales: 'MZ', cliente: 'Prueba' });
