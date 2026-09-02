@@ -4,9 +4,10 @@
   "private": true,
   "description": "Arneses de verificacion del Cotizador Hesperia",
   "scripts": {
-    "test": "node _verificar.js && node _verificar_spa.js",
+    "test": "node _verificar.js && node _verificar_spa.js && node _verificar_admin.js",
     "test:motor": "node _verificar.js",
-    "test:spa": "node _verificar_spa.js"
+    "test:spa": "node _verificar_spa.js",
+    "test:admin": "node _verificar_admin.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"

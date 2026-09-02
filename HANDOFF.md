@@ -120,8 +120,7 @@ interfaz, suma en el motor, `{{BLOQUE_EXTRAS}}` en el mensaje y 27 aserciones nu
 El brazalete VIP quedó modelado como `POR_PERSONA_DIA` aunque nadie lo active todavía:
 así activarlo es marcar una fila, no tocar el motor.
 
-**Fase 5 — Pantalla de administración.** Edita el catálogo, corre el validador antes de
-dejar guardar, y descarga el JSON listo para subir.
+**Fase 5 — Pantalla de administración.** ✅ hecha (02/09/2026). Ver §14.
 
 **Fase 6 — Estilo.** Aplicar el sistema visual que defina Marla
 (`docs/GUIA-ESTILOS-MARLA.md`).
@@ -433,3 +432,51 @@ Las dos advertencias son el horizonte de Valencia y Maracay, que termina el 20/1
 - **Pantalla de administración** (Fase 5), para que la gerencia edite el catálogo sin
   pasar por un programador. Aplazada hasta ver el uso real.
 - **Cargar las temporadas de 2027**, y las de fin de año de los hoteles de ciudad.
+
+
+---
+
+## 14. Pantalla de administración — hecha el 02/09/2026
+
+`admin.html` + `assets/admin.js` + `assets/admin.css`. Se llega desde el botón
+**Administración** de la cabecera del cotizador, en escritorio.
+
+**Cabecera en tinta llena, invertida.** Decisión del diseño y vale la pena respetarla:
+marca que esto no es la pantalla de venta antes de que nadie lea una palabra. Aquí un
+error se lo lleva el cliente.
+
+### Qué hace
+
+- Edita las cinco tablas que se tocan: tarifas, temporadas, fechas bloqueadas,
+  promociones y servicios. Cada pestaña declara sus columnas en un esquema; agregar una
+  columna es una entrada ahí, no código nuevo.
+- **El validador corre en cada tecla.** Es lo que separa esta pantalla de editar el JSON
+  a mano: un error de carga se ve al escribirlo, no cuando una asesora manda un precio
+  malo. Las filas con hallazgos se marcan en la tabla, no solo en el panel lateral.
+- **Con errores no deja publicar.** Publicar un catálogo que no carga deja a las asesoras
+  sin cotizador. Las advertencias sí dejan seguir.
+- Un punto ámbar en las pestañas que tienen hallazgos, para verlos sin ir buscándolos.
+- El borrador se guarda en el navegador mientras se trabaja: cargar un tarifario son
+  cuarenta filas y perderlas por recargar sin querer no es aceptable.
+- **Publicar descarga los archivos que cambiaron** —solo esos— para subirlos a `datos/`.
+  Ese rodeo es deliberado: sin servidor no hay forma de autenticar a nadie, y un token de
+  escritura viviendo en un navegador es peor que un paso manual.
+
+### Lo que no hace
+
+- No sube nada por su cuenta. Alguien tiene que arrastrar los archivos al repositorio.
+- No edita hoteles, habitaciones ni la política de niños: son cambios de estructura, más
+  raros y más delicados, y se hacen sobre el JSON con el validador al lado.
+- No hay control de acceso, porque no puede haberlo en un sitio estático. La URL es
+  pública: quien la conozca puede abrirla. Lo que **no** puede es cambiar nada de lo
+  publicado sin acceso de escritura al repositorio.
+
+### Estado
+
+| | |
+|---|---|
+| Aserciones | **309** |
+| Chequeos de interfaz | **92** |
+| Chequeos de administración | **48** |
+
+`npm test` corre las tres suites.

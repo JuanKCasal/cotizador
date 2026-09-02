@@ -1,0 +1,296 @@
+/* ==========================================================================
+   ADMINISTRACIÓN DE TARIFAS
+
+   La otra cara del cotizador. Aquí no hay pulgares ni clientes esperando: se
+   usa con ratón, sentado, para cargar precios. Por eso las filas miden 40 y no
+   48, y la densidad importa más que el tamaño del área táctil.
+
+   Comparte tokens.css y estilos.css con la pantalla de venta; esto es solo lo
+   que le es propio.
+   ========================================================================== */
+
+.adm { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* --------------------------------------------------------------- Cabecera
+   En tinta llena, invertida. Marca que esto NO es la pantalla de venta antes
+   de que nadie lea una palabra: aquí un error se lo lleva el cliente. */
+.adm-cabecera {
+  flex-shrink: 0;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 0 24px;
+  background: var(--tinta);
+}
+.adm-marca { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.adm-titulo {
+  margin: 0;
+  font-family: var(--display); font-weight: 800; font-size: 19px;
+  color: var(--papel);
+  white-space: nowrap;
+}
+.adm-estado {
+  font-family: var(--mono); font-size: 11.5px; color: #9FB2C9;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.adm-estado.sucio { color: #F0C674; }
+
+.adm-acciones { display: flex; align-items: center; gap: 10px; }
+
+.adm-volver {
+  color: #9FB2C9; font-size: 13.5px; font-weight: 500;
+  text-decoration: none; white-space: nowrap;
+}
+.adm-volver:hover { color: var(--papel); text-decoration: underline; }
+
+.adm-btn {
+  height: 40px; padding: 0 14px;
+  border: 0; border-radius: 10px;
+  font-family: var(--cuerpo); font-size: 14px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.adm-btn:disabled { opacity: .4; cursor: default; }
+.adm-btn-borde  { border: 1.5px solid var(--tinta-70); background: transparent; color: var(--papel); }
+.adm-btn-claro  { background: var(--papel); color: var(--tinta); }
+.adm-btn-oscuro { border: 1.5px solid var(--tinta); background: transparent; color: var(--tinta); }
+.adm-btn-borde:hover:not(:disabled)  { border-color: var(--papel); }
+.adm-btn-claro:hover:not(:disabled)  { filter: brightness(.94); }
+.adm-btn-oscuro:hover:not(:disabled) { background: var(--sal); }
+
+/* --------------------------------------------------------------- Pestañas */
+.adm-pestanas {
+  flex-shrink: 0;
+  height: 44px;
+  display: flex; align-items: stretch; gap: 24px;
+  padding: 0 24px;
+  background: var(--papel);
+  border-bottom: 1px solid var(--arena);
+}
+.adm-pestana {
+  border: 0; background: none;
+  border-bottom: 2px solid transparent;
+  padding: 0;
+  font-family: var(--cuerpo); font-size: 14px; color: var(--tinta-70);
+  cursor: pointer;
+}
+.adm-pestana.activa { color: var(--tinta); font-weight: 600; border-bottom-color: var(--tinta); }
+.adm-pestana .adm-pip {
+  display: inline-block;
+  width: 6px; height: 6px; margin-left: 6px;
+  border-radius: 50%; background: var(--aviso);
+  vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------- Lienzo */
+.adm-lienzo {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 1fr 340px; gap: 20px;
+  padding: 20px 24px;
+  overflow: hidden;
+}
+@media (max-width: 1100px) {
+  .adm-lienzo { grid-template-columns: 1fr; overflow-y: auto; }
+}
+
+.adm-panel {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+}
+
+/* --------------------------------------------------------------- Filtros */
+.adm-filtros {
+  flex-shrink: 0;
+  height: 52px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--arena);
+}
+.adm-espacio { flex: 1; }
+
+.adm-select select {
+  height: 36px;
+  padding: 0 28px 0 22px;
+  border-radius: var(--r-chico);
+  font-size: 13.5px;
+}
+.adm-select .acento-barra { left: 10px; margin-top: -7px; width: 4px; height: 14px; }
+.adm-select::after { right: 11px; }
+.adm-select-corto select { padding-left: 10px; min-width: 150px; }
+
+.adm-buscar {
+  height: 36px; width: 190px;
+  padding: 0 10px;
+  border: 1px solid var(--arena); border-radius: var(--r-chico);
+  background: var(--papel);
+  font-family: var(--cuerpo); font-size: 13.5px; color: var(--tinta);
+}
+.adm-buscar::placeholder { color: var(--tinta-45); }
+
+/* ----------------------------------------------------------------- Tabla */
+.adm-tabla { flex: 1; min-height: 0; overflow: auto; }
+
+.adm-fila {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--arena-sut);
+  font-size: 13.5px;
+}
+.adm-fila:nth-child(even) { background: #FAFBFC; }
+
+.adm-encabezado {
+  position: sticky; top: 0; z-index: 2;
+  min-height: 34px;
+  background: var(--arena-sut);
+  border-bottom: 1px solid var(--arena);
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-70);
+}
+.adm-encabezado > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.adm-num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.adm-tenue { color: var(--tinta-45); }
+
+/* Una fila con un hallazgo del validador se marca en la tabla, no solo en el
+   panel: quien esta cargando precios mira la tabla, no el costado. */
+.adm-fila.con-aviso { background: var(--aviso-sut); box-shadow: inset 3px 0 0 var(--aviso); }
+.adm-fila.con-error { background: var(--alerta-sut); box-shadow: inset 3px 0 0 var(--alerta); }
+.adm-fila.destacada { animation: destello 1.4s ease; }
+@keyframes destello {
+  0%, 100% { background: transparent; }
+  20%      { background: var(--acento-sut); }
+}
+
+/* Celdas editables: se ven como texto hasta que se tocan. Una tabla llena de
+   recuadros no se lee, y aqui lo que se hace la mayor parte del tiempo es
+   LEER precios para comprobarlos. */
+.adm-celda {
+  width: 100%; min-height: 28px;
+  padding: 4px 6px;
+  border: 1px solid transparent; border-radius: 6px;
+  background: none;
+  font-family: var(--cuerpo); font-size: 13.5px; color: var(--tinta);
+}
+.adm-celda.adm-num { font-family: var(--mono); }
+.adm-celda:hover  { border-color: var(--arena); background: var(--papel); }
+.adm-celda:focus  { border-color: var(--tinta); background: var(--papel); outline: none; }
+.adm-celda:focus-visible { outline: var(--foco); outline-offset: 1px; }
+.adm-celda.cambiada { background: #EAF4FF; border-color: #9EC5F0; }
+.adm-celda.vacia::placeholder { color: var(--tinta-45); }
+
+select.adm-celda { cursor: pointer; }
+
+.adm-borrar {
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 6px; background: none;
+  color: var(--tinta-45); font-size: 16px; cursor: pointer;
+}
+.adm-borrar:hover { background: var(--alerta-sut); color: var(--alerta); }
+
+.adm-vacio { padding: 28px 16px; text-align: center; color: var(--tinta-45); font-size: 14px; }
+
+.adm-pie {
+  flex-shrink: 0;
+  height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px;
+  border-top: 1px solid var(--arena);
+  font-family: var(--mono); font-size: 11.5px; color: var(--tinta-45);
+}
+
+/* --------------------------------------------------------------- Lateral */
+.adm-lateral { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+
+.adm-tarjeta {
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.adm-tarjeta-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.adm-marcador {
+  display: inline-flex; align-items: center;
+  height: 24px; padding: 0 8px;
+  border-radius: var(--r-chip);
+  border: 1px solid var(--exito); background: #EAF6F1;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--exito);
+  white-space: nowrap;
+}
+.adm-marcador.aviso { border-color: var(--aviso); background: var(--aviso-sut); color: var(--aviso); }
+.adm-marcador.error { border-color: var(--alerta); background: var(--alerta-sut); color: var(--alerta); }
+
+.adm-hallazgos { display: flex; flex-direction: column; gap: 10px; }
+
+.adm-hallazgo {
+  display: flex; gap: 10px;
+  padding: 12px;
+  border-radius: var(--r-medio);
+  border: 1.5px solid var(--aviso); background: var(--aviso-sut);
+}
+.adm-hallazgo.es-error { border-color: var(--alerta); background: var(--alerta-sut); }
+.adm-hallazgo-marca {
+  width: 20px; height: 20px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 5px; background: var(--aviso);
+  color: #fff; font-size: 13px; font-weight: 700;
+}
+.adm-hallazgo.es-error .adm-hallazgo-marca { background: var(--alerta); border-radius: 50%; }
+.adm-hallazgo-cuerpo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adm-hallazgo-tipo {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--aviso);
+}
+.adm-hallazgo.es-error .adm-hallazgo-tipo { color: var(--alerta); }
+.adm-hallazgo-texto { font-size: 13px; color: var(--tinta-70); line-height: 1.5; }
+.adm-hallazgo-ir {
+  align-self: flex-start; margin-top: 4px;
+  height: 36px; padding: 0 12px;
+  border: 1.5px solid var(--aviso); border-radius: var(--r-chico);
+  background: none; color: var(--aviso);
+  font-family: var(--cuerpo); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.adm-hallazgo.es-error .adm-hallazgo-ir { border-color: var(--alerta); color: var(--alerta); }
+
+.adm-todo-bien {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13.5px; color: var(--exito); font-weight: 500;
+}
+.adm-todo-bien::before {
+  content: '✓';
+  display: grid; place-items: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  border-radius: 50%; background: var(--exito); color: #fff;
+  font-size: 12px; font-weight: 700;
+}
+
+.adm-resumen { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.adm-resumen div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.adm-resumen dt { font-size: 13.5px; color: var(--tinta-70); }
+.adm-resumen dd {
+  margin: 0;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 600;
+}
+.adm-resumen dd.cero { color: var(--tinta-45); font-weight: 400; }
+
+/* --------------------------------------------------------------- Publicar */
+.adm-modal { max-width: 520px; }
+.adm-archivos {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 220px; overflow-y: auto;
+}
+.adm-archivos li {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--arena); border-radius: var(--r-chico);
+  font-family: var(--mono); font-size: 13px;
+}
+.adm-archivos .adm-archivo-det { color: var(--tinta-45); font-size: 11.5px; }
+.adm-modal-acciones { display: flex; gap: 8px; justify-content: flex-end; }

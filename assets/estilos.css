@@ -132,6 +132,13 @@ html, body {
 }
 .btn-cabecera:hover  { background: var(--sal); }
 .btn-cabecera.activo { background: var(--tinta); color: var(--papel); }
+/* La administracion es una salida, no una accion de la cotizacion: se ofrece
+   sin competir con el mini cotizador, que si se usa a diario. */
+.btn-cabecera-tenue {
+  border-color: var(--arena); color: var(--tinta-70);
+  text-decoration: none;
+}
+.btn-cabecera-tenue:hover { border-color: var(--tinta-45); }
 
 /* Ventana chica sobre ventana grande: dice "se abre aparte" sin texto. */
 .btn-cabecera-icono { position: relative; width: 15px; height: 14px; flex-shrink: 0; }

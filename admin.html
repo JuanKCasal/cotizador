@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Administración · Cotizador Hesperia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="assets/tokens.css">
+  <link rel="stylesheet" href="assets/estilos.css">
+  <link rel="stylesheet" href="assets/admin.css">
+</head>
+<body data-hotel="">
+
+<div id="cargando" class="cargando">
+  <div class="cargando-marca">HESPERIA</div>
+  <div class="cargando-barra"><span></span></div>
+  <p id="cargandoTexto">Cargando catálogo…</p>
+</div>
+
+<div id="app" class="oculto adm">
+
+  <!-- Cabecera en tinta llena: esto NO es la pantalla de venta, y tiene que
+       notarse antes de leer una sola palabra. -->
+  <header class="adm-cabecera">
+    <div class="adm-marca">
+      <h1 class="adm-titulo">Administración de tarifas</h1>
+      <span class="adm-estado" id="admEstado">cargando…</span>
+    </div>
+    <div class="adm-acciones">
+      <a class="adm-volver" href="index.html">← Al cotizador</a>
+      <button type="button" class="adm-btn adm-btn-borde" id="btnDescartar" disabled>
+        Descartar
+      </button>
+      <button type="button" class="adm-btn adm-btn-claro" id="btnPublicar" disabled>
+        Publicar cambios
+      </button>
+    </div>
+  </header>
+
+  <nav class="adm-pestanas" id="pestanas" role="tablist">
+    <button type="button" class="adm-pestana activa" role="tab" data-tab="tarifas">Tarifas</button>
+    <button type="button" class="adm-pestana" role="tab" data-tab="temporadas">Temporadas</button>
+    <button type="button" class="adm-pestana" role="tab" data-tab="stop-sales">Fechas bloqueadas</button>
+    <button type="button" class="adm-pestana" role="tab" data-tab="promociones">Promociones</button>
+    <button type="button" class="adm-pestana" role="tab" data-tab="extras">Servicios</button>
+  </nav>
+
+  <main class="adm-lienzo">
+
+    <section class="adm-panel">
+      <div class="adm-filtros">
+        <label class="campo-select adm-select">
+          <span class="acento-barra" aria-hidden="true"></span>
+          <select id="filtroHotel" aria-label="Hotel"></select>
+        </label>
+        <label class="campo-select adm-select adm-select-corto">
+          <select id="filtroTemp" aria-label="Temporada"></select>
+        </label>
+        <input type="search" id="filtroTexto" class="adm-buscar" placeholder="Buscar…"
+               autocomplete="off">
+        <span class="adm-espacio"></span>
+        <button type="button" class="adm-btn adm-btn-oscuro" id="btnFila">+ Fila</button>
+      </div>
+
+      <div class="adm-tabla" id="tabla" role="table"></div>
+
+      <div class="adm-pie">
+        <span id="pieFilas">—</span>
+        <span id="pieGuardado"></span>
+      </div>
+    </section>
+
+    <aside class="adm-lateral">
+      <div class="adm-tarjeta">
+        <div class="adm-tarjeta-cab">
+          <h2 class="titulo-seccion">Validador</h2>
+          <span class="adm-marcador" id="marcadorValidador">—</span>
+        </div>
+        <div id="hallazgos" class="adm-hallazgos"></div>
+      </div>
+
+      <div class="adm-tarjeta">
+        <h2 class="titulo-seccion">Resumen del borrador</h2>
+        <dl class="adm-resumen" id="resumen"></dl>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div id="modalPublicar" class="modal oculto" role="dialog" aria-modal="true"
+     aria-labelledby="modalPublicarTitulo">
+  <div class="modal-caja adm-modal">
+    <h3 id="modalPublicarTitulo">Publicar los cambios</h3>
+    <p class="modal-pista">
+      Se descargan los archivos que cambiaron. Súbelos a la carpeta
+      <strong>datos/</strong> del repositorio y las asesoras verán las tarifas
+      nuevas en cuanto se publique el sitio.
+    </p>
+    <ul class="adm-archivos" id="listaArchivos"></ul>
+    <div class="adm-modal-acciones">
+      <button type="button" class="btn btn-secundario" id="btnCerrarPublicar">Cancelar</button>
+      <button type="button" class="btn btn-primario" id="btnDescargar">Descargar archivos</button>
+    </div>
+  </div>
+</div>
+
+<div id="aviso" class="aviso" role="status" aria-live="polite"></div>
+
+<script src="assets/motor.js"></script>
+<script src="assets/catalogo.js"></script>
+<script src="assets/validador.js"></script>
+<script src="assets/admin.js"></script>
+</body>
+</html>
