@@ -74,8 +74,21 @@ var Motor = (function () {
    */
   function techo(n) { return Math.ceil(r2(n) - 1e-9); }
 
+  /**
+   * Los montos son enteros: el redondeo hacia arriba ocurre en el costo de una
+   * habitacion en una noche, no aqui. Esto solo agrupa los miles, porque
+   * "$1240" se lee mal y se transcribe peor cuando el cliente lo copia.
+   */
   function fmtMoney(cat, n) {
-    return String(techo(n));
+    var s = String(techo(n));
+    var sep = (cat && cat.config && cat.config.SEPARADOR_MILES);
+    if (!sep || s.length < 4) return s;
+    var out = '', c = 0;
+    for (var i = s.length - 1; i >= 0; i--) {
+      out = s.charAt(i) + out;
+      if (++c % 3 === 0 && i > 0) out = sep + out;
+    }
+    return out;
   }
 
   function pad2(n) { return ('0' + n).slice(-2); }

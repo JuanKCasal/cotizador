@@ -1,15 +1,16 @@
 /* ==========================================================================
    COTIZADOR HESPERIA — Estilos
-   Ancla: tinta marina. El acento cambia según el hotel seleccionado, para que
-   la asesora sepa de un vistazo qué está cotizando.
+
+   Las variables del sistema visual viven en tokens.css, que es el entregable
+   del diseño tal cual. Este archivo solo las consume: si un color cambia, se
+   cambia allí y no hay que buscarlo repartido por aquí.
+
+   Lo que sí queda aquí son las familias tipográficas, porque incluyen las
+   alternativas de respaldo que dependen del sistema operativo.
+
+   Móvil primero. El corte a escritorio está en 900px.
    ========================================================================== */
 
-/* Las variables del sistema visual viven en tokens.css, que es el entregable
-   del diseno tal cual. Este archivo solo las consume: si un color cambia, se
-   cambia alli y no hay que buscarlo repartido por aqui.
-
-   Lo que si queda aqui son las familias tipograficas, porque incluyen las
-   alternativas de respaldo que dependen del sistema operativo. */
 :root {
   --display: 'Bricolage Grotesque', Georgia, serif;
   --cuerpo:  'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -31,679 +32,736 @@ html, body {
 
 .oculto { display: none !important; }
 
+/* Piezas que solo existen en un tamaño de pantalla. */
+.solo-pc, .solo-pc-inline { display: none; }
+@media (min-width: 900px) {
+  .solo-pc { display: inline-flex; }
+  .solo-pc-inline { display: inline; }
+  .solo-movil { display: none !important; }
+}
+
 /* ---------------------------------------------------------------- Cargando */
 .cargando {
   position: fixed; inset: 0; z-index: 90;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; background: var(--tinta); color: #fff;
+  gap: 18px;
+  background: var(--tinta);
+  color: #fff;
 }
 .cargando-marca {
   font-family: var(--display); font-weight: 800; font-size: 30px;
-  letter-spacing: .22em; text-indent: .22em;
+  letter-spacing: .18em;
 }
 .cargando-barra {
-  width: 160px; height: 3px; background: rgba(255,255,255,.18);
-  border-radius: 2px; overflow: hidden;
+  width: 132px; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,.2); overflow: hidden;
 }
 .cargando-barra span {
-  display: block; width: 40%; height: 100%; background: #fff;
-  animation: desliza 1.1s ease-in-out infinite;
+  display: block; width: 40%; height: 100%; border-radius: 2px; background: #fff;
+  animation: corre 1.1s ease-in-out infinite;
 }
-@keyframes desliza {
+@keyframes corre {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(350%); }
 }
 .cargando p { margin: 0; font-size: 14px; color: rgba(255,255,255,.72); }
 
 /* ---------------------------------------------------------------- Cabecera */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
 .cabecera {
-  position: sticky; top: 0; z-index: 30;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 12px 16px;
+  flex-shrink: 0;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 16px;
   background: var(--papel);
   border-bottom: 1px solid var(--arena);
 }
-.cabecera-marca { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+
+.cabecera-marca { display: flex; align-items: center; gap: 16px; min-width: 0; }
+
 .marca-nombre {
   font-family: var(--display); font-weight: 800; font-size: 19px;
-  letter-spacing: -.015em;
+  letter-spacing: -.01em;
+  white-space: nowrap;
 }
-.marca-hotel {
-  font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+
+/* El hotel elegido, siempre visible: el acento solo no basta para saber cuál
+   se está cotizando, así que viaja con la sigla y el nombre. */
+.chip-hotel {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px;
+  border-radius: var(--r-chip);
+  background: var(--acento-sut);
+  min-width: 0;
+}
+.chip-sigla {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
   color: var(--acento-texto);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  transition: color .2s ease;
 }
-.btn-icono {
-  flex: none; width: 36px; height: 36px; border-radius: 50%;
-  border: 1px solid var(--arena); background: var(--papel);
-  color: var(--tinta-70); font-size: 17px; cursor: pointer;
-  display: grid; place-items: center;
-}
-.btn-icono:hover { background: var(--sal); color: var(--tinta); }
-
-/* ---------------------------------------------------------------- Lienzo */
-.lienzo {
-  max-width: 1120px; margin: 0 auto; padding: 16px 16px calc(var(--h-barra-total) + 20px);
-}
-.columna-form { display: flex; flex-direction: column; gap: 12px; }
-
-.tarjeta {
-  background: var(--papel);
-  border: 1px solid var(--arena);
-  border-radius: var(--r-grande);
-  padding: 16px;
-}
-.seccion-cabecera {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.titulo-seccion {
-  margin: 0 0 12px;
-  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--tinta-45);
-}
-.seccion-cabecera .titulo-seccion { margin-bottom: 0; }
-
-.btn-texto {
-  border: none; background: none; padding: 4px 2px;
-  font-family: inherit; font-size: 14px; font-weight: 600;
-  color: var(--acento-texto); cursor: pointer;
-}
-.btn-texto:hover { text-decoration: underline; }
-
-/* ---------------------------------------------------------------- Hoteles */
-.hoteles { display: grid; gap: 8px; }
-.hotel-op {
-  display: flex; align-items: center; gap: 12px;
-  padding: 13px 14px; text-align: left;
-  border: 1.5px solid var(--arena); border-radius: var(--r-medio);
-  background: var(--papel); cursor: pointer;
-  font-family: inherit; font-size: 15px; color: var(--tinta);
-  transition: border-color .15s ease, background .15s ease;
-}
-.hotel-op:hover { border-color: var(--tinta-45); }
-.hotel-op[aria-checked="true"] {
-  border-color: var(--acento); background: var(--acento-sut);
-}
-.hotel-sigla {
-  flex: none; width: 40px; height: 40px; border-radius: var(--r-chico);
-  display: grid; place-items: center;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; letter-spacing: .04em;
-  background: var(--sal); color: var(--tinta-70);
-}
-.hotel-op[aria-checked="true"] .hotel-sigla { background: var(--acento); color: #fff; }
-.hotel-nombre { font-weight: 500; line-height: 1.3; }
-
-/* ---------------------------------------------------------------- Campos */
-.campo { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
-.campo-etiqueta {
-  font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
-  color: var(--tinta-45);
-}
-.input, .select {
-  width: 100%; padding: 11px 12px;
-  font-family: inherit; font-size: 16px; color: var(--tinta);
-  background: var(--papel);
-  border: 1.5px solid var(--arena); border-radius: var(--r-chico);
-  appearance: none; -webkit-appearance: none;
-}
-.input:focus-visible, .select:focus-visible, .hotel-op:focus-visible,
-.btn:focus-visible, .btn-texto:focus-visible, .btn-icono:focus-visible,
-.paso-btn:focus-visible, .promo-op:focus-visible {
-  outline: var(--foco); outline-offset: var(--foco-offset);
-}
-.select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%237D8CA0' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
-  padding-right: 32px;
-}
-input[type="date"] { min-height: 44px; }
-
-.fechas { display: flex; align-items: flex-end; gap: 10px; }
-.fechas-puente {
-  flex: none; padding: 0 2px 12px;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 500;
-  color: var(--tinta-45); white-space: nowrap;
-}
-.pista { margin: 9px 0 0; font-size: 12.5px; color: var(--tinta-45); }
-.pista.alerta { color: var(--alerta); }
-
-.registro { display: flex; gap: 10px; }
-.campo-corto { flex: 0 0 96px; }
-
-/* ---------------------------------------------------------------- Líneas */
-.lineas { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
-
-.hab {
-  border: 1px solid var(--arena); border-radius: var(--r-medio);
-  background: var(--arena-sut);
-  padding: 13px;
-}
-.hab-cabecera {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 10px; margin-bottom: 11px;
-}
-.hab-indice {
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600;
-  letter-spacing: .06em; color: var(--tinta-45); text-transform: uppercase;
-}
-.hab-quitar {
-  border: none; background: none; padding: 2px 6px;
-  font-family: inherit; font-size: 13px; color: var(--tinta-45); cursor: pointer;
-}
-.hab-quitar:hover { color: var(--alerta); }
-
-.hab-selects { display: grid; gap: 8px; grid-template-columns: 1fr; }
-.hab-conteos {
-  display: grid; gap: 8px; grid-template-columns: 1fr;
-  margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--arena);
+.chip-nombre {
+  font-size: 13px; font-weight: 600; color: var(--acento-texto);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Selectores de edad: uno por menor declarado. */
-.edades {
-  display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr);
-  margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--arena);
-}
-.campo-edad .select { font-variant-numeric: tabular-nums; }
-.edades + .pista { margin-top: 8px; }
-
-.conteo {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.conteo-etiqueta { min-width: 0; }
-.conteo-nombre { font-size: 14.5px; font-weight: 500; }
-.conteo-detalle {
-  display: block; font-size: 11.5px; color: var(--tinta-45); margin-top: 1px;
-}
-
-.paso {
-  flex: none; display: flex; align-items: center; gap: 2px;
-  background: var(--papel); border: 1px solid var(--arena); border-radius: 999px;
-  padding: 3px;
-}
-.paso-btn {
-  width: 32px; height: 32px; border: none; border-radius: 50%;
-  background: none; color: var(--tinta); cursor: pointer;
-  font-size: 18px; line-height: 1; display: grid; place-items: center;
-  font-family: inherit;
-}
-.paso-btn:hover:not(:disabled) { background: var(--sal); }
-.paso-btn:disabled { color: var(--arena); cursor: default; }
-.paso-valor {
-  min-width: 26px; text-align: center;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.paso-valor[data-cero="si"] { color: var(--tinta-45); }
-
-/* ---------------------------------------------------------------- Promos */
-.promos { display: flex; flex-direction: column; gap: 8px; }
-.promo-op {
-  display: flex; align-items: flex-start; gap: 11px;
-  padding: 12px 13px; text-align: left;
-  border: 1.5px solid var(--arena); border-radius: var(--r-medio);
-  background: var(--papel); cursor: pointer; font-family: inherit;
-}
-.promo-op[aria-checked="true"] { border-color: var(--acento); background: var(--acento-sut); }
-.promo-marca {
-  flex: none; width: 19px; height: 19px; margin-top: 1px;
-  border: 1.5px solid var(--arena); border-radius: 5px;
-  background: var(--papel);
-  display: grid; place-items: center;
-  font-size: 12px; color: #fff; line-height: 1;
-}
-.promo-op[aria-checked="true"] .promo-marca {
-  background: var(--acento); border-color: var(--acento);
-}
-.promo-nombre { font-size: 14.5px; font-weight: 500; color: var(--tinta); }
-.promo-detalle { font-size: 12px; color: var(--tinta-45); margin-top: 2px; }
-
-/* ---------------------------------------------------------------- Mensaje */
-.columna-vista { display: flex; flex-direction: column; min-height: 0; }
-.vista-encabezado {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 14px 16px; border-bottom: 1px solid var(--arena); background: var(--papel);
-}
-.btn-cerrar { display: grid; }
-
-.chat {
-  flex: 1; min-height: 0; overflow-y: auto;
-  padding: 16px 14px;
-  background: var(--wa-fondo);
-  background-image:
-    radial-gradient(circle at 22% 32%, rgba(255,255,255,.42) 0 1.5px, transparent 2px),
-    radial-gradient(circle at 68% 71%, rgba(11,37,69,.05) 0 1.5px, transparent 2px);
-  background-size: 44px 44px, 62px 62px;
-}
-.burbuja {
-  max-width: 520px; margin-left: auto;
-  background: var(--wa-burbuja); color: var(--wa-texto);
-  border-radius: 12px 12px 3px 12px;
-  padding: 11px 13px 9px;
-  box-shadow: 0 1px 1.5px rgba(11,37,69,.16);
-  font-size: 14.6px; line-height: 1.48;
-  white-space: pre-wrap; word-break: break-word;
-}
-.burbuja strong { font-weight: 600; }
-.burbuja em { font-style: italic; }
-.burbuja-vacio {
-  margin: 0; color: #5B6B63; font-size: 13.5px; white-space: normal;
-}
-.burbuja-error { background: var(--alerta-sut); color: var(--alerta); }
-.burbuja-error ul { margin: 7px 0 0; padding-left: 19px; }
-.burbuja-error li { margin-bottom: 3px; }
-.burbuja-titulo { margin: 0; font-weight: 600; font-size: 14px; }
-
-.vista-acciones {
-  display: flex; gap: 9px; padding: 12px 14px;
-  background: var(--papel); border-top: 1px solid var(--arena);
-}
-
-/* ---------------------------------------------------------------- Botones */
-.btn {
-  flex: 1; min-height: 46px; padding: 12px 16px;
-  font-family: inherit; font-size: 15px; font-weight: 600;
-  border-radius: var(--r-chico); border: 1.5px solid transparent; cursor: pointer;
-  transition: opacity .15s ease, background .15s ease;
-}
-.btn:disabled { opacity: .42; cursor: default; }
-/* Tinta, no el acento del hotel. El boton mas importante de la aplicacion no
-   puede cambiar de color segun lo que se este cotizando: se busca con el
-   pulgar sin mirar, y para eso tiene que estar siempre igual. */
-.btn-primario { background: var(--tinta); color: #fff; }
-.btn-primario:hover:not(:disabled) { filter: brightness(.93); }
-.btn-secundario {
-  background: var(--papel); color: var(--tinta); border-color: var(--arena);
-}
-.btn-secundario:hover:not(:disabled) { background: var(--sal); }
-
-/* ---------------------------------------------------------------- Barra */
-.barra {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
-  display: flex; align-items: center; gap: 12px;
-  padding: 11px 14px calc(11px + env(safe-area-inset-bottom));
-  background: var(--papel); border-top: 1px solid var(--arena);
-  box-shadow: 0 -3px 16px rgba(11,37,69,.07);
-}
-.barra-total { flex: 1; min-width: 0; }
-.barra-etiqueta {
-  display: block; font-size: 11px; font-weight: 600;
-  letter-spacing: .07em; text-transform: uppercase; color: var(--tinta-45);
-}
-.barra-monto {
-  display: block;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 21px; font-weight: 600;
-  font-variant-numeric: tabular-nums; letter-spacing: -.01em;
-  color: var(--tinta);
-}
-.btn-barra { flex: 0 0 auto; min-width: 142px; }
-
-/* ---------------------------------------------------------------- Modal */
-.modal {
-  position: fixed; inset: 0; z-index: 80;
-  display: flex; align-items: flex-end; justify-content: center;
-  background: rgba(11,37,69,.5);
-  padding: 16px;
-}
-.modal-caja {
-  width: 100%; max-width: 520px;
-  background: var(--papel); border-radius: var(--r-grande);
-  padding: 18px;
-  display: flex; flex-direction: column; gap: 11px;
-  max-height: 88vh;
-}
-.modal-caja h3 {
-  margin: 0; font-family: var(--display); font-weight: 700; font-size: 18px;
-}
-.modal-pista { margin: 0; font-size: 13.5px; color: var(--tinta-70); }
-.modal-texto {
-  width: 100%; flex: 1; min-height: 190px; resize: none;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12.5px; line-height: 1.45;
-  padding: 11px; color: var(--tinta);
-  border: 1.5px solid var(--arena); border-radius: var(--r-chico);
-  background: var(--sal);
-}
-
-/* ---------------------------------------------------------------- Aviso */
-.aviso {
-  position: fixed; left: 50%; bottom: calc(var(--h-barra-total) + 16px); z-index: 70;
-  transform: translate(-50%, 14px);
-  padding: 11px 17px; border-radius: 999px;
-  background: var(--tinta); color: #fff;
-  font-size: 14px; font-weight: 500;
-  box-shadow: 0 5px 20px rgba(11,37,69,.28);
-  opacity: 0; pointer-events: none;
-  transition: opacity .2s ease, transform .2s ease;
-  max-width: calc(100vw - 32px); text-align: center;
-}
-.aviso.visible { opacity: 1; transform: translate(-50%, 0); }
-.aviso.error { background: var(--alerta); }
-.aviso.exito { background: var(--exito); }
+.cabecera-acciones { display: flex; align-items: center; gap: 12px; }
 
 .version {
-  margin: 2px 0 0; text-align: center;
-  font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 11px; color: var(--tinta-45);
+  font-family: var(--mono); font-size: 11.5px; color: var(--tinta-45);
+  white-space: nowrap;
 }
+@media (max-width: 899px) { .version { display: none; } }
 
-/* El botón de la barra cambia de rol cuando hay errores: deja de ofrecer el
-   mensaje y pasa a ofrecer la explicación de qué falta. */
-.btn-alerta { background: var(--alerta); }
-.btn-alerta:hover:not(:disabled) { background: #962E26; }
-
-/* ==========================================================================
-   MÓVIL: la vista del mensaje se abre como panel completo
-   ========================================================================== */
-@media (max-width: 899px) {
-  .columna-vista {
-    position: fixed; inset: 0; z-index: 50;
-    background: var(--papel);
-    transform: translateY(100%);
-    transition: transform .26s cubic-bezier(.32,.72,0,1);
-  }
-  .columna-vista.abierta { transform: translateY(0); }
-  .vista-acciones { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+.btn-icono {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--arena); border-radius: 50%;
+  background: var(--papel);
+  color: var(--tinta-70); font-size: 17px; cursor: pointer;
 }
-
-/* ==========================================================================
-   ESCRITORIO: dos columnas, el mensaje siempre visible
-   ========================================================================== */
-@media (min-width: 900px) {
-  .lienzo {
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 460px);
-    gap: 18px; padding: 18px 20px 24px; align-items: start;
-  }
-  .hoteles { grid-template-columns: repeat(3, 1fr); }
-  .hotel-op { flex-direction: column; align-items: flex-start; gap: 9px; }
-  .hab-selects { grid-template-columns: repeat(2, 1fr); }
-  .hab-conteos { grid-template-columns: repeat(2, 1fr); }
-  .edades { grid-template-columns: repeat(3, 1fr); }
-
-  .columna-vista {
-    position: sticky; top: 78px;
-    height: calc(100vh - 96px);
-    border: 1px solid var(--arena); border-radius: var(--r-grande);
-    overflow: hidden; background: var(--papel);
-  }
-  .btn-cerrar { display: none; }
-  .barra { display: none; }
-  .lienzo { padding-bottom: 24px; }
-  .aviso { bottom: 22px; }
-}
-
-@media (min-width: 900px) and (max-width: 1080px) {
-  .hab-selects, .hab-conteos { grid-template-columns: 1fr; }
-  .edades { grid-template-columns: repeat(2, 1fr); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .001ms !important;
-    transition-duration: .001ms !important;
-  }
-}
-
-/* ==========================================================================
-   MINI COTIZADOR
-   Vive en su propia ventana de 382x461, no en un modal: cuando hace falta, el
-   navegador suele estar detras de otra cosa. Si el navegador no da una ventana
-   -un bloqueador de emergentes, por ejemplo- el mismo panel se muestra dentro
-   de la pagina, anclado abajo a la derecha.
-   Solo en escritorio.
-   ========================================================================== */
-
-.cabecera-acciones { display: flex; align-items: center; gap: 8px; }
+.btn-icono:hover { border-color: var(--tinta-45); }
 
 .btn-cabecera {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px;
-  border: 1.5px solid var(--tinta);
-  border-radius: 10px;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 14px;
+  border: 1.5px solid var(--tinta); border-radius: 10px;
   background: transparent;
   color: var(--tinta);
-  font-family: var(--cuerpo);
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--cuerpo); font-size: 14px; font-weight: 600;
   cursor: pointer;
 }
 .btn-cabecera:hover  { background: var(--sal); }
 .btn-cabecera.activo { background: var(--tinta); color: var(--papel); }
-.btn-cabecera:focus-visible { outline: var(--foco); outline-offset: var(--foco-offset); }
 
 /* Ventana chica sobre ventana grande: dice "se abre aparte" sin texto. */
-.btn-cabecera-icono {
-  position: relative;
-  width: 15px; height: 14px;
-  flex-shrink: 0;
-}
+.btn-cabecera-icono { position: relative; width: 15px; height: 14px; flex-shrink: 0; }
 .btn-cabecera-icono::before,
 .btn-cabecera-icono::after { content: ''; position: absolute; }
 .btn-cabecera-icono::before {
-  left: 0; top: 0;
-  width: 11px; height: 9px;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  opacity: .5;
+  left: 0; top: 0; width: 11px; height: 9px;
+  border: 1.5px solid currentColor; border-radius: 2px; opacity: .5;
 }
 .btn-cabecera-icono::after {
-  right: 0; bottom: 0;
-  width: 9px; height: 7px;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  background: var(--papel);
+  right: 0; bottom: 0; width: 9px; height: 7px;
+  border: 1.5px solid currentColor; border-radius: 2px; background: var(--papel);
 }
 .btn-cabecera.activo .btn-cabecera-icono::after { background: var(--tinta); }
 
-/* No existe en el celular: alli no hay ventanas flotantes y la asesora ya
-   tiene la aplicacion entera a mano. */
-.solo-pc { display: none; }
-@media (min-width: 900px) { .solo-pc { display: inline-flex; } }
-
-.calc {
-  width: 380px;
-  background: var(--papel);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-/* Cuando el panel viaja a su propia ventana, ocupa todo el documento.
-
-   El total va anclado abajo y el resto se desplaza: la ventana mide 461 de
-   alto y basta un nino con su edad para empujar el precio fuera de la vista.
-   El precio es lo unico que la asesora esta mirando. */
-body.calc-suelta { margin: 0; background: var(--papel); }
-body.calc-suelta .calc {
-  width: auto;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0;
-  box-shadow: none;
-}
-body.calc-suelta .calc-cuerpo {
+/* ----------------------------------------------------------------- Lienzo */
+.lienzo {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
-  align-content: start;
-}
-body.calc-suelta .calc-salida {
-  position: sticky;
-  bottom: 0;
-  margin-top: auto;
-  box-shadow: 0 -6px 14px var(--papel);
+  padding: 16px;
+  padding-bottom: calc(var(--h-barra-total) + 16px);
 }
 
-/* Respaldo dentro de la pagina, si el navegador no dio ventana. */
-body:not(.calc-suelta) .calc {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 80;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
-  border: 1px solid var(--arena);
-  box-shadow: 0 18px 44px rgba(11, 37, 69, .34);
-}
+.columna-form { display: flex; flex-direction: column; gap: var(--e3); }
 
-.calc-cabecera {
-  position: sticky;
-  top: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  height: 40px;
-  padding: 0 12px 0 16px;
-  background: var(--tinta);
-  color: var(--papel);
-}
-
-.calc-titulo {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.calc-cabecera .btn-cerrar {
-  color: var(--papel);
-  background: rgba(255, 255, 255, .16);
-}
-
-.calc-cuerpo { display: grid; gap: var(--e3); padding: var(--e4); }
-.calc-fechas,
-.calc-pax    { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.calc-edades { display: flex; flex-wrap: wrap; gap: var(--e2); }
-
-.calc-salida {
-  min-height: 74px;
-  display: grid;
-  align-content: center;
-  gap: 2px;
-  padding: 14px 16px;
-  border-radius: var(--r-medio);
-  background: var(--acento-sut);
-  border: 1px solid var(--arena);
-  text-align: center;
-}
-
-.calc-espera { color: var(--tinta-45); font-size: 13px; }
-
-.calc-total {
-  font-family: var(--mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -.01em;
+/* -------------------------------------------------------- Campos genéricos */
+.campo-select { position: relative; display: block; }
+.campo-select select {
+  width: 100%; height: var(--h-campo);
+  padding: 0 36px 0 14px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+  font-family: var(--cuerpo); font-size: 16px; font-weight: 500;
   color: var(--tinta);
+  appearance: none; cursor: pointer;
+}
+.campo-select::after {
+  content: '';
+  position: absolute; right: 14px; top: 50%; margin-top: -3px;
+  border-left: 5px solid transparent; border-right: 5px solid transparent;
+  border-top: 6px solid var(--tinta-70);
+  pointer-events: none;
+}
+.campo-select select:disabled { background: var(--arena-sut); color: var(--tinta-45); }
+.campo-select select.vacio { color: var(--tinta-45); }
+
+/* El acento del hotel, pegado a su nombre. */
+.acento-barra {
+  position: absolute; left: 14px; top: 50%; margin-top: -11px;
+  width: 5px; height: 22px; border-radius: 3px;
+  background: var(--acento);
+  pointer-events: none;
+}
+.campo-hotel select { padding-left: 28px; }
+
+.campo-caja {
+  display: flex; flex-direction: column; justify-content: center;
+  min-width: 0; height: var(--h-campo);
+  padding: 0 12px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+}
+.campo-etiqueta {
+  font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-45);
+}
+.campo-caja input {
+  width: 100%;
+  border: 0; padding: 0; background: none;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 600; color: var(--tinta);
+}
+.campo-caja input[type="text"] {
+  font-family: var(--cuerpo); font-size: 16px; font-weight: 500;
+}
+.campo-caja input::placeholder { color: var(--tinta-45); font-weight: 400; }
+
+/* Un desplegable dentro de una caja con etiqueta: sin borde propio ni fondo,
+   para que se lea como un dato y no como un control metido dentro de otro. */
+.campo-caja select {
+  width: 100%;
+  border: 0; padding: 0; background: none;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 16px; font-weight: 600; color: var(--tinta);
+  appearance: none; cursor: pointer;
+}
+.campo-caja:focus-within { border-color: var(--tinta); }
+
+/* Foco de teclado idéntico en todos los controles. Si cambiara de forma o de
+   color según el sitio, dejaría de ser una señal fija. */
+select:focus-visible, input:focus-visible, button:focus-visible,
+textarea:focus-visible, [role="checkbox"]:focus-visible {
+  outline: var(--foco); outline-offset: var(--foco-offset);
 }
 
-.calc-detalle { font-size: 13px; color: var(--tinta-70); }
-
-.calc-error {
-  font-size: 13px;
-  color: var(--alerta);
-  text-align: left;
-  line-height: 1.45;
+.caja-noches {
+  flex-shrink: 0;
+  width: 64px; height: var(--h-campo);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: var(--r-medio);
+  background: var(--arena);
 }
-.calc-error strong { display: block; margin-bottom: 3px; }
+.caja-noches-n {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 17px; font-weight: 600;
+}
+.caja-noches-t { font-size: 10px; color: var(--tinta-70); }
 
-.calc-salida.con-error { background: var(--alerta-sut); border-color: var(--alerta); }
+.pista { margin: -4px 0 0; font-size: 12.5px; color: var(--tinta-45); }
+.pista.alerta { color: var(--alerta); font-weight: 500; }
 
-/* --------------------------------------------------------- Sin disponibilidad
-   Un cierre de venta no es un error de datos y no se pinta como tal: no hay
+/* --------------------------------------------------------- Hotel y fechas */
+.fila-estadia { display: flex; flex-wrap: wrap; gap: var(--e2); }
+.fila-estadia .campo-hotel { flex: 1 0 100%; }
+.fila-estadia .campo-caja  { flex: 1; }
+
+@media (min-width: 900px) {
+  .fila-estadia { flex-wrap: nowrap; gap: var(--e3); }
+  .fila-estadia .campo-hotel { flex: 1.6 0 auto; }
+}
+
+/* ------------------------------------------------------- Título de sección */
+.seccion-cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.titulo-seccion {
+  margin: 0;
+  font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--tinta-45);
+}
+
+.btn-borde {
+  height: 40px; padding: 0 14px;
+  border: 1.5px solid var(--tinta); border-radius: 10px;
+  background: transparent; color: var(--tinta);
+  font-family: var(--cuerpo); font-size: 14px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-borde:hover:not(:disabled) { background: var(--sal); }
+.btn-borde:disabled { opacity: .42; cursor: default; }
+
+/* ------------------------------------------------------------ Habitaciones */
+.lineas { display: flex; flex-direction: column; gap: var(--e3); }
+
+.hab {
+  display: flex; overflow: hidden;
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-grande);
+}
+/* La barra del acento dice de qué hotel es la habitación sin ocupar una línea
+   de texto, y sobrevive al cambio de hotel. */
+.hab::before {
+  content: ''; width: 5px; flex-shrink: 0; background: var(--acento);
+}
+.hab-cuerpo {
+  flex: 1; min-width: 0;
+  padding: 12px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.hab-cabecera {
+  min-height: 44px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.hab-idet { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hab-sigla {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  background: var(--acento-sut); color: var(--acento-texto);
+  padding: 3px 6px; border-radius: 5px;
+}
+.hab-indice {
+  font-family: var(--display); font-weight: 600; font-size: 17px;
+  white-space: nowrap;
+}
+.hab-derecha { display: flex; align-items: center; gap: 12px; }
+.hab-precio {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 16px; font-weight: 600;
+}
+.hab-precio.pendiente { color: var(--tinta-45); }
+.hab-quitar {
+  width: 44px; height: 44px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border: 0; border-radius: 10px; background: none;
+  color: var(--alerta); font-size: 20px; font-weight: 600; cursor: pointer;
+}
+.hab-quitar:hover { background: var(--alerta-sut); }
+
+.hab-controles { display: flex; flex-wrap: wrap; gap: var(--e2); }
+.hab-controles .campo-select { flex: 1 0 100%; }
+.hab-controles .campo-select.corto { flex: 1 0 calc(50% - 4px); }
+
+.contador {
+  flex: 1 0 calc(50% - 4px);
+  min-width: 0; height: var(--h-campo);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2px 0 10px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+}
+.contador-et { font-size: 13px; }
+.pasos { display: flex; align-items: center; }
+.pasos button {
+  width: 36px; height: 44px;
+  border: 0; border-radius: 8px; background: none;
+  font-family: var(--cuerpo); font-size: 18px; font-weight: 600;
+  color: var(--tinta); cursor: pointer;
+}
+.pasos button:disabled { opacity: .3; cursor: default; }
+.cifra {
+  min-width: 16px; text-align: center;
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 600;
+}
+
+.hab-edades { display: flex; flex-wrap: wrap; gap: var(--e2); }
+.campo-edad { width: 140px; position: relative; }
+.campo-edad::after {
+  content: '';
+  position: absolute; right: 12px; bottom: 14px;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 5px solid var(--tinta-70);
+  pointer-events: none;
+}
+.campo-edad select { padding-right: 16px; }
+/* Sin edad declarada no se puede cotizar: el campo lo dice antes de que la
+   asesora vaya a buscar el error en la vista previa. */
+.campo-edad.falta { border-color: var(--alerta); }
+.campo-edad.falta .campo-etiqueta { color: var(--alerta); }
+
+.hab-pie {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12.5px; color: var(--tinta-70);
+}
+.hab-pie-monto {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 16px; font-weight: 600; color: var(--tinta);
+}
+
+/* En el celular el precio vive al pie de la ficha, junto a las noches: arriba,
+   al lado del titulo, competiria con la × y apretaria el nombre. */
+@media (max-width: 899px) {
+  .hab-cabecera .hab-precio { display: none; }
+}
+
+@media (min-width: 900px) {
+  .hab-controles { flex-wrap: nowrap; }
+  .hab-controles .campo-select        { flex: 2 1 0; }
+  .hab-controles .campo-select.corto  { flex: 1.2 1 0; }
+  .hab-controles .campo-select.atributo { flex: 1.4 1 0; }
+  .contador { flex: 1.1 1 0; }
+  .hab-pie { display: none; }   /* el precio ya está arriba, junto al título */
+}
+
+/* ------------------------------------------------------------- Tarjetas */
+.tarjeta {
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-grande);
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+/* ---------------------------------------------------------------- Chips */
+.chips { display: flex; flex-wrap: wrap; gap: var(--e2); }
+
+.chip {
+  height: var(--h-chip); padding: 0 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--arena); border-radius: var(--r-chip);
+  background: var(--papel);
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 500;
+  color: var(--tinta); cursor: pointer;
+}
+.chip[aria-checked="true"] {
+  border-color: var(--tinta); background: var(--tinta); color: var(--papel);
+  font-weight: 600;
+}
+/* El check no es decorativo: sin él, un chip elegido y uno sin elegir se
+   distinguirían solo por el color. */
+.chip[aria-checked="true"]::before { content: '✓'; font-size: 13px; }
+.chip:disabled {
+  border-color: var(--arena-sut); background: var(--arena-sut);
+  color: #9FAEC0; cursor: default;
+}
+.chip-detalle { font-size: 12.5px; opacity: .78; font-weight: 400; }
+
+/* --------------------------------------------------------------- Registro */
+.fila-registro { display: flex; gap: var(--e2); }
+.campo-cliente   { flex: 2; }
+.campo-iniciales { flex: 0 0 110px; }
+.campo-iniciales input { text-transform: uppercase; }
+
+/* --------------------------------------------------------- Vista previa */
+.columna-vista {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-grande);
+}
+
+.vista-encabezado {
+  flex-shrink: 0;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--arena);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.vista-titulo {
+  margin: 0; font-family: var(--display); font-weight: 600; font-size: 16px;
+}
+.vista-sub {
+  margin: 0; font-size: 12px; color: var(--tinta-70);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.chat {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 14px;
+  display: flex; align-items: flex-start; justify-content: flex-end;
+  background: var(--wa-fondo);
+  background-image:
+    radial-gradient(circle at 22% 32%, rgba(255,255,255,.42) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 68% 71%, rgba(11,37,69,.05) 0 1.5px, transparent 2px);
+  background-size: 46px 46px;
+}
+
+.burbuja {
+  max-width: 360px;
+  padding: 12px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--wa-burbuja);
+  color: var(--wa-texto);
+  font-size: 14.5px; line-height: 1.55;
+  white-space: pre-wrap; word-wrap: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,.10);
+}
+.burbuja-vacio { margin: 0; color: #5B6B63; font-size: 13.5px; white-space: normal; }
+.burbuja-titulo { margin: 0 0 4px; font-weight: 600; font-size: 14px; }
+.burbuja b { font-weight: 600; }
+
+.burbuja-error {
+  background: var(--alerta-sut);
+  border: 1.5px solid var(--alerta);
+  color: var(--tinta);
+  white-space: normal;
+}
+.burbuja-error ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* Un cierre de venta no es un error de datos y no se pinta como tal: no hay
    nada que corregir, hay que ofrecer otra cosa. */
 .burbuja-sincupo {
   background: var(--aviso-sut);
   border: 1.5px solid var(--aviso);
   color: var(--tinta);
+  white-space: normal;
 }
 .burbuja-sincupo .burbuja-titulo { color: var(--aviso); }
-.burbuja-sincupo ul { margin: 8px 0 0; padding-left: 18px; }
+.burbuja-sincupo ul { margin: 6px 0 0; padding-left: 18px; }
 .burbuja-sincupo li { margin-bottom: 4px; }
-.burbuja-pie {
-  margin: 10px 0 0;
-  font-size: 13px;
-  color: var(--tinta-70);
-}
+.burbuja-pie { margin: 10px 0 0; font-size: 13px; color: var(--tinta-70); }
 
 /* --------------------------------------------------- Etiquetas de severidad
-   El color nunca informa solo. Quien no distingue rojo de ambar tiene que
+   El color nunca informa solo. Quien no distingue rojo de ámbar tiene que
    poder separar "no se puede cotizar" de "revisa esto" leyendo la palabra. */
 .sev {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 0 0 6px;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
 }
 .sev-marca {
-  display: grid;
-  place-items: center;
-  width: 20px; height: 20px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-  flex-shrink: 0;
+  display: grid; place-items: center;
+  width: 20px; height: 20px; flex-shrink: 0;
+  font-size: 14px; font-weight: 700; color: #fff;
 }
 .sev-error            { color: var(--alerta); }
 .sev-error .sev-marca { background: var(--alerta); border-radius: 50%; }
 .sev-aviso            { color: var(--aviso); }
 .sev-aviso .sev-marca { background: var(--aviso); border-radius: 4px; }
 
-/* El total apagado cuando no se puede cotizar. Un guion suelto se lee como
-   "todavia no calculo"; "$ —" en gris se lee como "no hay precio". */
+/* --------------------------------------------------------- Barra del total */
+.barra {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+  height: var(--h-barra-total);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--papel);
+  border-top: 2px solid var(--tinta);
+}
+.barra-total { display: flex; flex-direction: column; min-width: 0; }
+.barra-etiqueta {
+  font-size: 12.5px; color: var(--tinta-70);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.barra-monto {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 21px; font-weight: 600;
+}
+/* Un guion suelto se lee como "todavía no calculo"; "$ —" en gris se lee como
+   "no hay precio". Con un error activo es imposible copiar. */
 .barra-monto.apagado { color: #9FAEC0; }
 
-/* ------------------------------------------- El copiar, arriba en escritorio
-   En el celular el copiar vive al pie, donde cae el pulgar. En la computadora
-   no hay pulgar y si hay una esquina inferior derecha ocupada por el mini
-   cotizador: alli el boton sube a la cabecera del panel, donde nada lo tapa
-   y se ve sin desplazar el mensaje. */
-@media (min-width: 900px) {
-  .columna-vista { display: flex; flex-direction: column; }
-
-  .vista-encabezado {
-    order: -1;
-    gap: 12px;
-  }
-  .vista-encabezado .titulo-seccion { flex: 1; }
-
-  .vista-acciones {
-    display: contents;
-  }
-
-  .vista-acciones .btn {
-    flex: 0 0 auto;
-    min-height: 40px;
-    padding: 0 18px;
-    font-size: 14px;
-    align-self: center;
-  }
-
-  /* El boton se coloca dentro de la cabecera moviendolo con grid: el marcado
-     no cambia, asi que en el celular sigue estando al pie sin duplicar nodos. */
-  .columna-vista {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    grid-template-columns: 1fr auto;
-  }
-  .vista-encabezado { grid-row: 1; grid-column: 1; border-right: 0; }
-  .vista-acciones   { grid-row: 1; grid-column: 2; }
-  .chat             { grid-row: 2; grid-column: 1 / -1; }
-
-  .vista-acciones {
-    display: flex;
-    align-items: center;
-    padding: 10px 14px 10px 0;
-    border-top: 0;
-    border-bottom: 1px solid var(--arena);
-  }
+.barra-acciones { display: flex; align-items: center; gap: 12px; }
+.barra-sello {
+  font-family: var(--mono); font-size: 11.5px; color: var(--tinta-45);
+  white-space: nowrap;
 }
+@media (max-width: 899px) { .barra-sello { display: none; } }
+
+/* ---------------------------------------------------------------- Botones */
+.btn {
+  min-height: var(--h-boton); padding: 0 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 16px; font-weight: 600;
+  border-radius: var(--r-medio); border: 1.5px solid transparent;
+  cursor: pointer; white-space: nowrap;
+  transition: opacity .15s ease, background .15s ease;
+}
+.btn:disabled { opacity: .42; cursor: default; }
+/* Tinta, no el acento del hotel. El botón más importante de la aplicación no
+   puede cambiar de color según lo que se esté cotizando: se busca con el
+   pulgar sin mirar, y para eso tiene que estar siempre igual. */
+.btn-primario   { background: var(--tinta); color: #fff; }
+.btn-primario:hover:not(:disabled) { filter: brightness(1.15); }
+.btn-secundario { background: var(--papel); color: var(--tinta); border-color: var(--tinta); }
+.btn-secundario:hover:not(:disabled) { background: var(--sal); }
+.btn-barra      { background: var(--tinta); color: #fff; padding: 0 20px; }
+
+.btn-cerrar {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%; background: var(--sal);
+  color: var(--tinta-70); font-size: 15px; cursor: pointer;
+}
+
+/* ============================================================== ESCRITORIO */
+@media (min-width: 900px) {
+  #app { height: 100vh; overflow: hidden; }
+
+  .cabecera { height: 64px; padding: 0 24px; }
+  .marca-nombre { font-size: 20px; }
+
+  .lienzo {
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    gap: var(--e5);
+    padding: var(--e5);
+    padding-bottom: var(--e5);
+    overflow: hidden;
+  }
+
+  /* La columna del formulario se desplaza sola; la vista previa se queda
+     quieta, para que el mensaje no se mueva mientras se ajustan las fechas. */
+  .columna-form { overflow-y: auto; padding-right: 4px; }
+  .columna-vista { overflow: hidden; }
+
+  .barra { position: static; padding: 0 24px; }
+}
+
+/* ================================================================== MÓVIL */
+@media (max-width: 899px) {
+  /* La vista previa entra desde la derecha: en una pantalla de teléfono no
+     caben las dos columnas, y el mensaje se consulta, no se edita. */
+  .columna-vista {
+    position: fixed; inset: 0 0 var(--h-barra-total);
+    z-index: 70;
+    border: 0; border-radius: 0;
+    transform: translateX(100%);
+    transition: transform .22s ease;
+  }
+  .columna-vista.abierta { transform: translateX(0); }
+  .chat { align-items: flex-start; }
+  .burbuja { max-width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------------------------------------------------------------- Modales */
+.modal {
+  position: fixed; inset: 0; z-index: 95;
+  display: grid; place-items: center;
+  padding: 16px;
+  background: rgba(11,37,69,.55);
+}
+.modal-caja {
+  width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 18px;
+  background: var(--papel); border-radius: var(--r-grande);
+}
+.modal-caja h3 {
+  margin: 0; font-family: var(--display); font-weight: 600; font-size: 18px;
+}
+.modal-pista { margin: 0; font-size: 13.5px; color: var(--tinta-70); }
+.modal-texto {
+  width: 100%; height: 190px;
+  padding: 12px;
+  border: 1px solid var(--arena); border-radius: var(--r-chico);
+  font-family: var(--cuerpo); font-size: 14px; line-height: 1.5;
+  resize: none;
+}
+
+/* ----------------------------------------------------------------- Avisos */
+.aviso {
+  position: fixed; left: 50%; bottom: calc(var(--h-barra-total) + 16px);
+  z-index: 96;
+  transform: translate(-50%, 16px);
+  max-width: calc(100vw - 32px);
+  padding: 11px 18px;
+  border-radius: var(--r-chip);
+  background: var(--tinta); color: #fff;
+  font-size: 14px; font-weight: 500;
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+.aviso.error   { background: var(--alerta); }
+.aviso.exito   { background: var(--exito); }
+
+/* ==========================================================================
+   MINI COTIZADOR
+   Ventana propia de 380 de ancho: cabecera 40, cuerpo con controles de 44 y
+   separación de 8, pie con el total en 30 y el copiar en 48.
+   Solo en escritorio.
+   ========================================================================== */
+.calc {
+  width: 380px;
+  display: flex; flex-direction: column;
+  background: var(--papel);
+  border: 1px solid var(--tinta); border-radius: 14px;
+  overflow: hidden;
+}
+
+body.calc-suelta { margin: 0; background: var(--papel); }
+body.calc-suelta .calc {
+  width: auto; height: 100vh;
+  border: 0; border-radius: 0; box-shadow: none;
+}
+
+/* Respaldo dentro de la página, si el navegador no dio ventana. */
+body:not(.calc-suelta) .calc {
+  position: fixed; right: 20px; bottom: 20px; z-index: 80;
+  max-width: calc(100vw - 32px); max-height: calc(100vh - 40px);
+  box-shadow: 0 18px 44px rgba(11, 37, 69, .34);
+}
+
+.calc-cabecera {
+  flex-shrink: 0; height: 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 6px 0 12px;
+  background: var(--tinta);
+}
+.calc-marca { display: flex; align-items: center; gap: 10px; }
+
+/* Cuatro puntos: la marca de "esto se arrastra" de cualquier ventana. */
+.calc-agarre { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 10px; }
+.calc-agarre::before, .calc-agarre::after {
+  content: '';
+  width: 4px; height: 4px; border-radius: 1px;
+  background: #6C819B; box-shadow: 0 6px 0 #6C819B;
+}
+
+.calc-titulo {
+  margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600;
+  color: var(--papel);
+}
+
+/* Solo aparece cuando la ventana de verdad flota sobre todo: prometerlo
+   cuando el navegador no puede cumplirlo sería peor que no decir nada. */
+.calc-chip {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--tinta); background: #9FD9C8;
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
+
+.calc-botones-ventana { display: flex; align-items: center; }
+.calc-btn-ventana {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border: 0; background: none;
+  color: var(--papel); font-size: 15px; cursor: pointer;
+}
+.calc-btn-ventana:focus-visible { outline: 2px solid var(--papel); outline-offset: -2px; }
+
+.calc-cuerpo {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: var(--e2);
+}
+.calc-cuerpo .campo-select select { height: 44px; font-size: 15px; }
+.calc-cuerpo .campo-hotel select  { padding-left: 24px; }
+.calc-cuerpo .acento-barra { left: 12px; margin-top: -9px; width: 4px; height: 18px; }
+.calc-cuerpo .campo-caja   { height: 44px; padding: 0 10px; }
+.calc-cuerpo .campo-etiqueta { font-size: 9.5px; }
+.calc-cuerpo .campo-caja input { font-size: 14px; }
+.calc-cuerpo .caja-noches  { width: 52px; height: 44px; background: var(--arena-sut); }
+.calc-cuerpo .caja-noches-n { font-size: 15px; }
+.calc-cuerpo .caja-noches-t { font-size: 9.5px; }
+.calc-cuerpo .contador { height: 44px; }
+.calc-cuerpo .pasos button { width: 32px; font-size: 17px; }
+
+.calc-fechas { display: flex; gap: var(--e2); }
+.calc-fechas .campo-caja { flex: 1; min-width: 0; }
+.calc-pax    { display: flex; gap: var(--e2); }
+.calc-edades { display: flex; flex-wrap: wrap; gap: var(--e2); }
+.calc-edades .campo-edad { width: 108px; }
+
+.calc-pie {
+  flex-shrink: 0;
+  border-top: 1px solid var(--arena);
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--papel);
+}
+.calc-resumen { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.calc-cifras { display: flex; flex-direction: column; min-width: 0; }
+.calc-detalle { font-size: 12px; color: var(--tinta-70); }
+.calc-detalle.error { color: var(--alerta); }
+.calc-total {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -.01em;
+}
+.calc-total.apagado { color: #9FAEC0; }
+.calc-version {
+  flex-shrink: 0;
+  font-family: var(--mono); font-size: 10.5px; color: var(--tinta-45);
+}
+
+.calc-acciones { display: flex; gap: var(--e2); }
+.calc-acciones .btn { min-height: 48px; border-radius: var(--r-medio); }
+#calcCopiar { flex: 1.4; font-size: 16px; }
+#calcAbrir  { flex: 1; font-size: 14px; }

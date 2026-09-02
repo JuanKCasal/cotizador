@@ -26,10 +26,15 @@
 
   <header class="cabecera">
     <div class="cabecera-marca">
-      <span class="marca-nombre">Cotizador</span>
-      <span class="marca-hotel" id="marcaHotel">Hesperia</span>
+      <span class="marca-nombre">Cotizador<span class="solo-pc-inline"> Hesperia</span></span>
+      <span class="chip-hotel oculto" id="chipHotel">
+        <span class="chip-sigla" id="chipSigla"></span>
+        <span class="chip-nombre" id="chipNombre"></span>
+      </span>
     </div>
+
     <div class="cabecera-acciones">
+      <span class="version" id="version"></span>
       <button type="button" class="btn-cabecera solo-pc" id="btnCalc"
               title="Abrir el mini cotizador en su propia ventana"
               aria-expanded="false">
@@ -46,69 +51,74 @@
     <!-- ---------- Columna del formulario ---------- -->
     <div class="columna-form">
 
-      <section class="tarjeta">
-        <h2 class="titulo-seccion">Hotel</h2>
-        <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
-      </section>
+      <!-- Hotel y fechas, en una sola fila: es lo primero que se decide y lo
+           que menos se vuelve a tocar. -->
+      <div class="fila-estadia">
+        <label class="campo-select campo-hotel">
+          <span class="acento-barra" aria-hidden="true"></span>
+          <select id="hoteles" aria-label="Hotel"></select>
+        </label>
 
-      <section class="tarjeta">
-        <h2 class="titulo-seccion">Estadía</h2>
-        <div class="fechas">
-          <label class="campo">
-            <span class="campo-etiqueta">Entrada</span>
-            <input type="date" id="checkin" class="input">
-          </label>
-          <div class="fechas-puente" id="puenteNoches" aria-hidden="true">—</div>
-          <label class="campo">
-            <span class="campo-etiqueta">Salida</span>
-            <input type="date" id="checkout" class="input">
-          </label>
-        </div>
-        <p class="pista" id="pistaFechas">La noche de salida no se cobra.</p>
-      </section>
+        <label class="campo-caja">
+          <span class="campo-etiqueta">Entrada</span>
+          <input type="date" id="checkin">
+        </label>
 
-      <section class="tarjeta">
-        <div class="seccion-cabecera">
-          <h2 class="titulo-seccion">Habitaciones</h2>
-          <button type="button" class="btn-texto" id="btnAgregar">+ Agregar</button>
+        <label class="campo-caja">
+          <span class="campo-etiqueta">Salida</span>
+          <input type="date" id="checkout">
+        </label>
+
+        <div class="caja-noches" id="puenteNoches" aria-hidden="true">
+          <span class="caja-noches-n">—</span>
+          <span class="caja-noches-t">noches</span>
         </div>
-        <div id="lineas" class="lineas"></div>
-      </section>
+      </div>
+      <p class="pista" id="pistaFechas">La noche de salida no se cobra.</p>
+
+      <div class="seccion-cabecera">
+        <h2 class="titulo-seccion" id="tituloHabitaciones">Habitaciones</h2>
+        <button type="button" class="btn-borde" id="btnAgregar">
+          + Agregar<span class="solo-pc-inline"> habitación</span>
+        </button>
+      </div>
+
+      <div id="lineas" class="lineas"></div>
 
       <section class="tarjeta oculto" id="seccionPromos">
         <h2 class="titulo-seccion">Promociones</h2>
-        <div id="promos" class="promos"></div>
+        <div id="promos" class="chips"></div>
       </section>
 
       <section class="tarjeta oculto" id="seccionExtras">
         <h2 class="titulo-seccion">Servicios adicionales</h2>
-        <div id="extras" class="promos"></div>
+        <div id="extras" class="chips"></div>
       </section>
 
-      <section class="tarjeta">
-        <h2 class="titulo-seccion">Registro</h2>
-        <div class="registro">
-          <label class="campo">
-            <span class="campo-etiqueta">Cliente</span>
-            <input type="text" id="cliente" class="input" placeholder="Nombre del cliente"
-                   autocomplete="off">
-          </label>
-          <label class="campo campo-corto">
-            <span class="campo-etiqueta">Iniciales</span>
-            <input type="text" id="asesor" class="input" placeholder="MZ" maxlength="4"
-                   autocomplete="off">
-          </label>
-        </div>
-      </section>
-
-      <p class="version" id="version"></p>
+      <div class="fila-registro">
+        <label class="campo-caja campo-cliente">
+          <span class="campo-etiqueta">Cliente</span>
+          <input type="text" id="cliente" placeholder="Nombre del cliente"
+                 autocomplete="off">
+        </label>
+        <label class="campo-caja campo-iniciales">
+          <span class="campo-etiqueta">Iniciales</span>
+          <input type="text" id="asesor" maxlength="4" autocomplete="off">
+        </label>
+      </div>
     </div>
 
-    <!-- ---------- Columna del mensaje ---------- -->
+    <!-- ---------- Columna de la vista previa ---------- -->
     <div class="columna-vista" id="columnaVista">
       <div class="vista-encabezado">
-        <h2 class="titulo-seccion">Mensaje para el cliente</h2>
-        <button type="button" class="btn-icono btn-cerrar" id="btnCerrarVista"
+        <div class="vista-titulos">
+          <h2 class="vista-titulo">Vista del cliente</h2>
+          <p class="vista-sub" id="vistaSub">WhatsApp</p>
+        </div>
+        <button type="button" class="btn btn-primario" id="btnCopiar" disabled>
+          Copiar mensaje
+        </button>
+        <button type="button" class="btn-icono btn-cerrar solo-movil" id="btnCerrarVista"
                 aria-label="Cerrar">✕</button>
       </div>
 
@@ -117,25 +127,22 @@
           <p class="burbuja-vacio">Selecciona hotel, fechas y habitación para ver el mensaje.</p>
         </div>
       </div>
-
-      <div class="vista-acciones">
-        <button type="button" class="btn btn-primario" id="btnCopiar" disabled>
-          Copiar mensaje
-        </button>
-      </div>
     </div>
-
   </main>
 
-  <!-- ---------- Barra fija (móvil) ---------- -->
-  <div class="barra" id="barra">
+  <!-- ---------- Barra del total ---------- -->
+  <div class="barra">
     <div class="barra-total">
       <span class="barra-etiqueta" id="barraEtiqueta">Sin cotizar</span>
-      <strong class="barra-monto" id="barraMonto">—</strong>
+      <span class="barra-monto apagado" id="barraMonto">$ —</span>
     </div>
-    <button type="button" class="btn btn-primario btn-barra" id="btnVerMensaje" disabled>
-      Ver mensaje
-    </button>
+    <div class="barra-acciones">
+      <span class="barra-sello" id="barraSello"></span>
+      <button type="button" class="btn-borde solo-pc" id="btnVaciar">Vaciar</button>
+      <button type="button" class="btn btn-barra solo-movil" id="btnVerMensaje" disabled>
+        Ver mensaje
+      </button>
+    </div>
   </div>
 </div>
 
@@ -151,51 +158,85 @@
 
 <div id="calc" class="calc oculto" role="dialog" aria-modal="false"
      aria-labelledby="calcTitulo">
+
   <div class="calc-cabecera">
-    <h3 id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
-    <button type="button" class="btn-cerrar" id="btnCalcCerrar"
-            aria-label="Cerrar el mini cotizador">✕</button>
+    <div class="calc-marca">
+      <span class="calc-agarre" aria-hidden="true"></span>
+      <h3 id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
+      <span class="calc-chip" id="calcChip" hidden>SIEMPRE ENCIMA</span>
+    </div>
+    <div class="calc-botones-ventana">
+      <button type="button" class="calc-btn-ventana calc-btn-cerrar" id="btnCalcCerrar"
+              aria-label="Cerrar el mini cotizador">✕</button>
+    </div>
   </div>
 
-  <div class="calc-cuerpo">
-    <label class="campo">
-      <span class="campo-etiqueta">Hotel</span>
-      <select id="calcHotel" class="select"></select>
+  <div class="calc-cuerpo" id="calcCuerpo">
+    <label class="campo-select">
+      <span class="acento-barra" aria-hidden="true"></span>
+      <select id="calcHotel" aria-label="Hotel"></select>
     </label>
 
-    <label class="campo">
-      <span class="campo-etiqueta">Habitación</span>
-      <select id="calcHab" class="select"></select>
+    <label class="campo-select">
+      <select id="calcHab" aria-label="Habitación"></select>
     </label>
 
     <div class="calc-fechas">
-      <label class="campo">
+      <label class="campo-caja">
         <span class="campo-etiqueta">Entrada</span>
-        <input type="date" id="calcIn" class="input">
+        <input type="date" id="calcIn">
       </label>
-      <label class="campo">
+      <label class="campo-caja">
         <span class="campo-etiqueta">Salida</span>
-        <input type="date" id="calcOut" class="input">
+        <input type="date" id="calcOut">
       </label>
+      <div class="caja-noches" id="calcNoches" aria-hidden="true">
+        <span class="caja-noches-n">—</span>
+        <span class="caja-noches-t">noches</span>
+      </div>
     </div>
 
     <div class="calc-pax">
-      <label class="campo campo-corto">
-        <span class="campo-etiqueta">Adultos</span>
-        <input type="number" id="calcAdultos" class="input" min="1" max="8" value="2"
-               inputmode="numeric">
-      </label>
-      <label class="campo campo-corto">
-        <span class="campo-etiqueta">Niños</span>
-        <input type="number" id="calcNinos" class="input" min="0" max="6" value="0"
-               inputmode="numeric">
-      </label>
+      <div class="contador">
+        <span class="contador-et">Adultos</span>
+        <div class="pasos">
+          <button type="button" data-calcpaso="adultos" data-delta="-1"
+                  aria-label="Menos adultos">−</button>
+          <span id="calcAdultos" class="cifra" aria-live="polite">2</span>
+          <button type="button" data-calcpaso="adultos" data-delta="1"
+                  aria-label="Más adultos">+</button>
+        </div>
+      </div>
+      <div class="contador">
+        <span class="contador-et">Niños</span>
+        <div class="pasos">
+          <button type="button" data-calcpaso="ninos" data-delta="-1"
+                  aria-label="Menos niños">−</button>
+          <span id="calcNinos" class="cifra" aria-live="polite">0</span>
+          <button type="button" data-calcpaso="ninos" data-delta="1"
+                  aria-label="Más niños">+</button>
+        </div>
+      </div>
     </div>
 
     <div class="calc-edades oculto" id="calcEdades"></div>
+  </div>
 
-    <div class="calc-salida" id="calcSalida" aria-live="polite">
-      <span class="calc-espera">Elige hotel, habitación y fechas.</span>
+  <div class="calc-pie">
+    <div class="calc-resumen">
+      <div class="calc-cifras">
+        <span class="calc-detalle" id="calcDetalle">Elige hotel, habitación y fechas</span>
+        <span class="calc-total apagado" id="calcTotal">$ —</span>
+      </div>
+      <span class="calc-version" id="calcVersion"></span>
+    </div>
+    <div class="calc-acciones">
+      <button type="button" class="btn btn-primario" id="calcCopiar" disabled>
+        Copiar mensaje
+      </button>
+      <button type="button" class="btn btn-secundario" id="calcAbrir" disabled>
+        Abrir completo
+      </button>
     </div>
   </div>
 </div>

@@ -9,6 +9,7 @@
   var CAT = null;
   var ULTIMO = null;      // ultimo resultado del motor
   var TEXTO = '';         // ultimo texto renderizado
+  var PORTAPAPELES = '';  // lo que se esta copiando ahora mismo
   var secuencia = 0;
 
   var estado = {
@@ -90,7 +91,9 @@
 
   function montar() {
     $('asesor').value = estado.asesor;
-    $('version').textContent = 'Tarifas ' + (CAT.config.VERSION_TARIFAS || '');
+    var ver = CAT.config.VERSION_TARIFAS || '';
+    $('version').textContent = ver ? 'tarifas ' + ver : '';
+    $('calcVersion').textContent = ver;
     renderHoteles();
     conectarEventos();
     if (window.innerWidth >= 900) calcMontar();
@@ -175,46 +178,67 @@
   // RENDER
   // ==========================================================================
   function renderHoteles() {
-    var cont = $('hoteles');
-    cont.innerHTML = '';
-    Object.keys(CAT.hoteles).forEach(function (cod) {
-      var h = CAT.hoteles[cod];
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'hotel-op';
-      b.setAttribute('role', 'radio');
-      b.setAttribute('aria-checked', estado.hotel === cod ? 'true' : 'false');
-      b.dataset.hotel = cod;
-      b.innerHTML =
-        '<span class="hotel-sigla">' + esc(cod) + '</span>' +
-        '<span class="hotel-nombre">' + esc(nombreCorto(h.nombre)) + '</span>';
-      cont.appendChild(b);
-    });
+    var sel = $('hoteles');
+    var cods = Object.keys(CAT.hoteles);
+    sel.innerHTML = '<option value="">Elige el hotel…</option>' +
+      cods.map(function (cod) {
+        return '<option value="' + esc(cod) + '"' +
+               (estado.hotel === cod ? ' selected' : '') + '>' +
+               esc(CAT.hoteles[cod].nombreCorto) + '</option>';
+      }).join('');
+    sel.value = estado.hotel;
+    sel.classList.toggle('vacio', !estado.hotel);
+    renderChipHotel();
   }
 
-  function nombreCorto(n) {
-    return String(n).replace(/^HOTEL\s+HESPERIA\s+/i, '');
+  /**
+   * El hotel elegido, en la cabecera y siempre visible.
+   *
+   * El acento de color no basta por si solo: hay dos hoteles cuyo tono no se
+   * distingue bien para quien no ve los colores igual, y la asesora cotiza
+   * cinco hoteles seguidos sin mirar dos veces. Por eso el color viaja pegado
+   * a la sigla y al nombre.
+   */
+  function renderChipHotel() {
+    var chip = $('chipHotel');
+    var h = CAT.hoteles[estado.hotel];
+    if (!h) { chip.classList.add('oculto'); return; }
+    chip.classList.remove('oculto');
+    $('chipSigla').textContent = h.codigo;
+    $('chipNombre').textContent = h.nombreCorto;
   }
 
   function renderLineas() {
     var cont = $('lineas');
     cont.innerHTML = '';
+    $('btnAgregar').disabled = !estado.hotel;
+
     if (!estado.hotel) {
       cont.innerHTML = '<p class="pista">Selecciona un hotel para elegir habitaciones.</p>';
+      $('tituloHabitaciones').textContent = 'Habitaciones';
       return;
     }
+    $('tituloHabitaciones').textContent = 'Habitaciones · ' + estado.lineas.length;
     estado.lineas.forEach(function (l, i) {
       cont.appendChild(nodoLinea(l, i));
     });
+    pintarPreciosLineas();
   }
 
   function nodoLinea(l, i) {
     var div = document.createElement('div');
     div.className = 'hab';
     div.dataset.id = l.id;
-    div.innerHTML = htmlLinea(l, i);
+    div.innerHTML = envolver(htmlLinea(l, i));
     return div;
   }
+
+  /**
+   * La ficha es una fila: la barra del acento a la izquierda y TODO lo demas
+   * apilado a su derecha. Sin este envoltorio, la cabecera y los controles se
+   * reparten esa fila y la ficha se sale por el costado.
+   */
+  function envolver(html) { return '<div class="hab-cuerpo">' + html + '</div>'; }
 
   function htmlLinea(l, i) {
     var habs = habsDe(estado.hotel);
@@ -226,62 +250,64 @@
     var hab = habDeLinea(l);
 
     var h = [];
+
     h.push('<div class="hab-cabecera">');
-    h.push('<span class="hab-indice">Habitación ' + (i + 1) + '</span>');
+    h.push(  '<span class="hab-idet">');
+    h.push(    '<span class="hab-sigla">' + esc(estado.hotel) + '</span>');
+    h.push(    '<span class="hab-indice">Habitación ' + (i + 1) + '</span>');
+    h.push(  '</span>');
+    h.push(  '<span class="hab-derecha">');
+    h.push(    '<span class="hab-precio pendiente" data-precio>$ —</span>');
     if (estado.lineas.length > 1) {
-      h.push('<button type="button" class="hab-quitar" data-act="quitar">Quitar</button>');
+      h.push(  '<button type="button" class="hab-quitar" data-act="quitar" ' +
+                 'aria-label="Quitar esta habitación">×</button>');
     }
+    h.push(  '</span>');
     h.push('</div>');
 
-    h.push('<div class="hab-selects">');
+    h.push('<div class="hab-controles">');
     h.push(select('categoria', 'Categoría', cats, l.categoria));
-    h.push(select('ocupacion', 'Ocupación', ocups, l.ocupacion, ocups.length < 2));
-    if (atrs.length > 1) {
-      h.push(select('atributo', 'Vista', atrs, l.atributo, false,
-                    function (v) { return v || 'Estándar'; }));
-    }
-    h.push('</div>');
-
-    h.push('<div class="hab-conteos">');
-    h.push(conteo('cantidad', 'Habitaciones', 'iguales a esta', l.cantidad, 1, 20));
-    h.push(conteo('adultos', 'Adultos', hab ? 'máx. ' + hab.ocupMaxAdultos : '',
-                  l.adultos, 0, hab ? hab.ocupMaxAdultos : 9));
-    h.push(conteo('menores', 'Menores de 18', 'se indica la edad de cada uno',
-                  l.edades.length, 0, 9));
+    h.push(select('ocupacion', 'Ocupación', ocups, l.ocupacion, ocups.length < 2, null, 'corto'));
+    h.push(select('atributo', 'Vista', atrs, l.atributo, atrs.length < 2,
+                  function (v) { return v || 'Sin atributo'; }, 'atributo'));
+    h.push(contador('adultos', 'Ad.', l.adultos, 0, hab ? hab.ocupMaxAdultos : 9));
+    h.push(contador('menores', 'Niños', l.edades.length, 0, 9));
     h.push('</div>');
 
     h.push(htmlEdades(l));
 
-    if (hab) {
-      h.push('<p class="pista">' + esc(hab.nombre) + ' · hasta ' + hab.ocupMaxTotal +
-             ' huésped' + (hab.ocupMaxTotal === 1 ? '' : 'es') +
-             (hab.permiteSingle ? ' · suplemento individual $' + hab.suplementoSingle : '') +
-             '</p>');
-    }
+    // En el celular el precio de la habitación va al pie: arriba, junto al
+    // título, no cabe sin apretar el resto.
+    h.push('<div class="hab-pie">');
+    h.push(  '<span data-noches>' + textoNoches() +
+             (l.cantidad > 1 ? ' · ' + l.cantidad + ' habitaciones iguales' : '') + '</span>');
+    h.push(  '<span class="hab-pie-monto" data-precio>$ —</span>');
+    h.push('</div>');
+
     return h.join('');
   }
 
   /**
-   * Un selector de edad por menor. Arranca VACIO a proposito: la asesora tiene
+   * Un campo de edad por menor. Arranca VACIO a proposito: la asesora tiene
    * que declarar la edad real, no aceptar un valor por defecto que despues
    * termina impreso en el mensaje del cliente.
    */
   function htmlEdades(l) {
     if (!l.edades.length) return '';
-    var h = ['<div class="edades">'];
+    var h = ['<div class="hab-edades">'];
     l.edades.forEach(function (edad, i) {
-      var op = ['<option value=""' + (edad === '' ? ' selected' : '') + '>— edad —</option>'];
+      // El texto elegido queda a la vista dentro de un campo estrecho, asi que
+      // dice solo la edad. Lo que esa edad implica -mitad de precio, sin cargo-
+      // va en la pista de abajo, donde se lee entero y para todos los rangos.
+      var op = ['<option value=""' + (edad === '' ? ' selected' : '') + '>—</option>'];
       for (var e = 0; e <= 17; e++) {
-        var r = rangoDeEdad(e);
         op.push('<option value="' + e + '"' + (String(edad) === String(e) ? ' selected' : '') +
-                '>' + e + (e === 1 ? ' año' : ' años') +
-                (r ? ' · ' + textoFactor(r.factor) : '') + '</option>');
+                '>' + e + (e === 1 ? ' año' : ' años') + '</option>');
       }
-      h.push('<label class="campo campo-edad">' +
-               '<span class="campo-etiqueta">Menor ' + (i + 1) + '</span>' +
-               '<select class="select" data-campo="edad" data-idx="' + i + '">' +
-                 op.join('') +
-               '</select>' +
+      h.push('<label class="campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
+               '<span class="campo-etiqueta">Niño ' + (i + 1) + '</span>' +
+               '<select data-campo="edad" data-idx="' + i + '" ' +
+                 'aria-label="Edad del niño ' + (i + 1) + '">' + op.join('') + '</select>' +
              '</label>');
     });
     h.push('</div>');
@@ -289,41 +315,69 @@
     return h.join('');
   }
 
+  /** "0-4 años: sin cargo · 5-9: mitad de precio · 10-17: precio completo" */
   function leyendaRangos() {
     return rangosDe(estado.hotel).map(function (r) {
       return r.rango + ': ' + textoFactor(r.factor);
     }).join(' · ');
   }
 
-  function select(campo, etiqueta, opciones, valor, unica, formato) {
+  function select(campo, etiqueta, opciones, valor, unica, formato, clase) {
     var f = formato || function (v) { return v; };
     var o = opciones.map(function (v) {
       return '<option value="' + esc(v) + '"' + (v === valor ? ' selected' : '') + '>' +
              esc(f(v)) + '</option>';
     }).join('');
-    return '<label class="campo">' +
-             '<span class="campo-etiqueta">' + esc(etiqueta) + '</span>' +
-             '<select class="select" data-campo="' + campo + '"' +
+    return '<label class="campo-select' + (clase ? ' ' + clase : '') + '">' +
+             '<select data-campo="' + campo + '" aria-label="' + esc(etiqueta) + '"' +
              (unica ? ' disabled' : '') + '>' + o + '</select>' +
            '</label>';
   }
 
-  function conteo(campo, nombre, detalle, valor, min, max) {
-    return '<div class="conteo">' +
-             '<span class="conteo-etiqueta">' +
-               '<span class="conteo-nombre">' + esc(nombre) + '</span>' +
-               (detalle ? '<span class="conteo-detalle">' + esc(detalle) + '</span>' : '') +
-             '</span>' +
-             '<span class="paso" data-campo="' + campo + '" data-min="' + min +
+  function contador(campo, nombre, valor, min, max) {
+    return '<div class="contador">' +
+             '<span class="contador-et">' + esc(nombre) + '</span>' +
+             '<span class="pasos" data-campo="' + campo + '" data-min="' + min +
                    '" data-max="' + max + '">' +
-               '<button type="button" class="paso-btn" data-paso="-1"' +
-                 (valor <= min ? ' disabled' : '') + ' aria-label="Restar">−</button>' +
-               '<span class="paso-valor" data-cero="' + (valor ? 'no' : 'si') + '">' +
-                 valor + '</span>' +
-               '<button type="button" class="paso-btn" data-paso="1"' +
-                 (valor >= max ? ' disabled' : '') + ' aria-label="Sumar">+</button>' +
+               '<button type="button" data-paso="-1"' +
+                 (valor <= min ? ' disabled' : '') + ' aria-label="Restar ' + esc(nombre) +
+                 '">−</button>' +
+               '<span class="cifra">' + valor + '</span>' +
+               '<button type="button" data-paso="1"' +
+                 (valor >= max ? ' disabled' : '') + ' aria-label="Sumar ' + esc(nombre) +
+                 '">+</button>' +
              '</span>' +
            '</div>';
+  }
+
+  /**
+   * Los precios de cada habitación, sin volver a dibujar las fichas.
+   *
+   * Redibujarlas enteras en cada tecla haría perder el foco del campo que la
+   * asesora está usando: el precio cambia con cada ajuste, y el ajuste se hace
+   * mirando el precio.
+   */
+  function pintarPreciosLineas() {
+    var nodos = $('lineas').querySelectorAll('.hab');
+    for (var i = 0; i < nodos.length; i++) {
+      var noches = nodos[i].querySelector('[data-noches]');
+      if (noches) {
+        var l = estado.lineas[i];
+        noches.textContent = textoNoches() +
+          (l && l.cantidad > 1 ? ' · ' + l.cantidad + ' habitaciones iguales' : '');
+      }
+      var celdas = nodos[i].querySelectorAll('[data-precio]');
+      var linea = ULTIMO && ULTIMO.lineas && ULTIMO.lineas[i];
+      for (var c = 0; c < celdas.length; c++) {
+        if (linea) {
+          celdas[c].textContent = '$' + Motor.fmtMoney(CAT, linea.subtotalLinea);
+          celdas[c].classList.remove('pendiente');
+        } else {
+          celdas[c].textContent = '$ —';
+          celdas[c].classList.add('pendiente');
+        }
+      }
+    }
   }
 
   function renderPromos() {
@@ -331,9 +385,9 @@
     var seccion = $('seccionPromos');
     var aplicables = promosAplicables();
 
-    // La seccion se oculta solo si aun no hay hotel y fechas. Con fechas ya
+    // La sección se oculta solo si aún no hay hotel y fechas. Con fechas ya
     // elegidas se muestra siempre, aunque no haya promos vigentes: si se
-    // ocultara, la asesora no sabria si la funcion existe o si el hotel
+    // ocultara, la asesora no sabría si la función existe o si el hotel
     // simplemente no tiene promociones en ese rango.
     var listo = estado.hotel && estado.checkin && estado.checkout &&
                 estado.checkout > estado.checkin;
@@ -349,18 +403,14 @@
     }
     cont.innerHTML = aplicables.map(function (p) {
       var sel = estado.promos.indexOf(p.cod) !== -1;
-      var det = p.tipo === 'SUSTITUYE' ? 'Tarifa especial de $' + p.valor + ' por persona'
-              : p.tipo === 'DESCUENTO_PCT' ? p.valor + '% de descuento'
-              : '$' + p.valor + ' de descuento por persona';
-      if (p.minNoches > 1) det += ' · mínimo ' + p.minNoches + ' noches';
-      if (p.mensaje) det += ' · ' + p.mensaje;
-      return '<button type="button" class="promo-op" data-promo="' + esc(p.cod) + '"' +
+      var det = p.tipo === 'SUSTITUYE' ? 'tarifa $' + p.valor + ' p/p'
+              : p.tipo === 'DESCUENTO_PCT' ? '−' + p.valor + '%'
+              : '−$' + p.valor + ' p/p';
+      if (p.minNoches > 1) det += ' · mín. ' + p.minNoches + ' noches';
+      return '<button type="button" class="chip" data-promo="' + esc(p.cod) + '"' +
                ' role="checkbox" aria-checked="' + sel + '">' +
-               '<span class="promo-marca">' + (sel ? '✓' : '') + '</span>' +
-               '<span>' +
-                 '<span class="promo-nombre">' + esc(p.nombre) + '</span>' +
-                 '<span class="promo-detalle">' + esc(det) + '</span>' +
-               '</span>' +
+               esc(p.nombre) +
+               '<span class="chip-detalle">' + esc(det) + '</span>' +
              '</button>';
     }).join('');
   }
@@ -369,8 +419,8 @@
    * Servicios adicionales del hotel.
    *
    * Se muestran una vez elegido el hotel, sin esperar a las fechas: el precio
-   * no depende de ellas -salvo el que se cobra por dia- y la asesora suele
-   * preguntar por el early check-in antes de cerrar la estadia.
+   * no depende de ellas —salvo el que se cobra por día— y la asesora suele
+   * preguntar por el early check-in antes de cerrar la estadía.
    */
   function renderExtras() {
     var cont = $('extras');
@@ -386,21 +436,38 @@
 
     cont.innerHTML = lista.map(function (x) {
       var sel = estado.extras.indexOf(x.cod) !== -1;
-      var det = '$' + x.monto + ' por persona' +
-                (x.tipo === 'POR_PERSONA_DIA' ? ', por día' : '') +
-                (x.detalle ? ' · ' + x.detalle : '');
-      return '<button type="button" class="promo-op" data-extra="' + esc(x.cod) + '"' +
+      var det = '$' + x.monto + ' p/p' + (x.tipo === 'POR_PERSONA_DIA' ? ' por día' : '');
+      return '<button type="button" class="chip" data-extra="' + esc(x.cod) + '"' +
                ' role="checkbox" aria-checked="' + sel + '">' +
-               '<span class="promo-marca">' + (sel ? '✓' : '') + '</span>' +
-               '<span>' +
-                 '<span class="promo-nombre">' + esc(x.nombre) + '</span>' +
-                 '<span class="promo-detalle">' + esc(det) + '</span>' +
-               '</span>' +
+               esc(x.nombre) +
+               '<span class="chip-detalle">' + esc(det) + '</span>' +
              '</button>';
     }).join('');
   }
 
-  /** Promos del hotel cuya vigencia toca el rango de la estadia. */
+  function textoNoches() {
+    if (!estado.checkin || !estado.checkout || estado.checkout <= estado.checkin) {
+      return 'Elige las fechas';
+    }
+    var d = Motor.Fechas.diffDias(estado.checkin, estado.checkout);
+    return d + (d === 1 ? ' noche' : ' noches');
+  }
+
+  /** El recuadro de noches de la fila de estadía. */
+  function pintarNoches() {
+    var caja = $('puenteNoches');
+    var n = caja.querySelector('.caja-noches-n');
+    var t = caja.querySelector('.caja-noches-t');
+    if (estado.checkin && estado.checkout && estado.checkout > estado.checkin) {
+      var d = Motor.Fechas.diffDias(estado.checkin, estado.checkout);
+      n.textContent = d;
+      t.textContent = d === 1 ? 'noche' : 'noches';
+    } else {
+      n.textContent = '—';
+      t.textContent = 'noches';
+    }
+  }
+
   function promosAplicables() {
     if (!estado.hotel || !estado.checkin || !estado.checkout) return [];
     if (estado.checkout <= estado.checkin) return [];
@@ -420,13 +487,8 @@
 
   function recalcular() {
     // Noches entre fechas
-    var puente = $('puenteNoches');
-    if (estado.checkin && estado.checkout && estado.checkout > estado.checkin) {
-      var n = Motor.Fechas.diffDias(estado.checkin, estado.checkout);
-      puente.textContent = n + (n === 1 ? ' noche' : ' noches');
-    } else {
-      puente.textContent = '—';
-    }
+    // La caja de noches la repinta pintarNoches(), desde avisoFechas(): aqui
+    // se escribia el texto plano y se borraban los dos <span> de dentro.
     avisoFechas();
 
     if (!completo()) {
@@ -483,6 +545,7 @@
   }
 
   function avisoFechas() {
+    pintarNoches();
     var p = $('pistaFechas');
     var hoy = new Date().toISOString().slice(0, 10);
     if (estado.checkin && estado.checkout && estado.checkout <= estado.checkin) {
@@ -515,6 +578,8 @@
     $('barraEtiqueta').textContent = 'Sin cotizar';
     $('barraMonto').textContent = '$ —';
     $('barraMonto').className = 'barra-monto apagado';
+    marcarSello(false);
+    pintarPreciosLineas();
     habilitar(false);
     botonPanel('vacio');
   }
@@ -531,6 +596,8 @@
       ? '1 cosa por corregir' : errores.length + ' cosas por corregir';
     $('barraMonto').textContent = '$ —';
     $('barraMonto').className = 'barra-monto apagado';
+    marcarSello(false);
+    pintarPreciosLineas();
     habilitar(false);
     botonPanel('error');
   }
@@ -568,6 +635,8 @@
     $('barraEtiqueta').textContent = 'Sin disponibilidad';
     $('barraMonto').textContent = '$ —';
     $('barraMonto').className = 'barra-monto apagado';
+    marcarSello(false);
+    pintarPreciosLineas();
     habilitar(false);
     botonPanel('error');
   }
@@ -593,14 +662,45 @@
     return out;
   }
 
+  /** "actualizado hace 3 s": dice que lo que se ve corresponde a lo cargado. */
+  var selloTimer = null, selloDesde = 0;
+  function marcarSello(activo) {
+    clearInterval(selloTimer);
+    var el = $('barraSello');
+    if (!activo) { el.textContent = ''; return; }
+    selloDesde = Date.now();
+    var pintar = function () {
+      var s = Math.round((Date.now() - selloDesde) / 1000);
+      el.textContent = s < 1 ? 'actualizado ahora'
+                     : s < 60 ? 'actualizado hace ' + s + ' s'
+                     : 'actualizado hace ' + Math.round(s / 60) + ' min';
+    };
+    pintar();
+    selloTimer = setInterval(pintar, 5000);
+  }
+
+  function pintarVistaSub() {
+    var quien = estado.cliente.trim();
+    $('vistaSub').textContent = quien ? 'WhatsApp · ' + quien : 'WhatsApp';
+  }
+
   function pintarMensaje(res, texto) {
     $('burbuja').className = 'burbuja';
     $('burbuja').innerHTML = aHtmlWhatsApp(texto);
-    $('barraEtiqueta').textContent =
-      res.nNoches + (res.nNoches === 1 ? ' noche' : ' noches') + ' · ' +
-      res.totalHabitaciones + (res.totalHabitaciones === 1 ? ' habitación' : ' habitaciones');
+
+    var partes = [
+      res.nNoches + (res.nNoches === 1 ? ' noche' : ' noches'),
+      res.totalHabitaciones + (res.totalHabitaciones === 1 ? ' habitación' : ' habitaciones')
+    ];
+    res.promosAplicadas.forEach(function (p) { partes.push(p.nombre.toLowerCase()); });
+    res.extras.forEach(function (x) { partes.push(x.nombre.toLowerCase()); });
+
+    $('barraEtiqueta').textContent = partes.join(' · ');
     $('barraMonto').textContent = '$' + Motor.fmtMoney(CAT, res.total);
     $('barraMonto').className = 'barra-monto';
+    pintarVistaSub();
+    marcarSello(true);
+    pintarPreciosLineas();
     habilitar(true);
     botonPanel('ok');
   }
@@ -642,12 +742,14 @@
   // ==========================================================================
   // COPIAR — tres niveles de respaldo
   // ==========================================================================
-  function copiar() {
-    if (!TEXTO) return;
+  function copiar(texto) {
+    texto = (typeof texto === 'string' && texto) ? texto : TEXTO;
+    if (!texto) return;
+    PORTAPAPELES = texto;
 
     // Nivel 1: API moderna del portapapeles
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(TEXTO).then(
+      navigator.clipboard.writeText(PORTAPAPELES).then(
         function () { aviso('Mensaje copiado', 'exito'); },
         function () { copiarNivel2(); }
       );
@@ -659,13 +761,13 @@
   function copiarNivel2() {
     try {
       var ta = document.createElement('textarea');
-      ta.value = TEXTO;
+      ta.value = PORTAPAPELES;
       ta.setAttribute('readonly', '');
       ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
       document.body.appendChild(ta);
       ta.focus();
       ta.select();
-      ta.setSelectionRange(0, TEXTO.length);
+      ta.setSelectionRange(0, PORTAPAPELES.length);
       var ok = document.execCommand('copy');
       document.body.removeChild(ta);
       if (ok) { aviso('Mensaje copiado', 'exito'); return; }
@@ -679,9 +781,9 @@
     // de ayuda no impida mostrar el mensaje que hay que copiar.
     var ta = $('modalCopiaTexto');
     var modal = $('modalCopia');
-    if (!ta || !modal) { alert(TEXTO); return; }
+    if (!ta || !modal) { alert(PORTAPAPELES); return; }
 
-    ta.value = TEXTO;
+    ta.value = PORTAPAPELES;
     modal.classList.remove('oculto');
 
     try {
@@ -695,7 +797,7 @@
       try {
         ta.focus();
         ta.select();
-        ta.setSelectionRange(0, TEXTO.length);
+        ta.setSelectionRange(0, PORTAPAPELES.length);
       } catch (e) { /* la seleccion es opcional */ }
     }, 60);
   }
@@ -735,13 +837,10 @@
   // ==========================================================================
   function conectarEventos() {
     // --- Hotel ---
-    $('hoteles').addEventListener('click', function (e) {
-      var b = e.target.closest('.hotel-op');
-      if (!b) return;
-      if (estado.hotel === b.dataset.hotel) return;
-      estado.hotel = b.dataset.hotel;
+    $('hoteles').addEventListener('change', function () {
+      if (estado.hotel === this.value) return;
+      estado.hotel = this.value;
       document.body.dataset.hotel = estado.hotel;
-      $('marcaHotel').textContent = nombreCorto(CAT.hoteles[estado.hotel].nombre);
       estado.promos = [];
       if (!estado.lineas.length) estado.lineas = [nuevaLinea()];
       else estado.lineas.forEach(normalizarLinea);
@@ -794,8 +893,10 @@
       if (sel.dataset.campo === 'edad') {
         var idx = Number(sel.dataset.idx);
         l.edades[idx] = sel.value === '' ? '' : Number(sel.value);
-        // Solo se repinta la pista: repintar la linea completa cerraria el
+        // Se marca solo este campo: repintar la ficha entera cerraria el
         // selector nativo que la asesora acaba de usar.
+        var caja = sel.closest('.campo-edad');
+        if (caja) caja.classList.toggle('falta', sel.value === '');
         recalcular();
         return;
       }
@@ -819,9 +920,9 @@
         return;
       }
 
-      var btn = e.target.closest('.paso-btn');
+      var btn = e.target.closest('.pasos button');
       if (!btn) return;
-      var grupo = btn.closest('.paso');
+      var grupo = btn.closest('.pasos');
       var campo = grupo.dataset.campo;
       var min = Number(grupo.dataset.min), max = Number(grupo.dataset.max);
       var delta = Number(btn.dataset.paso);
@@ -858,7 +959,7 @@
 
     // --- Promociones ---
     $('promos').addEventListener('click', function (e) {
-      var b = e.target.closest('.promo-op');
+      var b = e.target.closest('.chip');
       if (!b) return;
       var cod = b.dataset.promo;
       var i = estado.promos.indexOf(cod);
@@ -868,7 +969,7 @@
     });
 
     $('extras').addEventListener('click', function (e) {
-      var b = e.target.closest('.promo-op');
+      var b = e.target.closest('.chip');
       if (!b) return;
       var cod = b.dataset.extra;
       var i = estado.extras.indexOf(cod);
@@ -880,6 +981,7 @@
     // --- Registro ---
     $('cliente').addEventListener('input', function () {
       estado.cliente = this.value;
+      pintarVistaSub();
       recalcular();
     });
     $('asesor').addEventListener('input', function () {
@@ -908,12 +1010,15 @@
       estado.hotel = ''; estado.checkin = ''; estado.checkout = '';
       estado.lineas = []; estado.promos = []; estado.cliente = '';
       document.body.dataset.hotel = '';
-      $('marcaHotel').textContent = 'Hesperia';
       $('checkin').value = ''; $('checkout').value = ''; $('cliente').value = '';
       $('columnaVista').classList.remove('abierta');
       estado.extras = [];
       renderHoteles(); renderLineas(); renderPromos(); renderExtras(); recalcular();
       aviso('Cotización nueva', 'exito');
+    });
+
+    $('btnVaciar').addEventListener('click', function () {
+      $('btnReiniciar').click();
     });
 
     document.addEventListener('keydown', function (e) {
@@ -936,7 +1041,8 @@
 
   function refrescarLinea(nodo, l) {
     var i = estado.lineas.indexOf(l);
-    nodo.innerHTML = htmlLinea(l, i);
+    nodo.innerHTML = envolver(htmlLinea(l, i));
+    pintarPreciosLineas();
   }
 
   // ==========================================================================
@@ -964,6 +1070,16 @@
   // Solo en escritorio. En el celular no existen las ventanas flotantes y la
   // asesora ya tiene la aplicacion entera a mano.
   // ==========================================================================
+  var CALC_ANCHO = 382;
+  var CALC_ALTO = 461;      // por debajo de 459 de contenido se corta el total
+
+  var calcAbierta = false;
+  var calcVentana = null;   // la ventana externa, si se pudo abrir
+  var calcNivel = 0;        // 1 = ventana de documento, 2 = emergente, 3 = en pagina
+  var calcRes = null;       // ultimo resultado valido, para copiar y abrir
+
+  var calcEstado = { hotel: '', cod: '', ci: '', co: '', adultos: 2, edades: [] };
+
   /**
    * El panel del mini cotizador, este donde este.
    *
@@ -982,37 +1098,60 @@
     return caja ? caja.querySelector('#' + id) : document.getElementById(id);
   }
 
-  var CALC_ANCHO = 382;
-  var CALC_ALTO = 461;      // por debajo de 459 de contenido se corta el total
-
-  var calcAbierta = false;
-  var calcVentana = null;   // la ventana externa, si se pudo abrir
-  var calcNivel = 0;        // 1 = ventana de documento, 2 = emergente, 3 = en pagina
-
   function calcMontar() {
-    var selH = $c('calcHotel');
-    selH.innerHTML = '<option value="">Elige…</option>' +
+    $c('calcHotel').innerHTML = '<option value="">Elige el hotel…</option>' +
       Object.keys(CAT.hoteles).map(function (c) {
-        return '<option value="' + c + '">' + esc(CAT.hoteles[c].nombre) + '</option>';
+        return '<option value="' + esc(c) + '">' + esc(CAT.hoteles[c].nombreCorto) + '</option>';
       }).join('');
 
     $c('calcHotel').addEventListener('change', function () {
+      calcEstado.hotel = this.value;
+      calcEstado.cod = '';
       calcLlenarHabs();
       calcCalcular();
     });
+    $c('calcHab').addEventListener('change', function () {
+      calcEstado.cod = this.value;
+      calcCalcular();
+    });
+    $c('calcIn').addEventListener('change', function () {
+      calcEstado.ci = this.value;
+      calcCalcular();
+    });
+    $c('calcOut').addEventListener('change', function () {
+      calcEstado.co = this.value;
+      calcCalcular();
+    });
 
-    ['calcHab', 'calcIn', 'calcOut'].forEach(function (id) {
-      $(id).addEventListener('change', calcCalcular);
+    calcCaja().addEventListener('click', function (e) {
+      var b = e.target.closest('[data-calcpaso]');
+      if (!b) return;
+      var delta = Number(b.dataset.delta);
+      if (b.dataset.calcpaso === 'adultos') {
+        calcEstado.adultos = Math.min(9, Math.max(1, calcEstado.adultos + delta));
+      } else {
+        var n = Math.min(6, Math.max(0, calcEstado.edades.length + delta));
+        if (n > calcEstado.edades.length) calcEstado.edades.push('');
+        else calcEstado.edades.length = n;
+      }
+      calcPintarPax();
+      calcCalcular();
     });
-    ['calcAdultos', 'calcNinos'].forEach(function (id) {
-      $(id).addEventListener('input', function () { calcEdades(); calcCalcular(); });
+
+    $c('calcEdades').addEventListener('change', function (e) {
+      var sel = e.target.closest('[data-edad]');
+      if (!sel) return;
+      calcEstado.edades[Number(sel.dataset.edad)] = sel.value;
+      calcCalcular();
     });
-    $c('calcEdades').addEventListener('input', calcCalcular);
+
+    $c('calcCopiar').addEventListener('click', calcCopiarMensaje);
+    $c('calcAbrir').addEventListener('click', calcAbrirCompleto);
 
     $('btnCalc').addEventListener('click', function () {
       calcAbierta ? calcCerrar() : calcAbrir();
     });
-    $('btnCalcCerrar').addEventListener('click', calcCerrar);
+    $c('btnCalcCerrar').addEventListener('click', calcCerrar);
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && calcAbierta && calcNivel === 3) calcCerrar();
@@ -1022,6 +1161,8 @@
     window.addEventListener('pagehide', function () {
       if (calcVentana && !calcVentana.closed) calcVentana.close();
     });
+
+    calcPintarPax();
   }
 
   /** Copia las hojas de estilo a la ventana nueva, con rutas absolutas. */
@@ -1038,16 +1179,13 @@
     meta.name = 'viewport';
     meta.content = 'width=device-width, initial-scale=1';
     doc.head.appendChild(meta);
-
-    // El acento del hotel se hereda del cuerpo principal.
-    doc.body.setAttribute('data-hotel', document.body.getAttribute('data-hotel') || '');
+    doc.body.setAttribute('data-hotel', calcEstado.hotel || '');
     doc.body.className = 'calc-suelta';
   }
 
   function calcAbrir() {
     var caja = calcCaja();
     caja.classList.remove('oculto');
-
     calcSembrar();
 
     // --- Nivel 1: ventana de documento, siempre encima ---------------------
@@ -1107,6 +1245,11 @@
     calcAbierta = true;
     $('btnCalc').setAttribute('aria-expanded', 'true');
     $('btnCalc').classList.add('activo');
+    // Solo el nivel 1 flota de verdad sobre otras aplicaciones. Prometerlo
+    // cuando el navegador no puede cumplirlo seria peor que no decir nada.
+    $c('calcChip').hidden = (calcNivel !== 1);
+    $c('calcVersion').textContent = CAT.config.VERSION_TARIFAS || '';
+    calcPintarPax();
     calcCalcular();
     try { $c('calcHotel').focus(); } catch (e) { /* la ventana aun no tiene foco */ }
   }
@@ -1142,99 +1285,176 @@
 
   /** Arranca con lo que ya esta cargado: casi siempre se quiere variar sobre eso. */
   function calcSembrar() {
-    if (!$c('calcHotel').value && estado.hotel) {
+    if (!calcEstado.hotel && estado.hotel) {
+      calcEstado.hotel = estado.hotel;
       $c('calcHotel').value = estado.hotel;
       calcLlenarHabs();
     }
-    if (!$c('calcIn').value && estado.checkin) $c('calcIn').value = estado.checkin;
-    if (!$c('calcOut').value && estado.checkout) $c('calcOut').value = estado.checkout;
+    if (!calcEstado.ci && estado.checkin) {
+      calcEstado.ci = estado.checkin;
+      $c('calcIn').value = estado.checkin;
+    }
+    if (!calcEstado.co && estado.checkout) {
+      calcEstado.co = estado.checkout;
+      $c('calcOut').value = estado.checkout;
+    }
   }
 
   function calcLlenarHabs() {
-    var hotel = $c('calcHotel').value;
-    var habs = hotel ? habsDe(hotel) : [];
-    $c('calcHab').innerHTML = '<option value="">Elige…</option>' +
+    var habs = calcEstado.hotel ? habsDe(calcEstado.hotel) : [];
+    $c('calcHab').innerHTML = '<option value="">Elige la habitación…</option>' +
       habs.map(function (h) {
-        return '<option value="' + esc(h.cod) + '">' + esc(h.nombre) + '</option>';
+        var etq = h.categoria + ' · ' + h.ocupacion + (h.atributo ? ' · ' + h.atributo : '');
+        return '<option value="' + esc(h.cod) + '">' + esc(etq) + '</option>';
       }).join('');
+    $c('calcHab').value = calcEstado.cod;
   }
 
-  /** Un campo de edad por cada nino declarado, conservando lo ya escrito. */
-  function calcEdades() {
-    var n = Math.max(0, Math.min(6, Number($c('calcNinos').value) || 0));
+  /** Contadores y campos de edad, segun el estado propio del mini. */
+  function calcPintarPax() {
+    $c('calcAdultos').textContent = calcEstado.adultos;
+    $c('calcNinos').textContent = calcEstado.edades.length;
+
     var cont = $c('calcEdades');
-    var previos = [].slice.call(cont.querySelectorAll('input'))
-                    .map(function (i) { return i.value; });
-
-    if (!n) { cont.innerHTML = ''; cont.classList.add('oculto'); return; }
-
-    var html = [];
-    for (var i = 0; i < n; i++) {
-      html.push('<label class="campo campo-edad"><span class="campo-etiqueta">Edad ' +
-                (i + 1) + '</span><input type="number" class="input" min="0" max="17" ' +
-                'inputmode="numeric" value="' + esc(previos[i] || '') + '"></label>');
+    if (!calcEstado.edades.length) {
+      cont.innerHTML = '';
+      cont.classList.add('oculto');
+      return;
     }
-    cont.innerHTML = html.join('');
     cont.classList.remove('oculto');
+    cont.innerHTML = calcEstado.edades.map(function (edad, i) {
+      var op = ['<option value=""' + (edad === '' ? ' selected' : '') + '>—</option>'];
+      for (var e = 0; e <= 17; e++) {
+        op.push('<option value="' + e + '"' + (String(edad) === String(e) ? ' selected' : '') +
+                '>' + e + (e === 1 ? ' año' : ' años') + '</option>');
+      }
+      return '<label class="campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
+               '<span class="campo-etiqueta">Niño ' + (i + 1) + '</span>' +
+               '<select data-edad="' + i + '">' + op.join('') + '</select>' +
+             '</label>';
+    }).join('');
   }
 
-  function calcSalida(html, hayError) {
-    var s = $c('calcSalida');
-    s.innerHTML = html;
-    s.className = 'calc-salida' + (hayError ? ' con-error' : '');
+  function calcNochesTexto() {
+    var caja = $c('calcNoches');
+    var n = caja.querySelector('.caja-noches-n');
+    var t = caja.querySelector('.caja-noches-t');
+    if (calcEstado.ci && calcEstado.co && calcEstado.co > calcEstado.ci) {
+      var d = Motor.Fechas.diffDias(calcEstado.ci, calcEstado.co);
+      n.textContent = d;
+      t.textContent = d === 1 ? 'noche' : 'noches';
+      return d;
+    }
+    n.textContent = '—';
+    t.textContent = 'noches';
+    return 0;
+  }
+
+  function calcSalida(detalle, total, hayError) {
+    $c('calcDetalle').textContent = detalle;
+    $c('calcDetalle').className = 'calc-detalle' + (hayError ? ' error' : '');
+    $c('calcTotal').textContent = total;
+    $c('calcTotal').className = 'calc-total' + (total === '$ —' ? ' apagado' : '');
+    var listo = !hayError && total !== '$ —';
+    $c('calcCopiar').disabled = !listo;
+    $c('calcAbrir').disabled = !listo;
   }
 
   function calcCalcular() {
-    var hotel = $c('calcHotel').value;
-    var cod = $c('calcHab').value;
-    var ci = $c('calcIn').value;
-    var co = $c('calcOut').value;
+    calcNochesTexto();
+    calcRes = null;
 
-    if (!hotel || !cod || !ci || !co) {
-      calcSalida('<span class="calc-espera">Elige hotel, habitación y fechas.</span>', false);
+    var e = calcEstado;
+    if (!e.hotel || !e.cod || !e.ci || !e.co) {
+      calcSalida('Elige hotel, habitación y fechas', '$ —', false);
       return;
     }
 
-    var edades = [].slice.call($c('calcEdades').querySelectorAll('input'))
-      .map(function (i) { return Number(i.value); })
-      .filter(edadDeMenor);
+    var edades = e.edades
+      .filter(function (v) { return v !== ''; })
+      .map(Number);
+    if (edades.length !== e.edades.length) {
+      calcSalida('Falta la edad de algún niño', '$ —', true);
+      return;
+    }
 
     var req = {
-      hotel: hotel, checkin: ci, checkout: co, promos: [],
-      lineas: [{ cod_hab: cod, cantidad: 1,
-                 adultos: Math.max(1, Number($c('calcAdultos').value) || 1),
-                 edades: edades }]
+      hotel: e.hotel, checkin: e.ci, checkout: e.co, promos: [], extras: [],
+      lineas: [{ cod_hab: e.cod, cantidad: 1, adultos: e.adultos, edades: edades }]
     };
 
     var r;
     try {
       r = Motor.calcular(CAT, req);
-    } catch (e) {
-      calcSalida('<span class="calc-error">No se pudo calcular: ' + esc(e.message) +
-                 '</span>', true);
+    } catch (err) {
+      calcSalida('No se pudo calcular: ' + err.message, '$ —', true);
       return;
     }
 
     if (!r.ok) {
       var titulo = (r.sinCupo && r.sinCupo.length)
         ? 'Sin disponibilidad esas noches'
-        : 'No se puede cotizar';
-      calcSalida('<span class="calc-error"><strong>' + titulo + '</strong><br>' +
-                 r.errores.map(esc).join('<br>') + '</span>', true);
+        : r.errores[0];
+      calcSalida(titulo, '$ —', true);
       return;
     }
 
-    var porNoche = r.lineas[0].costoUniforme;
-    calcSalida(
-      '<span class="calc-total">$' + Motor.fmtMoney(CAT, r.total) + '</span>' +
-      '<span class="calc-detalle">' + r.nNoches +
-      (r.nNoches === 1 ? ' noche' : ' noches') +
-      (porNoche !== null ? ' · $' + Motor.fmtMoney(CAT, porNoche) + ' por noche' : '') +
-      '</span>', false);
+    calcRes = r;
+    var temp = r.lineas[0].detalleNoches[0];
+    var detalle = r.nNoches + (r.nNoches === 1 ? ' noche' : ' noches') +
+                  (temp && temp.temporada ? ' · ' + temp.temporada.toLowerCase() : '');
+    calcSalida(detalle, '$' + Motor.fmtMoney(CAT, r.total), false);
   }
 
-  /** Una edad de menor: 0 a 17. Un "18" aqui seria un adulto mal contado. */
-  function edadDeMenor(e) { return !isNaN(e) && e >= 0 && e <= 17; }
+  function calcCopiarMensaje() {
+    if (!calcRes) return;
+    var texto;
+    try {
+      texto = Motor.render(CAT, calcRes, { asesorIniciales: estado.asesor, cliente: '' });
+    } catch (err) {
+      aviso('No se pudo armar el mensaje', 'error');
+      return;
+    }
+    copiar(texto);
+  }
+
+  /**
+   * Pasa lo calculado a la aplicacion, para seguir armando la cotizacion sin
+   * volver a teclear lo mismo. Reemplaza lo que hubiera: si la asesora pulsa
+   * esto es porque quiere trabajar sobre este precio.
+   */
+  function calcAbrirCompleto() {
+    if (!calcRes) return;
+    var e = calcEstado;
+    var hab = habsDe(e.hotel).filter(function (h) { return h.cod === e.cod; })[0];
+    if (!hab) return;
+
+    estado.hotel = e.hotel;
+    estado.checkin = e.ci;
+    estado.checkout = e.co;
+    estado.promos = [];
+    estado.extras = [];
+    estado.lineas = [{
+      id: ++secuencia,
+      categoria: hab.categoria, ocupacion: hab.ocupacion, atributo: hab.atributo || '',
+      cantidad: 1, adultos: e.adultos, edades: e.edades.slice()
+    }];
+
+    document.body.dataset.hotel = estado.hotel;
+    $('hoteles').value = estado.hotel;
+    fijarFecha($('checkin'), estado.checkin);
+    fijarFecha($('checkout'), estado.checkout);
+
+    renderHoteles();
+    renderLineas();
+    renderPromos();
+    renderExtras();
+    recalcular();
+
+    calcCerrar();
+    try { window.focus(); } catch (err) { /* el navegador puede negar el foco */ }
+    aviso('Pasado al cotizador', 'exito');
+  }
 
   // ==========================================================================
   iniciar();

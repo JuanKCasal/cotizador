@@ -84,6 +84,7 @@ var Catalogo = (function () {
       .forEach(function (r) {
         hoteles[r.codigo] = {
           codigo: r.codigo, nombre: r.nombre_display, emojis: r.emojis_titulo,
+          nombreCorto: String(r.nombre_corto || r.nombre_display).trim(),
           horaIn: r.hora_checkin, horaOut: r.hora_checkout,
           formatoFecha: String(r.formato_fecha || 'dd/MM/yy').trim(),
           modoTarifa: String(r.modo_tarifa || 'POR_PERSONA').trim().toUpperCase(),
