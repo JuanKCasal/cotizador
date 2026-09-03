@@ -572,13 +572,20 @@ select:focus-visible, input:focus-visible {
      donde se rompe. Con una base minima por control, lo que no cabe baja a una
      segunda linea y nunca se corta nada. */
   .hab-controles { flex-wrap: wrap; }
-  /* Las bases salen del texto mas largo de cada control, no de proporciones:
-     la categoria tiene que poder decir "ESTÁNDAR BÁSICA" entera. Suman menos
-     que la columna a 1300, asi que entran en una fila; en una pantalla mas
-     estrecha bajan a dos en vez de cortarse. */
-  .hab-controles .campo-select          { flex: 2 1 204px; }
+
+  /* La categoria se lleva su propia linea, entera.
+     Es el unico control cuyo contenido no tiene tope: los nombres de
+     habitacion los pone el negocio y manana puede entrar uno mas largo que
+     cualquiera de hoy. Darle una base sacada del nombre mas largo que
+     conocemos solo mueve el problema al siguiente nombre; darle la fila
+     completa lo resuelve para todos. Los otros cuatro si tienen contenido
+     acotado -DOBLE/TRIPLE, el atributo, y dos cifras- y comparten la
+     siguiente.
+     De paso queda mejor jerarquia: la categoria es LA eleccion, y el resto
+     son matices de esa eleccion. */
+  .hab-controles .campo-select          { flex: 1 0 100%; }
   .hab-controles .campo-select.corto    { flex: 1 1 112px; }
-  .hab-controles .campo-select.atributo { flex: 1 1 130px; }
+  .hab-controles .campo-select.atributo { flex: 1.4 1 150px; }
   .contador { flex: 1 1 142px; }
   .hab-pie { display: none; }   /* el precio ya está arriba, junto al título */
 }

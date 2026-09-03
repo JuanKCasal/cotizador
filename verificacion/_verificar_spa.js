@@ -566,6 +566,19 @@ function paso(ficha, campo, signo) {
   ok($('calcBurbuja').classList.contains('oculto'),
      'cerrar el mini tambien recoge la burbuja');
 
+  // ============================== N. LA CATEGORIA, PARA CUALQUIER NOMBRE
+  // Los nombres de habitacion los pone el negocio y no tienen tope: darle al
+  // control una medida sacada del nombre mas largo que conocemos hoy solo
+  // mueve el problema al siguiente nombre. La regla es que se lleva la fila
+  // entera, y eso se comprueba en la hoja porque jsdom no maqueta.
+  const hojaCss = leerRaiz('assets/estilos.css');
+  ok(/\.hab-controles \.campo-select\s+\{ flex: 1 0 100%; \}/.test(hojaCss),
+     'la categoria se lleva la fila completa en escritorio');
+  ok(/\.hab-controles \.campo-select \{ flex: 1 0 100%; \}/.test(hojaCss) ||
+     /\.hab-controles \.campo-select \{ flex: 1 0 100%; \}/.test(hojaCss) ||
+     /\.hab-controles \.campo-select \{[^}]*100%/.test(hojaCss),
+     'y tambien en movil');
+
   // ================================================ N. LA HOJA, EN CRUDO
   // Dos atributos class en la misma etiqueta no dan error: el navegador se
   // queda con el primero y tira el segundo, en silencio. Asi desaparecio
