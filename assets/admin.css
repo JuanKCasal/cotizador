@@ -360,3 +360,52 @@ select.adm-celda { cursor: pointer; }
   border-radius: var(--r-medio);
   border: 1px solid var(--arena);
 }
+
+
+/* ---------------------------------------------------------- Publicar
+   La clave se pide cada vez y no se guarda. Es la decision deliberada: la
+   pantalla vive en un sitio publico y una credencial guardada en el navegador
+   sobrevive a la persona que la escribio. */
+.adm-clave {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 4px;
+}
+.adm-clave select {
+  height: var(--h-campo);
+  padding: 0 12px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+  font-family: var(--cuerpo); font-size: 15px;
+  color: var(--tinta); cursor: pointer;
+}
+.adm-clave input {
+  height: var(--h-campo);
+  padding: 0 12px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+  font-family: var(--mono); font-size: 15px;
+  color: var(--tinta);
+}
+.adm-clave input:focus-visible { outline: var(--foco); outline-offset: var(--foco-offset); }
+.adm-clave-pista { font-size: 12.5px; color: var(--tinta-70); }
+
+.adm-publicando {
+  margin: 0; padding: 10px 12px;
+  border-radius: var(--r-medio);
+  background: var(--arena-sut);
+  font-size: 13.5px; color: var(--tinta);
+}
+.adm-publicando.error { background: var(--alerta-sut); color: var(--alerta); }
+.adm-publicando.exito { background: #E8F5F0; color: var(--exito); }
+
+.adm-salida {
+  margin: 0; padding-top: 4px;
+  font-size: 12.5px; color: var(--tinta-70); text-align: right;
+}
+.adm-enlace {
+  border: 0; background: none; padding: 0;
+  font: inherit; font-weight: 600; color: var(--tinta);
+  text-decoration: underline; cursor: pointer;
+}
+.adm-enlace:hover { color: var(--alerta); }
+.adm-enlace:focus-visible { outline: var(--foco); outline-offset: 2px; }

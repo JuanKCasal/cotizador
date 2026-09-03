@@ -1,5 +1,16 @@
 # Plan de mejoras — Cotizador Hesperia
 
+> **Estado al 03/09/2026: ejecutado.** Se aplicaron las cinco correcciones, la
+> **Opción A** (el sistema, cumplido) y la **Opción C** (jerarquía material). La
+> **Opción B** (el pulgar) queda sin hacer: parte de sus piezas —copiar como acción
+> principal de la barra, el mínimo táctil en los contadores— entraron con A y C, pero
+> contraer los hoteles a un chip no se hizo, porque esconde los otros cuatro y eso es
+> una decisión de negocio, no de diseño.
+>
+> Este documento se queda como el registro de por qué se hizo cada cosa. Lo que dice en
+> presente («hoy la barra se aplasta») describe el estado **antes** de la entrega; el
+> apartado de cada corrección lleva la cura que se aplicó.
+
 Auditoría de diseño del proyecto tal como está en `main`, hecha con los cuatro
 agentes y las cuatro skills de diseño registrados en `CLAUDE.md`. Todo lo que
 sigue está verificado contra el código y, donde se puede, medido: no hay ningún

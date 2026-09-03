@@ -115,15 +115,43 @@
   <div class="modal-caja adm-modal">
     <h3 id="modalPublicarTitulo">Publicar los cambios</h3>
     <p class="modal-pista">
-      Se descargan los archivos que cambiaron. Súbelos a la carpeta
-      <strong>datos/</strong> del repositorio y las asesoras verán las tarifas
-      nuevas en cuanto se publique el sitio.
+      Esto sube los archivos que cambiaron. En un par de minutos las asesoras
+      ven las tarifas nuevas.
     </p>
     <ul class="adm-archivos" id="listaArchivos"></ul>
+
+    <label class="adm-clave">
+      <span class="t-seccion">Quién publica</span>
+      <select id="quienPublica"></select>
+      <span class="adm-clave-pista">
+        Queda escrito en el historial del repositorio.
+      </span>
+    </label>
+
+    <label class="adm-clave">
+      <span class="t-seccion">Clave para publicar</span>
+      <input type="password" id="clavePublicar" autocomplete="off"
+             spellcheck="false" placeholder="github_pat_…">
+      <span class="adm-clave-pista">
+        No se guarda en ningún lado: se pide cada vez.
+      </span>
+    </label>
+
+    <p class="adm-publicando oculto" id="publicando" role="status" aria-live="polite"></p>
+
     <div class="adm-modal-acciones">
       <button type="button" class="btn btn-secundario" id="btnCerrarPublicar">Cancelar</button>
-      <button type="button" class="btn btn-primario" id="btnDescargar">Descargar archivos</button>
+      <button type="button" class="btn btn-primario" id="btnPublicarGit">Publicar</button>
     </div>
+
+    <!-- La salida de emergencia, y se ve como tal: si GitHub no responde o la
+         clave caducó, se descargan los archivos y se suben a mano antes que
+         quedarse sin poder cambiar una tarifa con un cliente esperando. -->
+    <p class="adm-salida">
+      ¿No responde GitHub?
+      <button type="button" class="adm-enlace" id="btnDescargar">Descargar los archivos</button>
+      y súbelos a mano.
+    </p>
   </div>
 </div>
 

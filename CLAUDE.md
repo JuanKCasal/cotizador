@@ -59,17 +59,97 @@ nombre, así que el orden no importa, pero **el nombre sí es parte del contrato
 ```bash
 cd verificacion
 npm install                 # solo la primera vez (jsdom)
-npm test                    # las dos suites
+npm test                    # las cuatro suites
+npm run versionar           # sella los assets antes de comitear
 ```
 
-Deben terminar en `FALLAN: 0` y `Sin errores de ejecucion`.
+Deben terminar en `FALLAN: 0` y `Sin errores de ejecucion`. Son cuatro: el motor
+(`_verificar.js`), el cotizador (`_verificar_spa.js`), la administración
+(`_verificar_admin.js`) y la publicación a GitHub (`_verificar_publicar.js`, contra un
+GitHub de mentira).
 
-**Corre las dos suites antes y después de cualquier cambio al motor.** No es opcional:
+**Corre las suites antes y después de cualquier cambio al motor.** No es opcional:
 es lo único que separa un refactor seguro de un error de precio en producción.
+
+### Antes de comitear: sellar los assets
+
+```
+cd verificacion && npm run versionar
+```
+
+GitHub Pages sirve el CSS y el JS con caché, así que sin esto una asesora puede seguir
+con la versión vieja después de publicar. El script pone `?v=<fecha>` en los assets de
+las dos pantallas. Los JSON de `datos/` no van ahí: los pide `fetch()` y `catalogo.js`
+ya les pone su propio anticaché.
 
 Los arneses leen `assets/` y `datos/` reales, los mismos archivos que descarga el
 navegador. Lo que pasa en las pruebas es lo que va a pasar en producción — salvo lo que
 depende del dispositivo, que sigue necesitando un celular de verdad.
+
+## Publicar el catálogo
+
+La pantalla de administración publica a GitHub por su cuenta: se corrige la tarifa, se
+pulsa **Publicar**, se elige quién publica y se pega la clave. En un par de minutos
+Pages sirve el cambio. La asesora no ve un `.json` en ningún momento.
+
+Cuatro cosas de ese camino no son negociables:
+
+- **Un solo commit.** Se usa la API de datos de Git (blob → árbol → commit →
+  referencia), no la de contenidos. La de contenidos solo sabe hacer un archivo por
+  commit, y si `tarifas.json` entra y `plantillas.json` falla el catálogo queda a
+  medias. O entra todo o no entra nada.
+- **Sin `force`.** Si alguien movió la rama mientras tanto, GitHub rechaza y se avisa,
+  antes que pisar el cambio de otro.
+- **La clave se pide cada vez y no se guarda.** Ni en `localStorage` ni en ningún sitio:
+  la pantalla vive en una URL pública y una credencial guardada en el navegador
+  sobrevive a la persona que la escribió. Es una decisión, no un pendiente.
+- **La descarga se queda.** Si GitHub no responde o la clave caducó, se descargan los
+  archivos y se suben a mano. Nunca se puede quedar sin poder cambiar una tarifa con un
+  cliente esperando.
+
+La clave es un *fine-grained token* con `Contents: read and write` sobre un solo
+repositorio y nada más. El repositorio y la rama son dato, no código:
+`REPO_GITHUB` y `RAMA_GITHUB` en `datos/config.json`.
+
+## El sistema visual manda
+
+`assets/tokens.css` es el entregable del sistema visual y **es la única fuente** de la
+tipografía, los espacios y el color. En la práctica eso significa:
+
+- Los papeles que el sistema nombra usan su clase (`.t-seccion`, `.t-campo`, `.t-pista`,
+  `.t-precio`, `.t-total`, `.t-titulo-tarjeta`). No se repiten sus medidas en
+  `estilos.css`.
+- Los controles de formulario llevan `font: inherit`, así que la clase va en la etiqueta
+  que los envuelve y manda sobre el control. No se declara la fuente control por
+  control.
+- Los espacios salen de `--e1`…`--e6`. Lo que no cae en la escala se lleva al escalón
+  más cercano; no se le agrega un escalón a la escala. Se salvan dos cosas que no son
+  ritmo: los despejes de ancho conocido (el hueco de la flecha del desplegable) y los
+  márgenes negativos que centran un dibujo respecto a su caja.
+- Nunca menos de 16px en un campo de móvil: por debajo, iOS hace zoom al enfocar.
+
+Lo único que `estilos.css` le añade al sistema es la pila de respaldo de cada fuente:
+`tokens.css` las nombra a secas y si no cargan el navegador caería a su serif.
+
+## Dos trampas de CSS que ya costaron caro
+
+Las dos son el mismo error y va a volver a pasar:
+
+1. `.solo-pc` declaraba `display: none`, pero `.btn-cabecera` declara
+   `display: inline-flex` más abajo con la misma especificidad y ganaba por orden. Los
+   botones de escritorio salían en el teléfono.
+2. El botón de colapsar el mini se escondía con el atributo `hidden`, pero eso es una
+   regla del navegador y `.calc-btn-ventana { display: grid }` le ganaba. El botón
+   aparecía dentro de la ventana flotante, donde no hace nada.
+
+**Una utilidad que esconde tiene que ganar siempre.** Por eso hoy
+`[hidden] { display: none !important }` y `.solo-pc` esconde con `!important` dentro de
+su media query, y al mostrar no reasigna `display`: cada pieza conserva el suyo.
+
+Y una de JS del mismo tipo: había dos `esMovil()`, uno de ancho y uno de táctil, y el
+izado de funciones dejaba ganar al de abajo. El del ancho ahora se llama
+`anchoDeMovil()` y pregunta por la media query, para que el JS y el CSS no puedan
+discrepar.
 
 ## Agentes y skills de diseño
 

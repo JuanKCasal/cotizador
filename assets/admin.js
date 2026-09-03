@@ -89,6 +89,10 @@
       $('modalPublicar').classList.add('oculto');
     });
     $('btnDescargar').addEventListener('click', descargar);
+    $('btnPublicarGit').addEventListener('click', publicarAGitHub);
+    $('clavePublicar').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') publicarAGitHub();
+    });
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') $('modalPublicar').classList.add('oculto');
@@ -898,7 +902,11 @@
       return '<li><span>datos/' + esc(t) + '.json</span>' +
              '<span class="adm-archivo-det">' + n + '</span></li>';
     }).join('');
+    llenarQuienPublica();
+    $('clavePublicar').value = '';
+    estadoPublicar('');
     $('modalPublicar').classList.remove('oculto');
+    setTimeout(function () { $('clavePublicar').focus(); }, 30);
   }
 
   function descargar() {
@@ -913,6 +921,223 @@
     $('modalPublicar').classList.add('oculto');
     aviso(cambiados.length === 1 ? 'Archivo descargado'
                                  : cambiados.length + ' archivos descargados', 'exito');
+  }
+
+  // ==========================================================================
+  // PUBLICAR A GITHUB
+  //
+  // Un solo commit con todos los archivos, no uno por archivo. Si tarifas.json
+  // entra y plantillas.json falla, el catalogo queda a medias y esa es la
+  // pantalla que decide el precio de TODAS las cotizaciones: o entra todo o no
+  // entra nada. Por eso se usa la API de datos de Git (blob, arbol, commit,
+  // referencia) en vez de la de contenidos, que solo sabe hacer un archivo por
+  // commit.
+  //
+  // La clave se pide cada vez y no se guarda: la pantalla vive en un sitio
+  // publico y una credencial guardada en el navegador sobrevive a la persona
+  // que la escribio. La descarga se queda como salida de emergencia para
+  // cuando GitHub no responde o la clave caduco.
+  // ==========================================================================
+  var API = 'https://api.github.com';
+  var publicando = false;
+
+  function repoGit()  { return (CRUDO.config && CRUDO.config.REPO_GITHUB) || ''; }
+  function ramaGit()  { return (CRUDO.config && CRUDO.config.RAMA_GITHUB) || 'main'; }
+
+  /** base64 de texto UTF-8. btoa solo entiende latin-1 y los mensajes traen emoji. */
+  function aBase64(texto) {
+    var bytes = new TextEncoder().encode(texto);
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+
+  function estadoPublicar(msg, clase) {
+    var el = $('publicando');
+    el.textContent = msg;
+    el.className = 'adm-publicando' + (clase ? ' ' + clase : '');
+    el.classList.toggle('oculto', !msg);
+  }
+
+  /**
+   * Traduce el fallo a algo que se pueda actuar.
+   *
+   * "Error 401" no le dice nada a quien esta corrigiendo una tarifa con un
+   * cliente esperando; "la clave no vale o caduco" si.
+   */
+  function fallaGit(status, cuerpo) {
+    if (status === 401) return 'La clave no vale o caducó. Pide una nueva.';
+    if (status === 403) return 'La clave no tiene permiso para escribir en el repositorio, ' +
+                              'o GitHub está limitando los intentos. Espera un minuto.';
+    if (status === 404) return 'No se encuentra el repositorio ' + repoGit() + '. ' +
+                              'Puede que la clave no tenga acceso a él.';
+    if (status === 409 || status === 422) return 'Alguien más publicó mientras tanto. ' +
+                              'Recarga la pantalla y vuelve a hacer el cambio.';
+    if (status === 0) return 'No hay conexión con GitHub. Usa Descargar y súbelo a mano.';
+    return 'GitHub respondió ' + status + (cuerpo ? ': ' + cuerpo : '') +
+           '. Usa Descargar y súbelo a mano.';
+  }
+
+  function pedirGit(ruta, clave, opciones) {
+    var op = opciones || {};
+    return fetch(API + '/repos/' + repoGit() + ruta, {
+      method: op.method || 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + clave,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json'
+      },
+      body: op.cuerpo ? JSON.stringify(op.cuerpo) : undefined
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.text().then(function (t) {
+          var msg = '';
+          try { msg = JSON.parse(t).message || ''; } catch (e) { msg = ''; }
+          throw new Error(fallaGit(r.status, msg));
+        });
+      }
+      return r.json();
+    }, function () {
+      throw new Error(fallaGit(0, ''));
+    });
+  }
+
+  /**
+   * Quien publica, elegido a mano en el dialogo.
+   *
+   * Se pregunta en vez de deducirlo del selector de asesora de la pestana,
+   * porque deducirlo acertaria en Mensajes y mentiria en Tarifas. Y en el
+   * historial de una pantalla que fija precios, un nombre equivocado es peor
+   * que ninguno.
+   */
+  function llenarQuienPublica() {
+    var sel = $('quienPublica');
+    if (!sel) return;
+    var lista = (CRUDO.asesoras || []).filter(function (a) { return a.activo !== false; });
+    var pordefecto = String((CRUDO.config && CRUDO.config.INICIALES_POR_DEFECTO) || '').toUpperCase();
+    sel.innerHTML = lista.map(function (a) {
+      return '<option value="' + esc(a.iniciales) + '">' +
+             esc(a.iniciales + ' · ' + a.nombre) + '</option>';
+    }).join('') + '<option value="">Sin especificar</option>';
+    var hay = lista.some(function (a) { return String(a.iniciales).toUpperCase() === pordefecto; });
+    sel.value = hay ? pordefecto : (lista.length ? lista[0].iniciales : '');
+  }
+
+  function quienPublica() {
+    var sel = $('quienPublica');
+    var ini = sel ? sel.value : '';
+    if (!ini) return '';
+    var a = (CRUDO.asesoras || []).filter(function (x) {
+      return String(x.iniciales).toUpperCase() === String(ini).toUpperCase();
+    })[0];
+    return a ? (a.iniciales + ' · ' + a.nombre) : ini;
+  }
+
+  function mensajeCommit(cambiados) {
+    var cuantos = cambiados.map(function (t) {
+      return t + '.json';
+    }).join(', ');
+    var quien = quienPublica();
+    return 'Catálogo: ' + cuantos + '\n\n' +
+           'Publicado desde la pantalla de administración' +
+           (quien ? ' por ' + quien : '') + '.';
+  }
+
+  function publicarAGitHub() {
+    if (publicando) return;
+    var clave = $('clavePublicar').value.trim();
+    if (!clave) {
+      estadoPublicar('Falta la clave.', 'error');
+      $('clavePublicar').focus();
+      return;
+    }
+    if (!repoGit()) {
+      estadoPublicar('No hay repositorio configurado (REPO_GITHUB).', 'error');
+      return;
+    }
+    var cambiados = archivosCambiados();
+    if (!cambiados.length) return;
+
+    publicando = true;
+    $('btnPublicarGit').disabled = true;
+    var rama = ramaGit();
+    var shaCommit, shaArbol;
+
+    estadoPublicar('Conectando con GitHub…');
+    pedirGit('/git/ref/heads/' + rama, clave)
+      .then(function (ref) {
+        shaCommit = ref.object.sha;
+        return pedirGit('/git/commits/' + shaCommit, clave);
+      })
+      .then(function (commit) {
+        shaArbol = commit.tree.sha;
+        estadoPublicar('Subiendo ' + cambiados.length +
+                       (cambiados.length === 1 ? ' archivo…' : ' archivos…'));
+        // Un blob por archivo; todavia no cuelgan de ningun sitio.
+        return Promise.all(cambiados.map(function (t) {
+          return pedirGit('/git/blobs', clave, {
+            method: 'POST',
+            cuerpo: {
+              content: aBase64(JSON.stringify(CRUDO[t], null, 2) + '\n'),
+              encoding: 'base64'
+            }
+          }).then(function (b) { return { tabla: t, sha: b.sha }; });
+        }));
+      })
+      .then(function (blobs) {
+        estadoPublicar('Armando el cambio…');
+        return pedirGit('/git/trees', clave, {
+          method: 'POST',
+          cuerpo: {
+            base_tree: shaArbol,
+            tree: blobs.map(function (b) {
+              return { path: 'datos/' + b.tabla + '.json', mode: '100644',
+                       type: 'blob', sha: b.sha };
+            })
+          }
+        });
+      })
+      .then(function (arbol) {
+        return pedirGit('/git/commits', clave, {
+          method: 'POST',
+          cuerpo: {
+            message: mensajeCommit(cambiados),
+            tree: arbol.sha,
+            parents: [shaCommit]
+          }
+        });
+      })
+      .then(function (commit) {
+        estadoPublicar('Publicando…');
+        // Sin force: si alguien movio la rama mientras tanto, GitHub lo rechaza
+        // y es preferible avisar antes que pisar el cambio de otro.
+        return pedirGit('/git/refs/heads/' + rama, clave, {
+          method: 'PATCH',
+          cuerpo: { sha: commit.sha, force: false }
+        });
+      })
+      .then(function () {
+        // Lo publicado pasa a ser lo original: deja de haber borrador.
+        ORIGINAL = clonar(CRUDO);
+        olvidarBorrador();
+        revalidar();
+        pintar();
+        estadoPublicar('Publicado. En un par de minutos se ve en el cotizador.', 'exito');
+        $('clavePublicar').value = '';
+        aviso('Cambios publicados', 'exito');
+        setTimeout(function () {
+          $('modalPublicar').classList.add('oculto');
+          estadoPublicar('');
+        }, 2600);
+      })
+      .catch(function (e) {
+        estadoPublicar(e.message, 'error');
+      })
+      .then(function () {
+        publicando = false;
+        $('btnPublicarGit').disabled = false;
+      });
   }
 
   function bajarArchivo(nombre, texto) {
