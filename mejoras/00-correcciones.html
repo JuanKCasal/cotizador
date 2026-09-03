@@ -1,0 +1,294 @@
+<meta charset="utf-8">
+<title>Correcciones · Cotizador Hesperia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hoja.css">
+
+<style>
+  /* Cada defecto se demuestra, no se describe: abajo hay piezas de verdad,
+     con el mismo CSS que tiene la app hoy y con el que tendría corregida. */
+
+  .defecto { border-top: 1px solid var(--arena); padding-top: 30px; margin-top: 38px; }
+  .defecto:first-of-type { border-top: 0; }
+
+  .sello {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 24px; padding: 0 10px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .sello.p0 { background: #FDF1F0; color: #B3382F; }
+  .sello.p1 { background: #FDF6E7; color: #9A5B08; }
+  .sello.ok { background: #E8F5F0; color: #1B7A5A; }
+
+  .prueba {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    background: #0B2545; color: #D8E3EE;
+    border-radius: var(--r-medio); padding: 14px 16px;
+    overflow-x: auto; margin: 14px 0;
+  }
+  .prueba i { color: #8FB4D9; font-style: normal; }
+
+  /* --- 1. barra y el borde inferior del iPhone --- */
+  .demo-barra { border: 1px solid var(--arena); border-radius: var(--r-medio); overflow: hidden; }
+  .demo-barra .indicador {
+    height: 34px; background: repeating-linear-gradient(45deg, #E3E9EE 0 6px, #D8E0E7 6px 12px);
+    display: grid; place-items: center; font-size: 10.5px; color: var(--tinta-45);
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .barra-mala {
+    height: 68px; padding: 0 16px 34px;      /* lo que hace la app hoy */
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--papel); border-top: 2px solid var(--tinta); overflow: hidden;
+  }
+  .barra-buena {
+    height: calc(68px + 34px); padding: 0 16px 34px;   /* la corrección */
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--papel); border-top: 2px solid var(--tinta);
+  }
+
+  /* --- 2. btn-alerta --- */
+  .b-base {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 48px; padding: 0 22px; border-radius: 10px;
+    border: 1.5px solid var(--arena); background: var(--papel);
+    color: var(--tinta); font: 600 15px 'Instrument Sans', sans-serif;
+  }
+  .b-alerta-def {
+    border-color: var(--alerta); background: var(--alerta-sut); color: var(--alerta);
+  }
+
+  /* --- 3. acento sin valor por defecto --- */
+  .demo-hab {
+    display: flex; gap: 12px; align-items: stretch;
+    background: var(--papel); border: 1px solid var(--arena);
+    border-radius: var(--r-medio); overflow: hidden; min-height: 74px;
+  }
+  .demo-hab .franja { width: 4px; flex-shrink: 0; }
+  .demo-hab .contenido { padding: 12px 12px 12px 0; }
+  .franja-hoy   { background: var(--acento); }              /* sin hotel: nada */
+  .franja-buena { background: var(--acento, var(--arena)); }
+
+  /* --- 4. contraste --- */
+  .pista-hoy   { color: #64758C; font-size: 12.5px; }
+  .pista-buena { color: #4A6079; font-size: 12.5px; }
+  .cifra {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--tinta-45); display: block; margin-top: 6px;
+  }
+
+  /* --- 5. respuesta al toque --- */
+  .b-sin:active { }
+  .b-con { transition: transform .1s cubic-bezier(.23,1,.32,1), background-color .1s ease; }
+  .b-con:active { transform: scale(.96); background: var(--sal); }
+</style>
+
+<div class="envoltura">
+  <a class="volver" href="index.html">← Todas las opciones</a>
+
+  <span class="etiqueta">Antes de elegir dirección</span>
+  <h1>Cinco cosas que hoy están rotas</h1>
+  <p class="tesis">
+    Esto no es una opción a elegir: es lo que hay que arreglar en cualquiera de
+    las tres direcciones. Cada punto se demuestra abajo con las piezas de
+    verdad — a la izquierda como se comporta hoy, a la derecha corregido.
+  </p>
+
+  <!-- ================================================================ 1 -->
+  <section class="defecto">
+    <span class="sello p0">P0 · iPhone</span>
+    <h2>La barra del total se aplasta contra el borde del iPhone</h2>
+    <p>
+      La barra reserva sitio para la franja del gesto de iOS con
+      <code>padding-bottom: env(safe-area-inset-bottom)</code>, pero mide
+      <code>height: 68px</code> y toda la app tiene <code>box-sizing: border-box</code>.
+      El relleno no se suma a la altura: se la come. En un iPhone con franja de
+      34&nbsp;px, los 68 de barra se vuelven 34 reales, y ahí dentro tienen que
+      caber el total y el botón. Es la única barra que se ve siempre, en el
+      teléfono desde el que se cotiza.
+    </p>
+    <div class="prueba">.barra { height: 68px; padding-bottom: env(safe-area-inset-bottom); }
+<i>→ con franja de 34px, la caja de contenido queda en 34px</i></div>
+
+    <div class="par">
+      <div class="lado lado-hoy">
+        <div class="lado-et">Hoy</div>
+        <div class="demo-barra">
+          <div class="barra-mala">
+            <div>
+              <div class="p-total-et">Total</div>
+              <div class="p-total">$540</div>
+            </div>
+            <span class="p-boton">Ver mensaje</span>
+          </div>
+          <div class="indicador">franja del gesto · 34px</div>
+        </div>
+      </div>
+      <div class="lado lado-prop">
+        <div class="lado-et">Corregido</div>
+        <div class="demo-barra">
+          <div class="barra-buena">
+            <div>
+              <div class="p-total-et">Total</div>
+              <div class="p-total">$540</div>
+            </div>
+            <span class="p-boton">Ver mensaje</span>
+          </div>
+          <div class="indicador">franja del gesto · 34px</div>
+        </div>
+      </div>
+    </div>
+    <div class="prueba">.barra { height: calc(var(--h-barra-total) + env(safe-area-inset-bottom, 0px)); }
+<i>→ y el mismo respiro en el relleno inferior del lienzo y en la vista del cliente</i></div>
+  </section>
+
+  <!-- ================================================================ 2 -->
+  <section class="defecto">
+    <span class="sello p0">P0 · estado invisible</span>
+    <h2>El botón de aviso no existe en el CSS</h2>
+    <p>
+      <code>logica.js</code> pone y quita la clase <code>btn-alerta</code> en tres
+      sitios para avisar de algo que hay que mirar antes de mandar la cotización.
+      Esa clase no está declarada en ninguna hoja. El botón cambia de clase y no
+      cambia de aspecto: el aviso se emite y nadie lo ve.
+    </p>
+    <div class="prueba">assets/logica.js:734  b.classList.remove('btn-alerta');
+assets/logica.js:738  b.classList.add('btn-alerta');
+assets/logica.js:742  b.classList.remove('btn-alerta');
+<i>grep "\.btn-alerta" assets/*.css → sin resultados</i></div>
+
+    <div class="par">
+      <div class="lado lado-hoy">
+        <div class="lado-et">Hoy · con la clase puesta</div>
+        <div class="muestra sobre-papel">
+          <span class="b-base">Ver mensaje</span>
+        </div>
+      </div>
+      <div class="lado lado-prop">
+        <div class="lado-et">Corregido</div>
+        <div class="muestra sobre-papel">
+          <span class="b-base b-alerta-def">Ver mensaje</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ 3 -->
+  <section class="defecto">
+    <span class="sello p1">P1 · estado inicial</span>
+    <h2>El acento no tiene valor hasta que se elige hotel</h2>
+    <p>
+      <code>--acento</code> y sus dos compañeras solo se declaran en
+      <code>body[data-hotel="…"]</code>. La app abre sin hotel elegido —es la
+      primera pantalla de cada cotización— y en ese momento las siete
+      referencias a <code>var(--acento…)</code> no resuelven a nada: la franja
+      del hotel desaparece en vez de mostrarse neutra.
+    </p>
+    <div class="par">
+      <div class="lado lado-hoy">
+        <div class="lado-et">Hoy · sin hotel elegido</div>
+        <div class="muestra">
+          <div class="demo-hab">
+            <div class="franja franja-hoy"></div>
+            <div class="contenido">
+              <b>Habitación 1</b>
+              <div class="pista-buena">Elige un hotel para ver las tarifas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="lado lado-prop">
+        <div class="lado-et">Corregido</div>
+        <div class="muestra">
+          <div class="demo-hab">
+            <div class="franja franja-buena"></div>
+            <div class="contenido">
+              <b>Habitación 1</b>
+              <div class="pista-buena">Elige un hotel para ver las tarifas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="prueba">:root { --acento: var(--arena); --acento-sut: var(--arena-sut); --acento-texto: var(--tinta-70); }
+<i>→ un valor neutro por defecto; cada hotel lo pisa como ya lo hace</i></div>
+  </section>
+
+  <!-- ================================================================ 4 -->
+  <section class="defecto">
+    <span class="sello p1">P1 · contraste</span>
+    <h2>Las pistas no llegan a 4.5:1 sobre el fondo de página</h2>
+    <p>
+      El sistema ya trae la respuesta: <code>.t-pista</code> se define con
+      <code>--tinta-70</code>. La app la pinta con <code>--tinta-45</code>, que
+      da 4.7:1 sobre blanco pero <b>4.18:1</b> sobre <code>--sal</code>, que es
+      justo donde vive («La noche de salida no se cobra»). Bajo el sol, en el
+      teléfono, esa frase es la que explica el precio.
+    </p>
+    <div class="par">
+      <div class="lado lado-hoy">
+        <div class="lado-et">Hoy · sobre el fondo de página</div>
+        <div class="muestra">
+          <div class="pista-hoy">La noche de salida no se cobra.</div>
+          <span class="cifra">#64758C sobre #EEF2F5 · 4.18:1 · no pasa AA</span>
+        </div>
+      </div>
+      <div class="lado lado-prop">
+        <div class="lado-et">Corregido · lo que dice el sistema</div>
+        <div class="muestra">
+          <div class="pista-buena">La noche de salida no se cobra.</div>
+          <span class="cifra">#4A6079 sobre #EEF2F5 · 5.7:1 · pasa AA</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================ 5 -->
+  <section class="defecto">
+    <span class="sello p1">P1 · táctil</span>
+    <h2>Casi nada responde al toque</h2>
+    <p>
+      Hay dos reglas <code>:active</code> en toda la app y ninguna en la
+      administración. En un teléfono no existe <code>:hover</code>: el
+      <code>:active</code> es la única confirmación de que el dedo dio en el
+      sitio. Sin ella, ante cualquier demora se toca dos veces — y en los
+      contadores de personas eso suma un adulto de más.
+    </p>
+    <p class="sutil">Púlsalos con el dedo o mantén el clic para notar la diferencia.</p>
+    <div class="par">
+      <div class="lado lado-hoy">
+        <div class="lado-et">Hoy</div>
+        <div class="muestra sobre-papel">
+          <button class="b-base b-sin">+ Agregar habitación</button>
+        </div>
+      </div>
+      <div class="lado lado-prop">
+        <div class="lado-et">Corregido</div>
+        <div class="muestra sobre-papel">
+          <button class="b-base b-con">+ Agregar habitación</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ hechas -->
+  <section class="defecto">
+    <span class="sello ok">Ya corregidas en esta entrega</span>
+    <h2>Dos que aparecieron al mirar la app a 390&nbsp;px</h2>
+    <ul class="lista">
+      <li>
+        <b><code>.solo-pc</code> no escondía nada.</b> Declaraba
+        <code>display:none</code>, pero <code>.btn-cabecera</code> declara
+        <code>display:inline-flex</code> más abajo con la misma especificidad y
+        ganaba por orden. Los dos botones de escritorio salían en el teléfono y
+        pisaban el título.
+      </li>
+      <li>
+        <b>Los nombres de hotel salían cortados</b> («Isla Marg…»). Con
+        <code>minmax(104px, 1fr)</code> entraban tres por fila y no cabía el
+        nombre, que es lo que se lee. Con 160&nbsp;px entran dos enteros.
+      </li>
+    </ul>
+  </section>
+</div>

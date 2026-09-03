@@ -1,0 +1,153 @@
+<meta charset="utf-8">
+<title>Plan de mejoras · Cotizador Hesperia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hoja.css">
+
+<style>
+  .fichas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 26px 0 10px; }
+  @media (max-width: 860px) { .fichas { grid-template-columns: 1fr; } }
+
+  .ficha {
+    display: flex; flex-direction: column;
+    background: var(--papel); border: 1px solid var(--arena);
+    border-radius: var(--r-grande); padding: 22px;
+    text-decoration: none; color: inherit;
+    transition: border-color .15s ease, transform .15s cubic-bezier(.23,1,.32,1),
+                box-shadow .15s ease;
+  }
+  .ficha:hover {
+    border-color: var(--tinta); transform: translateY(-2px);
+    box-shadow: 0 12px 28px -18px rgba(11,37,69,.5);
+  }
+  .ficha:active { transform: translateY(0); }
+  .ficha .letra {
+    font-family: 'Bricolage Grotesque', Georgia, serif;
+    font-size: 13px; font-weight: 800; letter-spacing: .12em;
+    color: var(--tinta-45); margin-bottom: 8px;
+  }
+  .ficha h3 {
+    font-family: 'Bricolage Grotesque', Georgia, serif;
+    font-size: 22px; font-weight: 600; line-height: 1.2; margin: 0 0 10px;
+  }
+  .ficha p { font-size: 14.5px; color: var(--tinta-70); margin: 0 0 16px; flex: 1; }
+  .ficha .pie {
+    display: flex; gap: 14px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; color: var(--tinta-45); text-transform: uppercase;
+    letter-spacing: .06em; border-top: 1px solid var(--arena-sut); padding-top: 12px;
+  }
+
+  .aviso {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--alerta-sut); border: 1px solid #F2D4D1;
+    border-radius: var(--r-grande); padding: 20px 22px; margin: 30px 0 10px;
+    text-decoration: none; color: inherit;
+  }
+  .aviso:hover { border-color: var(--alerta); }
+  .aviso .n {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%;
+    background: var(--alerta); color: #fff; display: grid; place-items: center;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 15px;
+  }
+  .aviso h3 { margin: 0 0 5px; font-size: 17px; }
+  .aviso p { margin: 0; font-size: 14.5px; color: var(--tinta-70); }
+
+  .como { border-top: 1px solid var(--arena); margin-top: 44px; padding-top: 26px; }
+</style>
+
+<div class="envoltura">
+  <span class="etiqueta">Cotizador Hesperia · auditoría de diseño</span>
+  <h1>Qué mejorar, y en qué orden</h1>
+  <p class="tesis">
+    Se auditó la app con los cuatro agentes y las cuatro skills de diseño
+    instalados. Lo que encontraron se separa en dos cosas muy distintas: lo que
+    está roto y hay que arreglar sí o sí, y una decisión de dirección que es
+    tuya.
+  </p>
+
+  <a class="aviso" href="00-correcciones.html">
+    <span class="n">5</span>
+    <span>
+      <h3>Primero: cinco cosas que hoy están rotas</h3>
+      <p>
+        No son opciones. Van en cualquiera de las tres direcciones y algunas se
+        ven en el teléfono de Marla ahora mismo. Cada una demostrada con las
+        piezas de verdad, antes y después. →
+      </p>
+    </span>
+  </a>
+
+  <h2>Después: elegir una dirección</h2>
+  <p>
+    Las tres parten del mismo diagnóstico y llegan a sitios distintos. No se
+    suman: cada una responde a una pregunta diferente sobre qué es lo que más
+    le falta hoy a la app. Se puede hacer A y después B o C; hacer B y C a la
+    vez sería rediseñar dos veces la misma pantalla.
+  </p>
+
+  <div class="fichas">
+    <a class="ficha" href="opcion-a-sistema.html">
+      <span class="letra">OPCIÓN A</span>
+      <h3>El sistema, cumplido</h3>
+      <p>
+        El sistema visual que aprobaste ya contesta casi todo; la app lo
+        re-escribe a mano. Ninguna de sus diez clases de tipografía se usa. Esta
+        dirección no cambia el aspecto: le da un solo dueño.
+      </p>
+      <span class="pie"><span>Costo bajo</span><span>·</span><span>Riesgo bajo</span></span>
+    </a>
+
+    <a class="ficha" href="opcion-b-pulgar.html">
+      <span class="letra">OPCIÓN B</span>
+      <h3>El pulgar</h3>
+      <p>
+        Se diseñó en un lienzo y se usa con una mano, de pie, con el cliente
+        esperando. Reordena la pantalla según lo que se toca y lo que solo se
+        lee, y pone copiar el mensaje al alcance.
+      </p>
+      <span class="pie"><span>Costo medio</span><span>·</span><span>Riesgo medio</span></span>
+    </a>
+
+    <a class="ficha" href="opcion-c-material.html">
+      <span class="letra">OPCIÓN C</span>
+      <h3>Jerarquía material</h3>
+      <p>
+        La app edita una cotización y produce un mensaje, pero el mensaje está
+        detrás de otra pantalla justo en el aparato donde se cotiza. Les da
+        materiales distintos y saca el resultado a la vista.
+      </p>
+      <span class="pie"><span>Costo alto</span><span>·</span><span>Riesgo medio-alto</span></span>
+    </a>
+  </div>
+
+  <section class="como">
+    <h2>Mi recomendación</h2>
+    <p>
+      Las cinco correcciones primero, sin discusión: dos de ellas se ven hoy en
+      el teléfono de Marla. Después la <b>A</b>, porque es barata y abarata las
+      otras dos —hacer B o C sobre 68 tamaños escritos a mano cuesta el doble—.
+      Y entre B y C, la <b>B</b>, porque ataca el minuto que se paga en cada
+      cotización, mientras que C resuelve un problema real pero menos frecuente.
+    </p>
+    <p>
+      Dicho eso, la elección entre B y C depende de algo que sabe Marla y yo no:
+      si el problema de todos los días es que la cotización se tarda, o que hay
+      que revisar el mensaje antes de mandarlo. Si es lo segundo, C está antes
+      que B.
+    </p>
+
+    <h2>Cómo leer estas páginas</h2>
+    <p>
+      Las maquetas usan <code>../assets/tokens.css</code>, o sea los tokens de
+      verdad del proyecto: si algo se ve bien aquí es porque el sistema aprobado
+      lo sostiene, no porque se hayan inventado colores para la ocasión. Los
+      teléfonos miden 390&nbsp;px, el ancho real desde el que se cotiza.
+    </p>
+    <p class="sutil">
+      El detalle escrito, con la evidencia de cada hallazgo, está en
+      <code>mejoras/PLAN_MEJORAS.md</code>.
+    </p>
+  </section>
+</div>

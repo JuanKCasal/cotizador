@@ -1,0 +1,228 @@
+<meta charset="utf-8">
+<title>Opción C · Jerarquía material</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hoja.css">
+
+<style>
+  /* Dos materiales: la mesa de trabajo (se edita) y el resultado (no se
+     edita, se manda). Hoy comparten el mismo plano plano y el resultado
+     además vive detrás de otra pantalla. */
+
+  .mesa { background: var(--sal); }
+  .hoja-trabajo {
+    background: var(--papel);
+    border: 1px solid var(--arena);
+    border-radius: var(--r-medio);
+    padding: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .hoja-et {
+    font-size: 10.5px; font-weight: 600; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--tinta-45);
+  }
+
+  /* El resultado no es una tarjeta más: es otro material, y se asoma. */
+  .asomo {
+    flex-shrink: 0;
+    background: var(--wa-fondo);
+    border-top: 1px solid rgba(11,37,69,.14);
+    box-shadow: 0 -10px 24px -14px rgba(11,37,69,.35);
+    padding: 10px 12px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .asomo-tirador {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: rgba(11,37,69,.22); margin: 0 auto 2px;
+  }
+  .asomo-burbuja {
+    background: var(--wa-burbuja); color: var(--wa-texto);
+    border-radius: 10px; padding: 9px 11px;
+    font-size: 12.5px; line-height: 1.45;
+    max-height: 92px; overflow: hidden;
+    position: relative;
+  }
+  .asomo-burbuja::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 30px;
+    background: linear-gradient(to top, var(--wa-burbuja), rgba(232,253,216,0));
+  }
+  .asomo-pie { display: flex; align-items: center; gap: 8px; }
+  .asomo-copiar {
+    flex: 1; height: 48px; border-radius: 11px; display: grid; place-items: center;
+    background: var(--tinta); color: #fff; font-size: 15px; font-weight: 600;
+  }
+  .asomo-total {
+    font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600;
+    color: var(--tinta); padding-right: 4px;
+  }
+
+  /* Lo de hoy: el mensaje detrás de una pantalla que entra por la derecha. */
+  .capa {
+    position: absolute; inset: 0; background: var(--wa-fondo);
+    transform: translateX(88%);
+    box-shadow: -14px 0 30px -14px rgba(11,37,69,.4);
+    display: flex; flex-direction: column;
+  }
+  .capa-et {
+    background: var(--papel); border-bottom: 1px solid var(--arena);
+    padding: 12px 14px; font-size: 13px; font-weight: 600;
+  }
+
+  .nota-lado {
+    font-size: 13.5px; color: var(--tinta-70); margin-top: 10px; max-width: 44ch;
+  }
+</style>
+
+<div class="envoltura">
+  <a class="volver" href="index.html">← Todas las opciones</a>
+
+  <span class="etiqueta">Opción C</span>
+  <h1>Jerarquía material</h1>
+  <p class="tesis">
+    La app hace dos cosas distintas: se edita una cotización y se produce un
+    mensaje. Hoy las dos viven en el mismo plano y el mensaje además está
+    escondido detrás de otra pantalla. Esta dirección les da materiales
+    distintos y saca el resultado a la vista.
+  </p>
+
+  <h2>De dónde sale</h2>
+  <p>
+    En el escritorio esto ya está resuelto: el formulario a la izquierda y la
+    vista del cliente a la derecha, quieta, siempre visible. En el teléfono esa
+    segunda columna no cabe y se resolvió metiéndola detrás de un botón. El
+    resultado es que en el aparato donde <b>sí</b> se cotiza, lo que se va a
+    mandar es lo único que no se ve — y se manda a ciegas o se paga un viaje de
+    ida y vuelta para mirarlo.
+  </p>
+  <p>
+    Un mensaje mal armado no se nota en el total: se nota en la frase, en una
+    llave sin resolver, en un plan que no era. Verlo cuesta más que corregirlo.
+  </p>
+
+  <h2>Cómo se ve</h2>
+
+  <div class="par">
+    <div class="lado lado-hoy">
+      <div class="lado-et">Hoy · el mensaje, detrás</div>
+      <div class="tel tel-alto">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo">
+            <div class="p-hoteles">
+              <div class="p-hotel"><span class="s s-hbk">HBK</span>Morrocoy</div>
+              <div class="p-hotel elegido"><span class="s s-wtc">WTC</span>WTC Valencia</div>
+            </div>
+            <div class="p-fila">
+              <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+              <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+              <div class="p-campo" style="min-width:60px;align-items:center"><span>3</span></div>
+            </div>
+            <div class="p-campo" style="min-height:74px"><b>Deluxe King</b><span>2 adultos · $180 / noche</span></div>
+          </div>
+          <div class="capa">
+            <div class="capa-et">Vista del cliente</div>
+          </div>
+        </div>
+        <div class="p-barra">
+          <div>
+            <div class="p-total-et">Total · 3 noches</div>
+            <div class="p-total">$540</div>
+          </div>
+          <span class="p-boton">Ver mensaje</span>
+        </div>
+      </div>
+      <p class="nota-lado">
+        Todo comparte el mismo plano: la tarjeta de la habitación, los campos y
+        la barra pesan visualmente lo mismo. El mensaje espera fuera de cuadro.
+      </p>
+    </div>
+
+    <div class="lado lado-prop">
+      <div class="lado-et">Con esta dirección</div>
+      <div class="tel tel-alto mesa">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo" style="gap:10px">
+            <div class="hoja-trabajo">
+              <span class="hoja-et">Estadía</span>
+              <div class="p-hoteles">
+                <div class="p-hotel"><span class="s s-hbk">HBK</span>Morrocoy</div>
+                <div class="p-hotel elegido"><span class="s s-wtc">WTC</span>WTC Valencia</div>
+              </div>
+              <div class="p-fila">
+                <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+                <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+                <div class="p-campo" style="min-width:60px;align-items:center"><span>3</span></div>
+              </div>
+            </div>
+            <div class="hoja-trabajo">
+              <span class="hoja-et">Habitaciones · 1</span>
+              <div class="p-campo" style="min-height:60px;border:0;padding:0">
+                <b>Deluxe King</b><span>2 adultos · $180 / noche</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="asomo">
+          <div class="asomo-tirador"></div>
+          <div class="asomo-burbuja">
+            *HOTEL HESPERIA WTC VALENCIA* 🏨<br>
+            *MZ*<br>
+            CHECK IN 3:00 PM: 01/08/26<br>
+            CHECK OUT 12:00 PM: 04/08/26<br><br>
+            🛏 *1 HABITACIÓN DELUXE KING*
+          </div>
+          <div class="asomo-pie">
+            <span class="asomo-total">$540</span>
+            <span class="asomo-copiar">Copiar mensaje</span>
+          </div>
+        </div>
+      </div>
+      <p class="nota-lado">
+        Dos materiales: hojas blancas que se editan sobre la mesa, y abajo el
+        resultado con el fondo de WhatsApp, que no se edita — se manda. Se
+        asoma siempre y se despliega arrastrando el tirador.
+      </p>
+    </div>
+  </div>
+
+  <h2>Qué cambia</h2>
+  <ul class="lista">
+    <li>El formulario se agrupa en hojas por asunto (estadía, habitaciones,
+      servicios) en vez de ser una lista continua de campos.</li>
+    <li>La barra del total se convierte en el asomo del mensaje: se ven las
+      primeras líneas reales, el total y el botón de copiar.</li>
+    <li>El asomo se arrastra hacia arriba para leer el mensaje completo, sin
+      cambiar de pantalla y sin perder de vista lo que se está editando.</li>
+    <li>La profundidad —no el color— dice qué es editable y qué es resultado.
+      El acento del hotel queda libre para lo que de verdad es del hotel.</li>
+  </ul>
+
+  <h2>El costo honesto</h2>
+  <p>
+    Es la más ambiciosa de las tres y la que más CSS nuevo pide: el asomo
+    arrastrable es un control de verdad, con sus estados y su comportamiento en
+    teclado, y hay que probarlo en el teléfono real antes de creerle. También
+    carga más la pantalla: las sombras y los agrupamientos ocupan espacio que
+    hoy usan los campos, y en un teléfono chico eso se paga desplazando más.
+  </p>
+  <p>
+    Se apoya en algo que la app ya sabe hacer —la burbuja arrastrable del mini
+    cotizador usa exactamente esta mecánica de puntero— así que no se parte de
+    cero.
+  </p>
+
+  <div class="balance">
+    <div><dt>Costo</dt><dd><span class="medida"><b>Alto</b></span><br><span class="sutil">Disposición móvil nueva, un control arrastrable y sus estados.</span></dd></div>
+    <div><dt>Riesgo</dt><dd><span class="medida"><b>Medio-alto</b></span><br><span class="sutil">Un control gestual mal calibrado estorba más de lo que ayuda; hay que probarlo en el teléfono real.</span></dd></div>
+    <div><dt>Qué gana Marla</dt><dd><span class="medida"><b>Ver antes</b></span><br><span class="sutil">Deja de mandar a ciegas: el mensaje está a la vista mientras se arma.</span></dd></div>
+  </div>
+</div>

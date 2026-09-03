@@ -1,0 +1,219 @@
+<meta charset="utf-8">
+<title>Opción B · El pulgar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hoja.css">
+
+<style>
+  /* El mapa del pulgar: qué parte de la pantalla se alcanza sin recolocar
+     el teléfono en la mano. Es la única medida que importa cuando el cliente
+     está esperando en WhatsApp. */
+  .mapa { position: relative; }
+  .mapa .zona {
+    position: absolute; left: 0; right: 0;
+    display: flex; align-items: flex-start; justify-content: flex-end;
+    padding: 6px 10px 0;
+    font-size: 10px; font-weight: 600; letter-spacing: .1em;
+    text-transform: uppercase; pointer-events: none;
+  }
+  .z-lejos  { top: 0; height: 38%; background: rgba(179,56,47,.13); color: #8E2B24; }
+  .z-media  { top: 38%; height: 27%; background: rgba(154,91,8,.11); color: #7A480A; }
+  .z-cerca  { top: 65%; bottom: 0; background: rgba(27,122,90,.12); color: #16624A; }
+
+  .chip-hotel-b {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 44px; padding: 0 6px 0 6px; border-radius: 999px;
+    background: #FAEBF0; border: 1.5px solid #8C2F55;
+    font-size: 14px; font-weight: 600; color: #8C2F55;
+  }
+  .chip-hotel-b .s { background: #8C2F55; color: #fff; }
+  .chip-cambiar {
+    margin-left: 2px; font-size: 12px; font-weight: 600;
+    color: var(--tinta-70); background: var(--papel);
+    border: 1px solid var(--arena); border-radius: 999px;
+    height: 32px; padding: 0 12px; display: inline-flex; align-items: center;
+  }
+
+  .cont {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px; padding: 0 8px;
+    border: 1px solid var(--arena); border-radius: var(--r-medio);
+    background: var(--papel);
+  }
+  .cont .op {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: grid; place-items: center; background: var(--sal);
+    font-size: 20px; font-weight: 600; color: var(--tinta);
+  }
+  .cont .val { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; }
+  .cont .et { font-size: 13px; color: var(--tinta-70); padding-left: 6px; }
+
+  .cont-viejo {
+    display: flex; align-items: center; gap: 6px;
+    height: 44px; padding: 0 8px;
+    border: 1px solid var(--arena); border-radius: var(--r-medio); background: var(--papel);
+  }
+  .cont-viejo .op { width: 26px; height: 26px; display: grid; place-items: center; font-size: 15px; color: var(--tinta-70); }
+  .cont-viejo .val { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 600; }
+  .cont-viejo .et { font-size: 13px; color: var(--tinta-70); }
+
+  .barra-b {
+    flex-shrink: 0; background: var(--papel); border-top: 2px solid var(--tinta);
+    padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .barra-b .linea { display: flex; align-items: baseline; justify-content: space-between; }
+  .copiar-b {
+    height: 56px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--tinta); color: #fff; font-size: 16px; font-weight: 600;
+  }
+  .ver-b {
+    height: 40px; border-radius: 10px; display: grid; place-items: center;
+    background: transparent; border: 1.5px solid var(--arena);
+    color: var(--tinta-70); font-size: 14px; font-weight: 600;
+  }
+</style>
+
+<div class="envoltura">
+  <a class="volver" href="index.html">← Todas las opciones</a>
+
+  <span class="etiqueta">Opción B</span>
+  <h1>El pulgar</h1>
+  <p class="tesis">
+    La app se diseñó en un lienzo y se usa con una mano, de pie, con un cliente
+    esperando del otro lado de WhatsApp. Esta dirección reordena la pantalla
+    según lo que se toca y lo que solo se lee.
+  </p>
+
+  <h2>De dónde sale</h2>
+  <p>
+    En un teléfono de 390&nbsp;×&nbsp;844 sostenido con una mano, el pulgar
+    alcanza cómodamente el tercio inferior. Hoy los tres controles que más se
+    tocan —los cinco hoteles, los contadores de adultos y niños, y el botón que
+    termina el trabajo— están repartidos entre las tres zonas, y el que cierra
+    la tarea está donde peor se llega o directamente detrás de otra pantalla.
+  </p>
+
+  <div class="par">
+    <div class="lado lado-hoy">
+      <div class="lado-et">Hoy · dónde cae cada cosa</div>
+      <div class="tel tel-alto mapa">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo">
+            <div class="p-hoteles">
+              <div class="p-hotel"><span class="s s-hbk">HBK</span>Morrocoy</div>
+              <div class="p-hotel"><span class="s s-him">HIM</span>Isla Margarita</div>
+              <div class="p-hotel"><span class="s s-hpa">HPA</span>Playa el Agua</div>
+              <div class="p-hotel elegido"><span class="s s-wtc">WTC</span>WTC Valencia</div>
+              <div class="p-hotel"><span class="s s-hmc">HMC</span>Maracay</div>
+            </div>
+            <div class="p-fila">
+              <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+              <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+              <div class="p-campo" style="min-width:60px;align-items:center"><span>3</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="cont-viejo"><span class="et">Ad.</span><span class="op">−</span><span class="val">2</span><span class="op">+</span></div>
+              <div class="cont-viejo"><span class="et">Niños</span><span class="op">−</span><span class="val">0</span><span class="op">+</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="p-barra">
+          <div>
+            <div class="p-total-et">Total · 3 noches</div>
+            <div class="p-total">$540</div>
+          </div>
+          <span class="p-boton">Ver mensaje</span>
+        </div>
+        <div class="zona z-lejos">Fuera de alcance</div>
+        <div class="zona z-media">Se llega estirando</div>
+        <div class="zona z-cerca">Zona del pulgar</div>
+      </div>
+      <p class="sutil" style="font-size:13.5px;margin-top:10px">
+        Los cinco hoteles —el primer toque de cada cotización— caen en la zona
+        que no se alcanza. Copiar el mensaje, que es el último, vive detrás de
+        «Ver mensaje»: dos toques y un cambio de pantalla.
+      </p>
+    </div>
+
+    <div class="lado lado-prop">
+      <div class="lado-et">Con esta dirección</div>
+      <div class="tel tel-alto">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo">
+            <div>
+              <span class="chip-hotel-b"><span class="s" style="min-width:34px;height:26px;display:grid;place-items:center;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px">WTC</span>WTC Valencia<span class="chip-cambiar">Cambiar</span></span>
+            </div>
+            <div class="p-fila">
+              <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+              <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+              <div class="p-campo" style="min-width:60px;align-items:center"><span>3</span></div>
+            </div>
+            <div class="p-campo" style="min-height:60px"><b>Habitación 1</b><span>Deluxe King · $180 / noche</span></div>
+            <div style="display:grid;gap:8px">
+              <div class="cont"><span class="et">Adultos</span><span style="display:flex;align-items:center;gap:14px"><span class="op">−</span><span class="val">2</span><span class="op">+</span></span></div>
+              <div class="cont"><span class="et">Niños</span><span style="display:flex;align-items:center;gap:14px"><span class="op">−</span><span class="val">0</span><span class="op">+</span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="barra-b">
+          <div class="linea">
+            <span class="p-total-et">Total · 3 noches</span>
+            <span class="p-total">$540</span>
+          </div>
+          <div class="copiar-b">Copiar mensaje</div>
+          <div class="ver-b">Ver cómo queda</div>
+        </div>
+      </div>
+      <p class="sutil" style="font-size:13.5px;margin-top:10px">
+        El hotel elegido se contrae a un chip y libera media pantalla; los
+        contadores suben a 44&nbsp;px de botón; y copiar —lo que de verdad
+        termina el trabajo— pasa a ser el control más grande y más bajo de la
+        app. Revisar el mensaje queda como el paso opcional que es.
+      </p>
+    </div>
+  </div>
+
+  <h2>Qué cambia</h2>
+  <ul class="lista">
+    <li>Elegido el hotel, los cinco botones se contraen a un chip con
+      «Cambiar». Se recuperan unos 120&nbsp;px de alto: entran las fechas y la
+      habitación sin desplazar.</li>
+    <li>Los contadores de adultos y niños pasan de 26 a 44&nbsp;px de zona
+      tocable, que es el mínimo que fija el propio sistema.</li>
+    <li>La barra inferior deja de ser una fila y pasa a ser el cierre de la
+      tarea: total, <b>Copiar mensaje</b> a 56&nbsp;px, y «Ver cómo queda»
+      debajo, en secundario.</li>
+    <li>Todo lo que se toca queda por debajo de la mitad de la pantalla; arriba
+      solo queda lo que se lee.</li>
+  </ul>
+
+  <h2>El costo honesto</h2>
+  <p>
+    Marla ya tiene memoria muscular con la disposición actual. Esta es la única
+    de las tres direcciones que se la cambia, y durante unos días va a ir a
+    buscar cosas donde ya no están. A cambio, quita un toque y un cambio de
+    pantalla de <b>cada</b> cotización.
+  </p>
+  <p>
+    También hay una decisión que no es mía: contraer los hoteles a un chip
+    ahorra espacio pero esconde los otros cuatro. Si es común cotizar el mismo
+    caso en dos hoteles para comparar, esto estorba y conviene dejarlos
+    visibles.
+  </p>
+
+  <div class="balance">
+    <div><dt>Costo</dt><dd><span class="medida"><b>Medio</b></span><br><span class="sutil">Cambia la disposición móvil y la barra; la lógica de cálculo no se toca.</span></dd></div>
+    <div><dt>Riesgo</dt><dd><span class="medida"><b>Medio</b></span><br><span class="sutil">Rompe la costumbre. Conviene probarlo una semana antes de darlo por bueno.</span></dd></div>
+    <div><dt>Qué gana Marla</dt><dd><span class="medida"><b>Segundos</b></span><br><span class="sutil">Un toque menos y una pantalla menos por cotización, con el cliente esperando.</span></dd></div>
+  </div>
+</div>

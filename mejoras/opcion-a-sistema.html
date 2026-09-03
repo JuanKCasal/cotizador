@@ -1,0 +1,176 @@
+<meta charset="utf-8">
+<title>Opción A · El sistema, cumplido</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="hoja.css">
+
+<style>
+  .cuentas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0 8px; }
+  @media (max-width: 720px) { .cuentas { grid-template-columns: 1fr 1fr; } }
+  .cuentas div {
+    background: var(--papel); border: 1px solid var(--arena);
+    border-radius: var(--r-medio); padding: 16px;
+  }
+  .cuentas b {
+    display: block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 26px; font-weight: 600; line-height: 1.1; color: var(--alerta);
+  }
+  .cuentas span { font-size: 12.5px; color: var(--tinta-70); }
+
+  /* La maqueta de la derecha: mismo esqueleto, medidas del sistema. */
+  .sis .p-campo b { font: 600 11px/1.4 'Instrument Sans'; letter-spacing: .14em; text-transform: uppercase; color: var(--tinta-45); }
+  .sis .p-campo span { font: 500 16px/1.5 'Instrument Sans'; }
+  .sis .p-lienzo { gap: var(--e4); padding: var(--e4); }
+  .sis .p-hoteles { gap: var(--e2); }
+  .sis .p-total { font: 600 21px/1.25 'IBM Plex Mono'; font-variant-numeric: tabular-nums; }
+  .sis .p-total-et { font: 400 12.5px/1.45 'Instrument Sans'; color: var(--tinta-70); }
+  .sis .sec { font: 600 11px/1.4 'Instrument Sans'; text-transform: uppercase; letter-spacing: .14em; color: var(--tinta-45); }
+  .sis .p-copiar {
+    height: var(--h-copiar); border-radius: 12px;
+    display: grid; place-items: center;
+    background: var(--tinta); color: #fff; font: 600 16px 'Instrument Sans';
+  }
+
+  .hoy .sec { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #64758C; }
+  .hoy .p-lienzo { gap: 14px; padding: 16px; }
+  .hoy .p-campo b { font-size: 11px; letter-spacing: .12em; }
+  .hoy .p-total-et { color: #64758C; }
+</style>
+
+<div class="envoltura">
+  <a class="volver" href="index.html">← Todas las opciones</a>
+
+  <span class="etiqueta">Opción A</span>
+  <h1>El sistema, cumplido</h1>
+  <p class="tesis">
+    El sistema visual que aprobó Marla ya contesta casi todas las preguntas de
+    la app. La app no lo usa: lo re-escribe a mano, tamaño por tamaño. Esta
+    dirección no cambia el aspecto — hace que el aspecto tenga un solo dueño.
+  </p>
+
+  <h2>De dónde sale</h2>
+  <p>
+    <code>tokens.css</code> define diez clases de tipografía, seis pasos de
+    espacio y seis alturas táctiles, y trae anotado el contraste de cada color.
+    Al medir cuánto de eso llega a la app:
+  </p>
+
+  <div class="cuentas">
+    <div><b>0 de 10</b><span>clases de tipografía del sistema usadas en la app</span></div>
+    <div><b>68</b><span><code>font-size</code> escritos a mano en <code>estilos.css</code></span></div>
+    <div><b>73 vs 17</b><span>márgenes en px crudos frente a los que usan <code>--e1…e6</code></span></div>
+    <div><b>0</b><span>usos de <code>--h-copiar</code>, el control más alto que el sistema pide en móvil</span></div>
+  </div>
+
+  <p>
+    La consecuencia no es fea: es cara. Cada regla vive en dos sitios y se
+    separan sin que nadie lo note — el caso del contraste de las pistas es
+    exactamente eso: el sistema dice <code>--tinta-70</code>, la app pinta
+    <code>--tinta-45</code>, y el resultado no pasa AA. Y sobre todo: si Marla
+    vuelve a Claude Design y ajusta el sistema, hoy ese ajuste no llega a la
+    app. Hay que traducirlo a mano, otra vez.
+  </p>
+
+  <h2>Cómo se ve</h2>
+  <p class="sutil">
+    Las diferencias son deliberadamente pequeñas. Si esta dirección se nota
+    mucho, está mal hecha.
+  </p>
+
+  <div class="par">
+    <div class="lado lado-hoy">
+      <div class="lado-et">Hoy</div>
+      <div class="tel tel-alto hoy">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo">
+            <div class="p-hoteles">
+              <div class="p-hotel"><span class="s s-hbk">HBK</span>Morrocoy</div>
+              <div class="p-hotel elegido"><span class="s s-wtc">WTC</span>WTC Valencia</div>
+            </div>
+            <div class="p-fila">
+              <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+              <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+              <div class="p-campo" style="min-width:64px;align-items:center"><span>3</span><b style="letter-spacing:.04em">noches</b></div>
+            </div>
+            <div class="sec">Habitaciones · 1</div>
+            <div class="p-campo" style="min-height:74px"><b>Deluxe King</b><span>2 adultos · $180 / noche</span></div>
+          </div>
+        </div>
+        <div class="p-barra">
+          <div>
+            <div class="p-total-et">Total · 3 noches</div>
+            <div class="p-total">$540</div>
+          </div>
+          <span class="p-boton">Ver mensaje</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lado lado-prop">
+      <div class="lado-et">Con el sistema aplicado</div>
+      <div class="tel tel-alto sis">
+        <div class="p-cabecera">
+          <span class="p-marca">Cotizador</span>
+          <span class="p-redondo">↺</span>
+        </div>
+        <div class="tel-cuerpo">
+          <div class="p-lienzo">
+            <div class="p-hoteles">
+              <div class="p-hotel"><span class="s s-hbk">HBK</span>Morrocoy</div>
+              <div class="p-hotel elegido"><span class="s s-wtc">WTC</span>WTC Valencia</div>
+            </div>
+            <div class="p-fila">
+              <div class="p-campo"><b>Entrada</b><span>01/08/26</span></div>
+              <div class="p-campo"><b>Salida</b><span>04/08/26</span></div>
+              <div class="p-campo" style="min-width:64px;align-items:center"><span>3</span><b style="letter-spacing:.04em">noches</b></div>
+            </div>
+            <div class="sec">Habitaciones · 1</div>
+            <div class="p-campo" style="min-height:74px"><b>Deluxe King</b><span>2 adultos · $180 / noche</span></div>
+          </div>
+        </div>
+        <div class="p-barra">
+          <div>
+            <div class="p-total-et">Total · 3 noches</div>
+            <div class="p-total">$540</div>
+          </div>
+          <span class="p-boton">Ver mensaje</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Qué cambia por dentro</h2>
+  <ul class="lista">
+    <li>Los 68 <code>font-size</code> a mano pasan a las diez clases del sistema
+      (<code>.t-seccion</code>, <code>.t-campo</code>, <code>.t-total</code>…),
+      declaradas una vez.</li>
+    <li>Los 73 valores de espacio en px crudos pasan a <code>--e1…--e6</code>.
+      Los que no encajen en la escala se corrigen a la escala, no se le agrega
+      un paso.</li>
+    <li>Los colores se toman del token, no del hexadecimal — con eso el
+      contraste de las pistas se corrige solo.</li>
+    <li>Aparece el botón de copiar de 56&nbsp;px que el sistema pide en móvil y
+      hoy no existe.</li>
+    <li><code>tokens.css</code> queda como única fuente: si Marla lo cambia en
+      Claude Design, se reemplaza el archivo y la app entera se mueve con él.</li>
+  </ul>
+
+  <h2>Lo que NO cambia</h2>
+  <p>
+    Ni la disposición, ni el recorrido, ni un solo cálculo. Es la dirección con
+    menos riesgo de las tres, y la única que hace más barato hacer las otras dos
+    después.
+  </p>
+
+  <div class="balance">
+    <div><dt>Costo</dt><dd><span class="medida"><b>Bajo</b></span><br><span class="sutil">Un solo archivo, <code>estilos.css</code>. Sin tocar la lógica.</span></dd></div>
+    <div><dt>Riesgo</dt><dd><span class="medida"><b>Bajo</b></span><br><span class="sutil">Los 483 chequeos existentes cubren el comportamiento; lo visual se compara a 390 y 1440.</span></dd></div>
+    <div><dt>Qué gana Marla</dt><dd><span class="medida"><b>Control</b></span><br><span class="sutil">Sus decisiones de diseño llegan a la app sin traducción.</span></dd></div>
+  </div>
+</div>

@@ -82,7 +82,20 @@ html, body {
   border-bottom: 1px solid var(--arena);
 }
 
-.cabecera-marca { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.cabecera-marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* -------------------------------------------------------------- La marca */
+/* Un solo dibujo para la cabecera, la burbuja y el favicon. La H usa
+   currentColor, asi que se pone en tinta sobre papel y en blanco sobre el
+   azul sin necesidad de un segundo archivo. */
+.marca-h { width: 100%; height: 100%; display: block; }
+
+.marca-logo {
+  display: grid; place-items: center;
+  width: 26px; height: 26px; flex-shrink: 0;
+  color: var(--tinta);
+}
+@media (min-width: 900px) { .marca-logo { width: 30px; height: 30px; } }
+
 
 .marca-nombre {
   font-family: var(--display); font-weight: 800; font-size: 19px;
@@ -895,12 +908,14 @@ body:not(.calc-suelta) .calc {
 }
 .calc-burbuja:focus-visible { outline: var(--foco); outline-offset: 3px; }
 
+/* La marca va sobre el azul de la burbuja: en blanco, como la pone Hesperia
+   sobre fondo oscuro. El arco rojo es el mismo en los dos fondos, asi que se
+   queda con su color y solo la H toma el del texto. Sin disco detras: dos
+   circulos concentricos serian una insignia, no una marca. */
 .calc-burbuja-signo {
   display: grid; place-items: center;
   width: 26px; height: 26px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .18);
-  font-family: var(--mono); font-size: 14px;
+  flex-shrink: 0;
 }
 .calc-burbuja-monto {
   font-family: var(--mono); font-variant-numeric: tabular-nums;

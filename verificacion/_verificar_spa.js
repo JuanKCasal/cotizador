@@ -28,6 +28,10 @@ pagina = pagina.replace(
   (_, ruta) => '<script>\n' + leerRaiz(ruta) + '\n</script>'
 );
 
+// El favicon no se inserta: jsdom no lo pide y no es parte de la conducta
+// de la pantalla. Se quita antes de comprobar que no quede nada suelto.
+pagina = pagina.replace(/\s*<link rel="icon"[^>]*>/g, '');
+
 const pendientes = pagina.match(/(src|href)="assets\/[^"]*"/g);
 if (pendientes) { console.log('ASSETS SIN RESOLVER:', pendientes); process.exit(1); }
 
