@@ -7,7 +7,7 @@
     "vig_fin": "2026-09-30",
     "tipo": "DESCUENTO_MONTO",
     "valor": 14,
-    "min_noches": "",
+    "min_noches": 1,
     "activo": true,
     "cod_hab": "",
     "dias_semana": "",
