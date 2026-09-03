@@ -291,9 +291,22 @@ var Validador = (function () {
     var conocidos = M.MARCADORES;
 
     hoteles.forEach(function (h) {
-      var pl = cat.plantillas[h];
-      if (!pl) {
-        add('ERROR', 'plantillas', 'SIN_PLANTILLA', h + ' no tiene plantilla configurada.');
+      if (!cat.plantillas[h + '|']) {
+        add('ERROR', 'plantillas', 'SIN_MENSAJE',
+            h + ': no tiene mensaje del hotel. Sin el, quien no tenga juego propio ' +
+            'no puede cotizar.');
+      }
+    });
+
+    // Todas las plantillas, no solo la del hotel: cada asesora puede tener la
+    // suya, y una llave mal escrita se imprime literal en el mensaje.
+    Object.keys(cat.plantillas || {}).forEach(function (k) {
+      var pl = cat.plantillas[k];
+      var partesK = k.split('|');
+      var h = partesK[0] + (partesK[1] ? ' / ' + partesK[1] : '');
+      if (!cat.hoteles[partesK[0]]) return;
+      if (!String(pl).trim()) {
+        add('ERROR', 'plantillas', 'MENSAJE_VACIO', h + ': el mensaje esta vacio.');
         return;
       }
       var usados = (pl.match(/\{\{(\w+)\}\}/g) || []).map(function (x) { return x.slice(2, -2); });

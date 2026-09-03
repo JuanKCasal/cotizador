@@ -10,3 +10,12 @@ Thumbs.db
 Desktop.ini
 .vscode/
 .idea/
+
+# Agentes y skills instalados: son herramienta del entorno, no del proyecto.
+# Cada maquina los instala por su cuenta y algunos son enlaces simbolicos que
+# git ni siquiera puede indexar. Lo que SI va al repo es su registro en
+# CLAUDE.md, que es lo unico que otro necesita para saber que usar y cuando.
+.agents/
+.claude/
+.codex/
+.impeccable/

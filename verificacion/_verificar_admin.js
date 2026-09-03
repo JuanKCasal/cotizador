@@ -192,7 +192,7 @@ function celda(n, campo) {
 
   // ======================================================== 6. PESTAÑAS
   const pest = qa('.adm-pestana').map((p) => p.dataset.tab);
-  eq(pest.length, 5, 'hay cinco pestañas', pest.join(','));
+  eq(pest.length, 6, 'hay seis pestañas', pest.join(','));
   click(qa('.adm-pestana').find((p) => p.dataset.tab === 'stop-sales'));
   await esperar(200);
   ok(q('.adm-pestana.activa').dataset.tab === 'stop-sales', 'se cambia de pestaña');
@@ -271,6 +271,69 @@ function celda(n, campo) {
     ok(texto.charAt(texto.length - 1) === '\n',
        'el archivo termina en salto de linea, como los del repositorio');
   }
+
+  // ======================================================== 9. MENSAJES
+  // La pestaña donde se editan los textos que recibe el cliente. Lo que
+  // importa no es que el textarea se pinte, sino que la vista previa salga
+  // del motor de verdad y que editar como asesora NO pise el mensaje del
+  // hotel: si lo pisara, cambiar el estilo de una cambiaria el de todas.
+  click(qa('.adm-pestana').find((p) => p.dataset.tab === 'plantillas'));
+  await esperar(250);
+  ok(!$('mensajes').classList.contains('oculto'), 'el panel de mensajes se muestra');
+  ok($('tabla').classList.contains('oculto'), 'y la tabla se esconde');
+  ok($('btnFila').classList.contains('oculto'),
+     'sin "+ Fila": los mensajes no se agregan a mano');
+
+  const quienes = [...$('filtroTemp').options].map((o) => o.value);
+  ok(quienes.indexOf('MZ') !== -1 && quienes.indexOf('LR') !== -1,
+     'el segundo filtro pasa a elegir asesora', quienes.join(','));
+  eq(quienes[0], '', 'con el mensaje del hotel como primera opcion');
+
+  setVal($('filtroHotel'), 'HBK', 'input');
+  await esperar(250);
+  const delHotel = $('plantillaTexto').value;
+  ok(delHotel.length > 50, 'trae el mensaje del hotel', 'largo=' + delHotel.length);
+  ok($('plantillaPrevia').textContent.indexOf('{{') === -1,
+     'la vista previa no deja marcadores sin resolver',
+     $('plantillaPrevia').textContent.slice(0, 120));
+  ok($('plantillaPrevia').textContent.indexOf('CHECK IN') !== -1,
+     'y sale del motor de verdad, con la cotizacion de ejemplo dentro');
+
+  // Una asesora sin juego propio hereda el del hotel
+  setVal($('filtroTemp'), 'MZ', 'input');
+  await esperar(250);
+  ok($('plantillaQuien').textContent.indexOf('MZ') !== -1 ||
+     $('plantillaQuien').textContent.indexOf('Marla') !== -1,
+     'la etiqueta dice de quien es el mensaje', $('plantillaQuien').textContent);
+
+  // Editar como asesora crea SU fila, sin tocar la del hotel
+  setVal($('plantillaTexto'), delHotel + '\nUn saludo, MZ.', 'input');
+  await esperar(300);
+  ok(!$('btnPublicar').disabled, 'editar un mensaje habilita publicar');
+
+  setVal($('filtroTemp'), '', 'input');
+  await esperar(250);
+  eq($('plantillaTexto').value, delHotel,
+     'el mensaje del hotel sigue intacto tras editar el de la asesora');
+
+  setVal($('filtroTemp'), 'MZ', 'input');
+  await esperar(250);
+  ok($('plantillaTexto').value.indexOf('Un saludo, MZ.') !== -1,
+     'y el de la asesora conserva lo editado');
+
+  // Un marcador mal escrito tiene que verse ANTES, no con el cliente esperando
+  setVal($('plantillaTexto'), 'Hola {{clientte}}, van {{noches}} noches.', 'input');
+  await esperar(300);
+  ok($('plantillaMarcadores').textContent.indexOf('clientte') !== -1,
+     'un marcador mal escrito se reporta',
+     $('plantillaMarcadores').textContent.slice(0, 140));
+  ok($('plantillaPrevia').textContent.indexOf('{{clientte}}') !== -1,
+     'y se ve tal cual saldria en el mensaje');
+
+  click($('btnDescartar'));
+  await esperar(300);
+  eq($('plantillaTexto').value.indexOf('clientte'), -1,
+     'descartar deja los mensajes como estaban');
 
   // ---------- Reporte ----------
   console.log('========================================');

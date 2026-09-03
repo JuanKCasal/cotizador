@@ -54,12 +54,13 @@
 
       <!-- Hotel y fechas, en una sola fila: es lo primero que se decide y lo
            que menos se vuelve a tocar. -->
-      <div class="fila-estadia">
-        <label class="campo-select campo-hotel">
-          <span class="acento-barra" aria-hidden="true"></span>
-          <select id="hoteles" aria-label="Hotel"></select>
-        </label>
+      <!-- Botones y no un desplegable: son cinco, no cambian nunca, y elegir
+           hotel es lo primero de cada cotizacion. Un desplegable esconde las
+           opciones detras de un toque y una lista; los botones se tocan
+           directo y dejan ver de un vistazo cual esta activo. -->
+      <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
 
+      <div class="fila-estadia">
         <label class="campo-caja">
           <span class="campo-etiqueta">Entrada</span>
           <input type="date" id="checkin">
@@ -167,16 +168,20 @@
       <span class="calc-chip" id="calcChip" hidden>SIEMPRE ENCIMA</span>
     </div>
     <div class="calc-botones-ventana">
+      <button type="button" class="calc-btn-ventana" id="btnCalcVaciar"
+              title="Borrar todo y empezar de nuevo"
+              aria-label="Borrar todo">↺</button>
+      <button type="button" class="calc-btn-ventana" id="btnCalcColapsar"
+              title="Colapsar a un icono"
+              aria-label="Colapsar el mini cotizador">−</button>
       <button type="button" class="calc-btn-ventana calc-btn-cerrar" id="btnCalcCerrar"
               aria-label="Cerrar el mini cotizador">✕</button>
     </div>
   </div>
 
   <div class="calc-cuerpo" id="calcCuerpo">
-    <label class="campo-select">
-      <span class="acento-barra" aria-hidden="true"></span>
-      <select id="calcHotel" aria-label="Hotel"></select>
-    </label>
+    <div class="hoteles hoteles-mini" id="calcHotel" role="radiogroup"
+         aria-label="Hotel"></div>
 
     <label class="campo-select">
       <select id="calcHab" aria-label="Habitación"></select>
@@ -241,6 +246,16 @@
     </div>
   </div>
 </div>
+
+<!-- Burbuja del mini cotizador colapsado. Se arrastra por el escritorio y al
+     pulsarla vuelve a abrirse. Solo aparece en el nivel 3 -panel dentro de la
+     pagina-: en los niveles 1 y 2 el panel vive en su propia ventana y quien
+     la mueve y la minimiza es el sistema operativo, no nosotros. -->
+<button type="button" id="calcBurbuja" class="calc-burbuja oculto"
+        aria-label="Abrir el mini cotizador">
+  <span class="calc-burbuja-signo" aria-hidden="true">$</span>
+  <span class="calc-burbuja-monto" id="calcBurbujaMonto"></span>
+</button>
 
 <!-- ====================== COPIA MANUAL (fallback nivel 3) ====================== -->
 <div id="modalCopia" class="modal oculto" role="dialog" aria-modal="true"

@@ -46,6 +46,7 @@
     <button type="button" class="adm-pestana" role="tab" data-tab="stop-sales">Fechas bloqueadas</button>
     <button type="button" class="adm-pestana" role="tab" data-tab="promociones">Promociones</button>
     <button type="button" class="adm-pestana" role="tab" data-tab="extras">Servicios</button>
+    <button type="button" class="adm-pestana" role="tab" data-tab="plantillas">Mensajes</button>
   </nav>
 
   <main class="adm-lienzo">
@@ -66,6 +67,24 @@
       </div>
 
       <div class="adm-tabla" id="tabla" role="table"></div>
+
+      <!-- Los mensajes no son una tabla: son textos largos que se leen
+           enteros. Su propio panel, con la vista previa al lado. -->
+      <div class="adm-mensajes oculto" id="mensajes">
+        <div class="adm-editor">
+          <label class="adm-editor-et" for="plantillaTexto">
+            Mensaje · <span id="plantillaQuien">—</span>
+          </label>
+          <textarea id="plantillaTexto" class="adm-textarea" spellcheck="false"></textarea>
+          <p class="adm-marcadores" id="plantillaMarcadores"></p>
+        </div>
+        <div class="adm-previa">
+          <span class="adm-previa-et">Así lo recibe el cliente</span>
+          <div class="chat adm-previa-chat">
+            <div class="burbuja" id="plantillaPrevia"></div>
+          </div>
+        </div>
+      </div>
 
       <div class="adm-pie">
         <span id="pieFilas">—</span>

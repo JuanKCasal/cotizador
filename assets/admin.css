@@ -294,3 +294,57 @@ select.adm-celda { cursor: pointer; }
 }
 .adm-archivos .adm-archivo-det { color: var(--tinta-45); font-size: 11.5px; }
 .adm-modal-acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---------------------------------------------------------------- Mensajes
+   Los mensajes no son una tabla: son textos largos que se leen enteros y se
+   corrigen palabra a palabra. Editor a la izquierda, y al lado exactamente lo
+   que va a recibir el cliente — que es la única forma de saber si una llave
+   quedó mal escrita antes de que lo descubra una asesora. */
+.adm-mensajes {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  padding: 16px;
+  overflow: hidden;
+}
+@media (max-width: 1100px) {
+  .adm-mensajes { grid-template-columns: 1fr; overflow-y: auto; }
+}
+
+.adm-editor { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.adm-editor-et {
+  font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--tinta-45);
+}
+.adm-editor-et span { color: var(--tinta); }
+
+.adm-textarea {
+  flex: 1; min-height: 240px;
+  padding: 12px 14px;
+  border: 1px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+  font-family: var(--mono); font-size: 13px; line-height: 1.6;
+  color: var(--tinta);
+  resize: none;
+}
+.adm-textarea:focus { border-color: var(--tinta); outline: none; }
+.adm-textarea:focus-visible { outline: var(--foco); outline-offset: var(--foco-offset); }
+.adm-textarea.con-error { border-color: var(--alerta); }
+
+.adm-marcadores { margin: 0; font-size: 12px; color: var(--tinta-45); line-height: 1.6; }
+.adm-marcadores code {
+  font-family: var(--mono); font-size: 11.5px;
+  background: var(--arena-sut); padding: 1px 5px; border-radius: 4px;
+  color: var(--tinta-70);
+}
+.adm-marcadores .falta { color: var(--alerta); font-weight: 500; }
+
+.adm-previa { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.adm-previa-et {
+  font-size: 11px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--tinta-45);
+}
+.adm-previa-chat {
+  flex: 1; min-height: 0;
+  border-radius: var(--r-medio);
+  border: 1px solid var(--arena);
+}

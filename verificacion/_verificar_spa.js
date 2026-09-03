@@ -131,12 +131,16 @@ function paso(ficha, campo, signo) {
   ok($('chipHotel').classList.contains('oculto'), 'sin hotel elegido no hay chip');
   ok($('btnAgregar').disabled, 'sin hotel no se pueden agregar habitaciones');
 
-  const opciones = qa('#hoteles option').map((o) => o.value).filter(Boolean);
-  eq(opciones.length, 5, 'los cinco hoteles estan en el desplegable',
-     'opciones=' + opciones.join(','));
+  // Botones y no un desplegable: los cinco a la vista, cada uno con su acento.
+  const botones = qa('#hoteles .hotel-op');
+  eq(botones.length, 5, 'los cinco hoteles estan a la vista como botones');
+  eq(botones.filter((b) => b.getAttribute('aria-checked') === 'true').length, 0,
+     'ninguno arranca elegido');
+  ok(botones.every((b) => b.querySelector('.hotel-sigla')),
+     'cada boton lleva su sigla, no solo el color');
 
   // ======================================================== 2. ELEGIR HOTEL
-  setVal($('hoteles'), 'HBK');
+  click(q('#hoteles [data-hotel=HBK]'));
   await esperar(140);
   eq(doc.body.dataset.hotel, 'HBK', 'el acento del hotel se aplica al cuerpo');
   ok(!$('chipHotel').classList.contains('oculto'), 'aparece el chip del hotel');
@@ -240,7 +244,7 @@ function paso(ficha, campo, signo) {
   eq(qa('#lineas .hab').length, 1, 'la × quita la habitacion');
 
   // ======================================================== 8. PROMOCIONES
-  setVal($('hoteles'), 'HIM');
+  click(q('#hoteles [data-hotel=HIM]'));
   await esperar(200);
   ok(!$('seccionPromos').classList.contains('oculto'), 'Isla Margarita tiene promociones');
   const promo = q('#promos .chip');
@@ -278,12 +282,12 @@ function paso(ficha, campo, signo) {
   // Al cambiar de hotel no se arrastran los servicios del anterior
   click(qa('#extras .chip')[0]);
   await esperar(140);
-  setVal($('hoteles'), 'HPA');
+  click(q('#hoteles [data-hotel=HPA]'));
   await esperar(220);
   eq(qa('#extras .chip[aria-checked="true"]').length, 0,
      'al cambiar de hotel los servicios quedan sin marcar');
 
-  setVal($('hoteles'), 'WTC');
+  click(q('#hoteles [data-hotel=WTC]'));
   await esperar(220);
   ok($('seccionExtras').classList.contains('oculto'),
      'Valencia no ofrece servicios y la seccion se oculta');
@@ -297,7 +301,7 @@ function paso(ficha, campo, signo) {
   // ======================================================== 11. COPIADO
   let copiado = null;
   window.navigator.clipboard = { writeText: (t) => { copiado = t; return Promise.resolve(); } };
-  setVal($('hoteles'), 'HBK');
+  click(q('#hoteles [data-hotel=HBK]'));
   await esperar(220);
   setVal($('checkin'), '2026-09-20');
   setVal($('checkout'), '2026-09-23');
@@ -335,12 +339,13 @@ function paso(ficha, campo, signo) {
   // ======================================================== 13. VACIAR
   click($('btnVaciar'));
   await esperar(200);
-  eq($('hoteles').value, '', 'vaciar limpia el hotel');
+  eq(qa('#hoteles .hotel-op[aria-checked="true"]').length, 0,
+     'vaciar deja los cinco botones sin elegir');
   ok($('chipHotel').classList.contains('oculto'), 'y el chip desaparece');
   ok($('barraMonto').classList.contains('apagado'), 'y el total se apaga');
 
   // ======================================================== 14. MINI COTIZADOR
-  setVal($('hoteles'), 'HBK');
+  click(q('#hoteles [data-hotel=HBK]'));
   await esperar(200);
   setVal($('checkin'), '2026-09-20');
   setVal($('checkout'), '2026-09-23');
@@ -362,7 +367,8 @@ function paso(ficha, campo, signo) {
   ok($('calcVersion').textContent.indexOf('v2026') !== -1, 'muestra la version de tarifas');
 
   // Hereda lo que ya estaba cargado
-  eq($('calcHotel').value, 'HBK', 'hereda el hotel ya elegido');
+  eq(q('#calcHotel .hotel-op[aria-checked="true"]').dataset.hotel, 'HBK',
+     'hereda el hotel ya elegido');
   eq($('calcIn').value, '2026-09-20', 'y las fechas');
   ok($('calcCopiar').disabled, 'sin habitacion elegida no se puede copiar');
 
@@ -454,9 +460,8 @@ function paso(ficha, campo, signo) {
 
   if (panel) {
     // Los escuchadores viajan con el nodo: sigue calculando desde alla.
-    const selHotel = panel.querySelector('#calcHotel');
-    selHotel.value = 'WTC';
-    selHotel.dispatchEvent(new ventana.Event('change', { bubbles: true }));
+    panel.querySelector('#calcHotel [data-hotel=WTC]')
+      .dispatchEvent(new ventana.MouseEvent('click', { bubbles: true }));
     await esperar(140);
     const selHab = panel.querySelector('#calcHab');
     selHab.value = 'DLX_KING';
@@ -479,6 +484,83 @@ function paso(ficha, campo, signo) {
   await esperar(180);
   ok(!!doc.getElementById('calc'), 'al cerrar, el panel vuelve a la pagina');
   eq($('btnCalc').getAttribute('aria-expanded'), 'false', 'y el boton se desmarca');
+
+  // ======================================================== 16. VACIAR Y COLAPSAR
+  // El mini cotizador vuelve a abrirse en el nivel 3 (panel en la pagina).
+  window.open = () => null;
+  click($('btnCalc'));
+  await esperar(180);
+  click(q('#calcHotel [data-hotel=HBK]'));
+  await esperar(140);
+  setVal($('calcHab'), 'BAS_DBL');
+  await esperar(160);
+  ok($('calcTotal').textContent !== '$ —', 'el mini vuelve a calcular',
+     $('calcTotal').textContent);
+
+  // Vaciar: borra lo del mini y NO toca la cotizacion de la app
+  const lineasApp = qa('#lineas .hab').length;
+  const totalApp = $('barraMonto').textContent;
+  click($('btnCalcVaciar'));
+  await esperar(180);
+  eq(qa('#calcHotel .hotel-op[aria-checked="true"]').length, 0,
+     'vaciar deja el mini sin hotel');
+  eq($('calcTotal').textContent, '$ —', 'y sin precio');
+  eq(qa('#lineas .hab').length, lineasApp, 'la cotizacion de la app sigue intacta');
+  eq($('barraMonto').textContent, totalApp, 'con su mismo total');
+
+  // Colapsar: el panel se esconde y queda la burbuja.
+  // Vaciar borro tambien las fechas, asi que hay que volver a ponerlas.
+  click(q('#calcHotel [data-hotel=HBK]'));
+  await esperar(140);
+  setVal($('calcHab'), 'BAS_DBL');
+  setVal($('calcIn'), '2026-09-20');
+  setVal($('calcOut'), '2026-09-23');
+  await esperar(200);
+  const totalMini2 = $('calcTotal').textContent;
+  ok(totalMini2 !== '$ —', 'el mini calcula otra vez tras vaciarlo', totalMini2);
+
+  ok(!$('btnCalcColapsar').hidden, 'en el panel de la pagina si se puede colapsar');
+  click($('btnCalcColapsar'));
+  await esperar(180);
+  ok($('calc').classList.contains('oculto'), 'el panel se esconde');
+  ok(!$('calcBurbuja').classList.contains('oculto'), 'y aparece la burbuja');
+  eq($('calcBurbujaMonto').textContent, totalMini2,
+     'la burbuja lleva el total encima: colapsada sigue siendo un cotizador');
+
+  // Al pulsarla vuelve a abrirse
+  click($('calcBurbuja'));
+  await esperar(180);
+  ok(!$('calc').classList.contains('oculto'), 'pulsar la burbuja reabre el panel');
+  ok($('calcBurbuja').classList.contains('oculto'), 'y la burbuja se guarda');
+  eq($('calcTotal').textContent, totalMini2, 'con lo que estaba cargado');
+
+  // Un arrastre no debe abrirla: si no se distinguen, no hay forma de moverla
+  click($('btnCalcColapsar'));
+  await esperar(180);
+  const burb2 = $('calcBurbuja');
+  burb2.getBoundingClientRect = () => ({ left: 100, top: 100, width: 120, height: 52 });
+  const ptr = (tipo, x, y) => {
+    const e = new window.Event(tipo, { bubbles: true });
+    e.clientX = x; e.clientY = y; e.pointerId = 1; e.button = 0;
+    e.movementX = 40; e.movementY = 40;
+    burb2.dispatchEvent(e);
+  };
+  ptr('pointerdown', 110, 110);
+  ptr('pointermove', 300, 300);
+  ptr('pointerup', 300, 300);
+  click(burb2);
+  await esperar(120);
+  ok($('calc').classList.contains('oculto'),
+     'arrastrar la burbuja NO la abre: el arrastre y el toque se distinguen');
+  ok(burb2.style.left !== '', 'y la burbuja se movio', 'left=' + burb2.style.left);
+
+  click(burb2);
+  await esperar(150);
+  ok(!$('calc').classList.contains('oculto'), 'un toque limpio si la abre');
+  click($('btnCalcCerrar'));
+  await esperar(150);
+  ok($('calcBurbuja').classList.contains('oculto'),
+     'cerrar el mini tambien recoge la burbuja');
 
   // ---------- Reporte ----------
   console.log('========================================');

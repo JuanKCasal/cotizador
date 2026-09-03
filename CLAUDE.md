@@ -19,11 +19,15 @@ Sheet. Si algo te parece raro, revisa el historial: la razón suele estar ahí.
 ## Estructura
 
 ```
-index.html       La aplicación. Una sola página.
-assets/          motor.js, catalogo.js, validador.js, logica.js, estilos.css
-datos/           El catálogo, en diez archivos JSON. Es la base de datos.
+index.html       El cotizador. Una sola página.
+admin.html       La administración del catálogo. Solo escritorio.
+assets/          tokens.css (sistema visual), estilos.css, admin.css,
+                 motor.js, catalogo.js, validador.js, logica.js, admin.js
+datos/           El catálogo, en once archivos JSON. Es la base de datos.
 verificacion/    Arneses de prueba en Node. NO se publican.
 docs/            Guías de instalación y de estilo.
+.agents/skills/  Skills de diseño instalados. Ver "Agentes y skills".
+.claude/agents/  Agentes de Impeccable.
 README.md        Documentación funcional completa.
 HANDOFF.md       Estado del proyecto y plan de trabajo.
 ```
@@ -36,13 +40,16 @@ HANDOFF.md       Estado del proyecto y plan de trabajo.
 | `catalogo.js` | Descarga los JSON de `datos/` → objeto `catalogo`. Normalizadores defensivos |
 | `validador.js` | Chequeos de integridad del catálogo. Devuelve hallazgos, no los muestra |
 | `logica.js` | Estado de la interfaz, cascada de habitación, cálculo en vivo, copiado |
-| `estilos.css` | CSS. Ancla tinta marina, acento por hotel |
+| `admin.js` | Pantalla de administración: edición del catálogo y publicación |
+| `tokens.css` | **El sistema visual.** Entregable del diseño, tal cual. Se consume, no se edita a la ligera |
+| `estilos.css` | CSS del cotizador. Consume `tokens.css` |
+| `admin.css` | Lo propio de la administración |
 
 ### Los archivos de `datos/`
 
-`config.json` (objeto clave→valor) y nueve arreglos de objetos: `hoteles`,
-`habitaciones`, `temporadas`, `tarifas`, `stop-sales`, `politica-ninos`, `promociones`,
-`cargos-fecha`, `plantillas`.
+`config.json` (objeto clave→valor) y diez arreglos de objetos: `hoteles`,
+`habitaciones`, `temporadas`, `tarifas`, `adicionales`, `stop-sales`, `politica-ninos`,
+`promociones`, `cargos-fecha`, `extras`, `plantillas`.
 
 Las claves de cada objeto son las columnas del Sheet original. `catalogo.js` los lee por
 nombre, así que el orden no importa, pero **el nombre sí es parte del contrato**.
@@ -63,6 +70,48 @@ es lo único que separa un refactor seguro de un error de precio en producción.
 Los arneses leen `assets/` y `datos/` reales, los mismos archivos que descarga el
 navegador. Lo que pasa en las pruebas es lo que va a pasar en producción — salvo lo que
 depende del dispositivo, que sigue necesitando un celular de verdad.
+
+## Agentes y skills de diseño
+
+El proyecto tiene cuatro skills de diseño instalados en `.agents/skills/` y cuatro
+agentes de Impeccable en `.claude/agents/`. **No se usan solos: hay que invocarlos.**
+
+Los cuatro skills se solapan a propósito y no dicen lo mismo. Elegir el que toca importa
+más que usarlos todos.
+
+| Skill | Para qué sirve de verdad | Cuándo NO |
+|---|---|---|
+| `impeccable` | El más completo. Auditar, criticar, pulir, endurecer, animar, extraer sistema. 37 referencias en `reference/` y scripts en `scripts/`. Empieza por `SKILL.md` y `reference/routing.md` | Tareas que no son de interfaz |
+| `emil-design-eng` | La filosofía de Emil Kowalski: pulido, animación, los detalles invisibles. Es el que da valores concretos de timing y easing | Decisiones de estructura o de contenido |
+| `design-taste-frontend` | Anti-plantilla. Infiere la dirección de diseño y evita que algo parezca hecho por defecto | **Está pensado para landings y portafolios**, no para herramientas de trabajo. Aquí sirve su criterio, no sus recetas |
+| `redesign-existing-projects` | Auditar lo que ya existe y subirlo de nivel sin reescribirlo. Audita primero, arregla después | Empezar de cero |
+
+Los agentes de Impeccable (`.claude/agents/`) son subagentes con su propio contrato:
+
+| Agente | Qué hace |
+|---|---|
+| `impeccable-finish-reviewer` | Revisa un trabajo terminado con ojos frescos y devuelve arreglos ordenados. **No edita** |
+| `impeccable-documenter` | Escribe el sistema de diseño a partir de lo construido, no de lo planeado |
+| `impeccable-asset-producer` | Produce recursos gráficos desde una maqueta aprobada. No redirige el diseño |
+| `impeccable-manual-edit-applier` | Aplica lotes de ediciones manuales al código fuente |
+
+### Cómo usarlos aquí
+
+- **Antes de tocar la interfaz:** audita con `impeccable` (`reference/audit.md`) o con
+  `redesign-existing-projects`. Los dos piden diagnóstico antes que cambio, que es la
+  regla de esta casa.
+- **Para microinteracciones** —el bucle de fecha → precio → ajuste → copiar, que es lo
+  que más se usa— `emil-design-eng` es el que da números en vez de adjetivos.
+- **Al terminar un cambio grande de interfaz**, pásalo por `impeccable-finish-reviewer`.
+- Los cuatro son de **diseño**. El motor, el catálogo y el validador no son su terreno:
+  ahí manda `verificacion/`.
+
+### Lo que ningún skill puede decidir por ti
+
+`tokens.css` es el entregable del sistema visual que definió **la propia asesora** con
+Claude Design. Los acentos por hotel, el botón principal en tinta y la separación
+`--acento` / `--acento-texto` son decisiones suyas con motivo escrito, no accidentes que
+un skill deba "corregir". Si una auditoría propone cambiarlas, se pregunta antes.
 
 ## Invariantes de arquitectura
 

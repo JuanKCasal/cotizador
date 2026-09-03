@@ -178,17 +178,28 @@
   // RENDER
   // ==========================================================================
   function renderHoteles() {
-    var sel = $('hoteles');
-    var cods = Object.keys(CAT.hoteles);
-    sel.innerHTML = '<option value="">Elige el hotel…</option>' +
-      cods.map(function (cod) {
-        return '<option value="' + esc(cod) + '"' +
-               (estado.hotel === cod ? ' selected' : '') + '>' +
-               esc(CAT.hoteles[cod].nombreCorto) + '</option>';
-      }).join('');
-    sel.value = estado.hotel;
-    sel.classList.toggle('vacio', !estado.hotel);
+    $('hoteles').innerHTML = botonesHotel(estado.hotel);
     renderChipHotel();
+  }
+
+  /**
+   * Los cinco hoteles como botones.
+   *
+   * Cada uno lleva SU acento, no el del elegido: el color es lo que permite
+   * reconocerlos antes de leer el nombre, y para eso tiene que estar en los
+   * cinco a la vez.
+   */
+  function botonesHotel(activo) {
+    return Object.keys(CAT.hoteles).map(function (cod) {
+      var h = CAT.hoteles[cod];
+      return '<button type="button" class="hotel-op" role="radio" data-h="' + esc(cod) + '"' +
+               ' data-hotel="' + esc(cod) + '"' +
+               ' aria-checked="' + (activo === cod) + '"' +
+               ' title="' + esc(h.nombre) + '">' +
+               '<span class="hotel-sigla">' + esc(cod) + '</span>' +
+               '<span class="hotel-nombre">' + esc(h.nombreCorto) + '</span>' +
+             '</button>';
+    }).join('');
   }
 
   /**
@@ -837,9 +848,10 @@
   // ==========================================================================
   function conectarEventos() {
     // --- Hotel ---
-    $('hoteles').addEventListener('change', function () {
-      if (estado.hotel === this.value) return;
-      estado.hotel = this.value;
+    $('hoteles').addEventListener('click', function (e) {
+      var b = e.target.closest('.hotel-op');
+      if (!b || estado.hotel === b.dataset.hotel) return;
+      estado.hotel = b.dataset.hotel;
       document.body.dataset.hotel = estado.hotel;
       estado.promos = [];
       if (!estado.lineas.length) estado.lineas = [nuevaLinea()];
@@ -1099,14 +1111,14 @@
   }
 
   function calcMontar() {
-    $c('calcHotel').innerHTML = '<option value="">Elige el hotel…</option>' +
-      Object.keys(CAT.hoteles).map(function (c) {
-        return '<option value="' + esc(c) + '">' + esc(CAT.hoteles[c].nombreCorto) + '</option>';
-      }).join('');
+    $c('calcHotel').innerHTML = botonesHotel(calcEstado.hotel);
 
-    $c('calcHotel').addEventListener('change', function () {
-      calcEstado.hotel = this.value;
+    $c('calcHotel').addEventListener('click', function (e) {
+      var b = e.target.closest('.hotel-op');
+      if (!b || calcEstado.hotel === b.dataset.hotel) return;
+      calcEstado.hotel = b.dataset.hotel;
       calcEstado.cod = '';
+      $c('calcHotel').innerHTML = botonesHotel(calcEstado.hotel);
       calcLlenarHabs();
       calcCalcular();
     });
@@ -1156,6 +1168,9 @@
       calcAbierta ? calcCerrar() : calcAbrir();
     });
     $c('btnCalcCerrar').addEventListener('click', calcCerrar);
+    $c('btnCalcVaciar').addEventListener('click', calcVaciar);
+    $c('btnCalcColapsar').addEventListener('click', calcColapsar);
+    montarArrastre();
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && calcAbierta && calcNivel === 3) calcCerrar();
@@ -1252,6 +1267,9 @@
     // Solo el nivel 1 flota de verdad sobre otras aplicaciones. Prometerlo
     // cuando el navegador no puede cumplirlo seria peor que no decir nada.
     $c('calcChip').hidden = (calcNivel !== 1);
+    // Colapsar solo cuando el panel vive en la pagina: en una ventana propia,
+    // minimizar es cosa del sistema operativo.
+    $c('btnCalcColapsar').hidden = (calcNivel !== 3);
     $c('calcVersion').textContent = CAT.config.VERSION_TARIFAS || '';
     calcPintarPax();
     calcCalcular();
@@ -1269,6 +1287,9 @@
 
   /** La ventana se cerro: desde su boton, desde la X del sistema o al navegar. */
   function calcDevolver() {
+    calcColapsado = false;
+    var b = $('calcBurbuja');
+    if (b) b.classList.add('oculto');
     calcDevolverNodo();
     calcCaja().classList.add('oculto');
     calcVentana = null;
@@ -1291,7 +1312,7 @@
   function calcSembrar() {
     if (!calcEstado.hotel && estado.hotel) {
       calcEstado.hotel = estado.hotel;
-      $c('calcHotel').value = estado.hotel;
+      $c('calcHotel').innerHTML = botonesHotel(calcEstado.hotel);
       calcLlenarHabs();
     }
     if (!calcEstado.ci && estado.checkin) {
@@ -1355,6 +1376,7 @@
   }
 
   function calcSalida(detalle, total, hayError) {
+    if (hayError || total === '$ —') { calcRes = null; calcPintarBurbuja(); }
     $c('calcDetalle').textContent = detalle;
     $c('calcDetalle').className = 'calc-detalle' + (hayError ? ' error' : '');
     $c('calcTotal').textContent = total;
@@ -1404,6 +1426,7 @@
     }
 
     calcRes = r;
+    calcPintarBurbuja();
     var temp = r.lineas[0].detalleNoches[0];
     var detalle = r.nNoches + (r.nNoches === 1 ? ' noche' : ' noches') +
                   (temp && temp.temporada ? ' · ' + temp.temporada.toLowerCase() : '');
@@ -1445,7 +1468,6 @@
     }];
 
     document.body.dataset.hotel = estado.hotel;
-    $('hoteles').value = estado.hotel;
     fijarFecha($('checkin'), estado.checkin);
     fijarFecha($('checkout'), estado.checkout);
 
@@ -1458,6 +1480,128 @@
     calcCerrar();
     try { window.focus(); } catch (err) { /* el navegador puede negar el foco */ }
     aviso('Pasado al cotizador', 'exito');
+  }
+
+  // ==========================================================================
+  // COLAPSAR Y ARRASTRAR
+  //
+  // Solo en el nivel 3, el panel dentro de la pagina. En los niveles 1 y 2 el
+  // panel vive en su propia ventana del navegador: moverla y minimizarla es
+  // cosa del sistema operativo, y duplicar esos controles seria pelearse con
+  // el.
+  //
+  // La burbuja lleva el total encima. Colapsada y sin cifra seria un boton
+  // cualquiera; con la cifra sigue siendo un cotizador, que es la razon de
+  // tenerlo abierto mientras se habla por telefono.
+  // ==========================================================================
+  var calcColapsado = false;
+  var burbujaPos = null;     // {x, y} en pixeles desde la esquina superior izquierda
+
+  function calcColapsar() {
+    if (calcNivel !== 3) return;
+    calcColapsado = true;
+    calcCaja().classList.add('oculto');
+    var b = $('calcBurbuja');
+    b.classList.remove('oculto');
+    calcPintarBurbuja();
+    colocarBurbuja();
+    b.focus();
+  }
+
+  function calcExpandir() {
+    calcColapsado = false;
+    $('calcBurbuja').classList.add('oculto');
+    calcCaja().classList.remove('oculto');
+    try { $c('calcHab').focus(); } catch (e) { /* aun sin foco */ }
+  }
+
+  function calcPintarBurbuja() {
+    var m = $('calcBurbujaMonto');
+    if (!m) return;
+    m.textContent = calcRes ? '$' + Motor.fmtMoney(CAT, calcRes.total) : '';
+  }
+
+  /** Coloca la burbuja donde se la dejo, sin salirse de la pantalla. */
+  function colocarBurbuja() {
+    var b = $('calcBurbuja');
+    if (!burbujaPos) return;                 // primera vez: la deja el CSS
+    var r = b.getBoundingClientRect();
+    var x = Math.max(8, Math.min(burbujaPos.x, window.innerWidth - r.width - 8));
+    var y = Math.max(8, Math.min(burbujaPos.y, window.innerHeight - r.height - 8));
+    b.style.left = x + 'px';
+    b.style.top = y + 'px';
+    b.style.right = 'auto';
+    b.style.bottom = 'auto';
+  }
+
+  /**
+   * Arrastre con captura de puntero.
+   *
+   * Un arrastre de menos de 4 pixeles no es un arrastre: es un toque con pulso.
+   * Si no se distinguen, la burbuja se vuelve imposible de abrir con el dedo.
+   */
+  function montarArrastre() {
+    var b = $('calcBurbuja');
+    if (!b) return;
+    var arrastrando = false, movio = false, dx = 0, dy = 0;
+
+    b.addEventListener('pointerdown', function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      var r = b.getBoundingClientRect();
+      dx = e.clientX - r.left;
+      dy = e.clientY - r.top;
+      arrastrando = true;
+      movio = false;
+      try { b.setPointerCapture(e.pointerId); } catch (err) { /* navegador viejo */ }
+    });
+
+    b.addEventListener('pointermove', function (e) {
+      if (!arrastrando) return;
+      var x = e.clientX - dx, y = e.clientY - dy;
+      if (!movio && (Math.abs(e.movementX) + Math.abs(e.movementY)) > 0) {
+        var r0 = b.getBoundingClientRect();
+        if (Math.abs(x - r0.left) > 4 || Math.abs(y - r0.top) > 4) {
+          movio = true;
+          b.classList.add('arrastrando');
+        }
+      }
+      if (!movio) return;
+      // transform y no left/top mientras se arrastra: no dispara maquetado.
+      burbujaPos = { x: x, y: y };
+      colocarBurbuja();
+    });
+
+    function soltar(e) {
+      if (!arrastrando) return;
+      arrastrando = false;
+      b.classList.remove('arrastrando');
+      try { b.releasePointerCapture(e.pointerId); } catch (err) { /* ya liberado */ }
+      // El click llega despues del pointerup; si hubo arrastre, se ignora.
+      if (movio) { b.dataset.arrastro = '1'; setTimeout(function () { delete b.dataset.arrastro; }, 0); }
+    }
+    b.addEventListener('pointerup', soltar);
+    b.addEventListener('pointercancel', soltar);
+
+    b.addEventListener('click', function () {
+      if (b.dataset.arrastro) return;
+      calcExpandir();
+    });
+
+    // Si la ventana cambia de tamaño, la burbuja podria quedar fuera.
+    window.addEventListener('resize', function () { if (calcColapsado) colocarBurbuja(); });
+  }
+
+  /** Borra todo lo cargado en el mini, sin tocar la cotizacion de la app. */
+  function calcVaciar() {
+    calcEstado = { hotel: '', cod: '', ci: '', co: '', adultos: 2, edades: [] };
+    calcRes = null;
+    $c('calcHotel').innerHTML = botonesHotel('');
+    calcLlenarHabs();
+    $c('calcIn').value = '';
+    $c('calcOut').value = '';
+    calcPintarPax();
+    calcCalcular();
+    aviso('Mini cotizador vacío', 'exito');
   }
 
   // ==========================================================================

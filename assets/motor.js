@@ -774,7 +774,10 @@ var Motor = (function () {
   function render(cat, res, datos) {
     if (!res.ok) throw new Error('No se puede renderizar una cotizacion con errores.');
     var h = cat.hoteles[res.hotel];
-    var plantilla = cat.plantillas[res.hotel];
+    // La plantilla de quien firma, si tiene juego propio; si no, la del hotel.
+    var quien = String((datos && datos.asesorIniciales) || '').trim().toUpperCase();
+    var plantilla = (quien && cat.plantillas[res.hotel + '|' + quien]) ||
+                    cat.plantillas[res.hotel + '|'];
     if (!plantilla) throw new Error('Sin plantilla configurada para el hotel ' + res.hotel);
     var ff = h.formatoFecha;
 

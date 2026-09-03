@@ -1,22 +1,52 @@
 [
   {
     "hotel": "HBK",
+    "asesor": "",
     "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}}  ({{DIAS}} DÍAS {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (12:00 PM - 2:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Bebidas Seleccionadas (Alcohólicas y no Alcohólicas).\n* Open Bar (11:00 AM - 11:00 PM): Cerveza y Cócteles.\n* Actividades Recreativas para toda la Familia.\n* Piscina con Tumbona y Toalla.\n* Gimnasio Gratuito.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n\n{{BLOQUE_EXTRAS}}\n\n*_¡Vive unas vacaciones excepcionales en el único hotel Todo Incluido de Morrocoy!_* 🍹😎\n\n¡La escapada perfecta al Caribe Venezolano!\n*Reservemos!* ✨"
   },
   {
     "hotel": "HIM",
+    "asesor": "",
     "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{DIAS}} DÍAS Y {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (01:00 PM - 3:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Selección de Bebidas Alcohólicas Incluidas.\n* Wifi en el Hotel y Habitaciones.\n* Piscina para Adultos y Niños.\n* Estacionamiento Gratuito.\n* Club de Playa.\n* Cancha de Tenis.\n* 40 min de Golf Gratis.\n* Club Náutico en Kayack.\n* Sala de Videos Juegos.\n* Disfrute de Lobby Bar.\n* Disfrute de Bar Playa.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n\n{{BLOQUE_EXTRAS}}\n\n*_¡Vive unas vacaciones inolvidables en Hesperia Isla Margarita!_* 🍹😎\n*Reservemos!* ✨"
   },
   {
     "hotel": "HPA",
+    "asesor": "",
     "plantilla": "*{{HOTEL_NOMBRE}}*{{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{DIAS}} DÍAS {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (12:00 PM - 2:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Selección de Bebidas Alcohólicas Incluidas.\n* Wifi en el Hotel.\n* Piscina para Adultos y Niños.\n* Estacionamiento Gratuito.\n* Club de Playa.\n* Zona Kids.\n* Disfrute de Lobby Bar.\n* Disfrute de Tiki Bar.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n*⚠️ Si uno de los huéspedes es menor de edad debe traer partida de nacimiento o documento de identidad del mismo.*\n\n{{BLOQUE_EXTRAS}}\n\n*_El verano será en la Isla de Margarita, ¡Hesperia Playa el Agua te espera!_* 🏝️🙌\n*Reservemos!* ✨"
   },
   {
     "hotel": "WTC",
+    "asesor": "",
     "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{NOCHES_N}} {{PALABRA_NOCHES}})*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n*PLAN:* Con Desayunos\n\n{{MENSAJE_CASHEA}}\n*Reservemos!* ✨"
   },
   {
     "hotel": "HMC",
+    "asesor": "",
     "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{NOCHES_N}} {{PALABRA_NOCHES}})*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n*PLAN:* Con Desayunos\n\n{{MENSAJE_CASHEA}}\n*Reservemos!* ✨"
+  },
+  {
+    "hotel": "HBK",
+    "asesor": "LR",
+    "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}}  ({{DIAS}} DÍAS {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (12:00 PM - 2:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Bebidas Seleccionadas (Alcohólicas y no Alcohólicas).\n* Open Bar (11:00 AM - 11:00 PM): Cerveza y Cócteles.\n* Actividades Recreativas para toda la Familia.\n* Piscina con Tumbona y Toalla.\n* Gimnasio Gratuito.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n\n{{BLOQUE_EXTRAS}}\n\n*_¡Date el gusto de unas vacaciones excepcionales en el único hotel Todo Incluido de Morrocoy!_* 🍹😎\n\n¡La escapada perfecta al Caribe Venezolano!\n*¿Te la aparto?* ✨"
+  },
+  {
+    "hotel": "HIM",
+    "asesor": "LR",
+    "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{DIAS}} DÍAS Y {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (01:00 PM - 3:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Selección de Bebidas Alcohólicas Incluidas.\n* Wifi en el Hotel y Habitaciones.\n* Piscina para Adultos y Niños.\n* Estacionamiento Gratuito.\n* Club de Playa.\n* Cancha de Tenis.\n* 40 min de Golf Gratis.\n* Club Náutico en Kayack.\n* Sala de Videos Juegos.\n* Disfrute de Lobby Bar.\n* Disfrute de Bar Playa.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n\n{{BLOQUE_EXTRAS}}\n\n*_¡Date el gusto de unas vacaciones inolvidables en Hesperia Isla Margarita!_* 🍹😎\n*¿Te la aparto?* ✨"
+  },
+  {
+    "hotel": "HPA",
+    "asesor": "LR",
+    "plantilla": "*{{HOTEL_NOMBRE}}*{{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{DIAS}} DÍAS {{NOCHES}} NOCHES)*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n{{MENSAJE_CASHEA}}\n\n*PLAN:* Todo Incluido\n\n*INCLUYE:*\n* Hospedaje.\n* Desayuno (7:00 AM - 10:00 AM).\n* Almuerzo (12:00 PM - 2:00 PM).\n* Snack de Media Tarde (3:00 PM - 5:00 PM).\n* Cena (7:00 PM - 10:00 PM).\n* Selección de Bebidas Alcohólicas Incluidas.\n* Wifi en el Hotel.\n* Piscina para Adultos y Niños.\n* Estacionamiento Gratuito.\n* Club de Playa.\n* Zona Kids.\n* Disfrute de Lobby Bar.\n* Disfrute de Tiki Bar.\n\n📌 *IMPORTANTE:* {{LABEL_DEPOSITO}}: ${{DEPOSITO}} *en efectivo* por habitación, se devuelven en el Check-out.\n*⚠️ Si uno de los huéspedes es menor de edad debe traer partida de nacimiento o documento de identidad del mismo.*\n\n{{BLOQUE_EXTRAS}}\n\n*_El verano será en la Isla de Margarita, ¡Hesperia Playa el Agua te espera!_* 🏝️🙌\n*¿Te la aparto?* ✨"
+  },
+  {
+    "hotel": "WTC",
+    "asesor": "LR",
+    "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{NOCHES_N}} {{PALABRA_NOCHES}})*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n*PLAN:* Con Desayunos\n\n{{MENSAJE_CASHEA}}\n*¿Te la aparto?* ✨"
+  },
+  {
+    "hotel": "HMC",
+    "asesor": "LR",
+    "plantilla": "*{{HOTEL_NOMBRE}}* {{EMOJIS}}\n*{{ASESOR_INICIALES}}*\nCHECK IN {{HORA_IN}}: {{FECHA_IN}}\nCHECK OUT {{HORA_OUT}}: {{FECHA_OUT}}\n\n{{BLOQUE_HABITACIONES}}\n\n*TOTAL: ${{TOTAL}} ({{NOCHES_N}} {{PALABRA_NOCHES}})*\n{{BLOQUE_CARGOS}}{{BLOQUE_PROMO}}\n*PLAN:* Con Desayunos\n\n{{MENSAJE_CASHEA}}\n*¿Te la aparto?* ✨"
   }
 ]

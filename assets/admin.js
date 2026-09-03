@@ -82,6 +82,7 @@
     });
 
     $('btnFila').addEventListener('click', filaNueva);
+    $('plantillaTexto').addEventListener('input', alEditarPlantilla);
     $('btnDescartar').addEventListener('click', descartar);
     $('btnPublicar').addEventListener('click', abrirPublicar);
     $('btnCerrarPublicar').addEventListener('click', function () {
@@ -202,6 +203,16 @@
   }
 
   var ESQUEMAS = {
+    // Mensajes tiene su propio panel, no una tabla, pero necesita entrada aqui
+    // para que el pie, los filtros y "ir a la fila" sepan de que tabla hablan.
+    'plantillas': {
+      titulo: 'mensajes',
+      panel: true,
+      cols: [
+        { c: 'hotel', et: 'Hotel', w: '1fr', tipo: 'hotel' },
+        { c: 'asesor', et: 'Asesora', w: '1fr', tipo: 'texto' }
+      ]
+    },
     'tarifas': {
       titulo: 'tarifas',
       cols: [
@@ -283,9 +294,16 @@
     return out;
   }
 
+  var MENSAJES = 'plantillas';
+
   function pintar() {
     pintarFiltroTemp();
-    pintarTabla();
+    var esMensajes = (TAB === MENSAJES);
+    $('tabla').classList.toggle('oculto', esMensajes);
+    $('mensajes').classList.toggle('oculto', !esMensajes);
+    $('btnFila').classList.toggle('oculto', esMensajes);
+    $('filtroTexto').classList.toggle('oculto', esMensajes);
+    if (esMensajes) pintarMensajes(); else pintarTabla();
     pintarLateral();
     pintarPie();
     pintarEstado();
@@ -294,14 +312,34 @@
 
   function pintarFiltroTemp() {
     var sel = $('filtroTemp');
+
+    // En Mensajes el segundo filtro elige la ASESORA: es la otra dimension
+    // por la que se parte esa tabla, igual que la temporada parte las tarifas.
+    if (TAB === MENSAJES) {
+      sel.parentNode.style.display = '';
+      var actual = sel.value;
+      var quienes = (CRUDO.asesoras || []).map(function (a) {
+        return String(a.iniciales).toUpperCase();
+      });
+      sel.innerHTML = '<option value="">Mensaje del hotel</option>' +
+        quienes.map(function (q) {
+          var a = CRUDO.asesoras.filter(function (x) {
+            return String(x.iniciales).toUpperCase() === q;
+          })[0];
+          return '<option value="' + esc(q) + '">' + esc(q + ' · ' + a.nombre) + '</option>';
+        }).join('');
+      sel.value = quienes.indexOf(actual) !== -1 ? actual : '';
+      return;
+    }
+
     var usa = (TAB === 'tarifas');
     sel.parentNode.style.display = usa ? '' : 'none';
     if (!usa) { sel.value = ''; return; }
     var ops = opcionesTemp($('filtroHotel').value);
-    var actual = sel.value;
+    var actual2 = sel.value;
     sel.innerHTML = '<option value="">Todas las temporadas</option>' +
       ops.map(function (t) { return '<option value="' + esc(t) + '">' + esc(t) + '</option>'; }).join('');
-    sel.value = ops.indexOf(actual) !== -1 ? actual : '';
+    sel.value = ops.indexOf(actual2) !== -1 ? actual2 : '';
   }
 
   function anchos(esq) {
@@ -589,8 +627,14 @@
     });
 
     var cierres = (CRUDO['stop-sales'] || []).filter(function (s) { return s.activo; }).length;
+    var juegos = {};
+    (CRUDO.plantillas || []).forEach(function (p) {
+      var q = String(p.asesor || '').trim();
+      if (q) juegos[q] = true;
+    });
     var filas = [
       ['Archivos por publicar', archivosCambiados().length],
+      ['Juegos de mensajes propios', Object.keys(juegos).length],
       ['Filas modificadas', modificadas],
       ['Filas nuevas', nuevas],
       ['Cierres de venta activos', cierres]
@@ -606,10 +650,31 @@
     var todas = (CRUDO[TAB] || []).length;
     var hotel = $('filtroHotel');
     var nom = hotel.value ? ' · ' + hotel.options[hotel.selectedIndex].text : '';
+
+    // En Mensajes no se ve una tabla sino UN texto: contar filas ahi decia
+    // "0 de 10 filas", que se lee como que algo fallo. Lo que importa es de
+    // quien es el mensaje que se esta editando y si es propio o heredado.
+    if (TAB === MENSAJES) {
+      var quien = $('filtroTemp');
+      var deQuien = quien.value
+        ? quien.options[quien.selectedIndex].text
+        : 'mensaje del hotel';
+      $('pieFilas').textContent = !hotel.value
+        ? 'elige un hotel'
+        : deQuien + nom +
+          ($('plantillaTexto').dataset.heredada ? ' · heredado del hotel' : '');
+      piePendiente();
+      return;
+    }
+
     $('pieFilas').textContent = vis === todas
       ? todas + (todas === 1 ? ' fila' : ' filas') + nom
       : vis + ' de ' + todas + ' filas' + nom;
 
+    piePendiente();
+  }
+
+  function piePendiente() {
     if (!guardadoEn) { $('pieGuardado').textContent = ''; return; }
     var s = Math.round((Date.now() - guardadoEn) / 1000);
     $('pieGuardado').textContent = s < 60 ? 'borrador guardado hace ' + s + ' s'
@@ -640,6 +705,185 @@
         pip.remove();
       }
     });
+  }
+
+  // ==========================================================================
+  // MENSAJES
+  //
+  // Cada asesora escribe distinto, y el mensaje sale firmado con sus
+  // iniciales: que lo firme una y suene a otra es raro para el cliente que ya
+  // habia hablado con ella. Por eso hay un juego de mensajes por asesora, con
+  // caida al del hotel para quien no tenga uno propio.
+  //
+  // No es una tabla: son textos largos que se leen enteros y se corrigen
+  // palabra a palabra. Editor a la izquierda y, al lado, exactamente lo que va
+  // a recibir el cliente — que es la unica forma de ver que una llave quedo
+  // mal escrita antes de que lo descubra una asesora con el cliente esperando.
+  // ==========================================================================
+
+  /** La fila de plantillas que corresponde al filtro de hotel y asesora. */
+  function filaPlantilla() {
+    var hotel = $('filtroHotel').value;
+    var quien = $('filtroTemp').value;      // en esta pestaña, la asesora
+    if (!hotel) return null;
+    var lista = CRUDO.plantillas || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].hotel === hotel &&
+          String(lista[i].asesor || '').toUpperCase() === quien) return lista[i];
+    }
+    return null;
+  }
+
+  function pintarMensajes() {
+    var hotel = $('filtroHotel').value;
+    var quien = $('filtroTemp').value;
+    var fila = filaPlantilla();
+    var ta = $('plantillaTexto');
+
+    var nombre = quien
+      ? ((CRUDO.asesoras || []).filter(function (a) {
+          return String(a.iniciales).toUpperCase() === quien;
+        })[0] || {}).nombre || quien
+      : 'mensaje del hotel';
+    $('plantillaQuien').textContent = hotel
+      ? (CRUDO.hoteles.filter(function (h) { return h.codigo === hotel; })[0] || {}).nombre_corto +
+        ' · ' + nombre
+      : 'elige un hotel';
+
+    ta.disabled = !hotel;
+    if (!hotel) {
+      ta.value = '';
+      $('plantillaPrevia').textContent = 'Elige un hotel para ver su mensaje.';
+      $('plantillaMarcadores').innerHTML = '';
+      return;
+    }
+
+    if (!fila) {
+      // Quien no tiene juego propio hereda el del hotel. Se muestra para que
+      // se pueda partir de el, y solo se crea la fila si de verdad se edita.
+      ta.value = plantillaHeredada(hotel);
+      ta.dataset.heredada = '1';
+    } else {
+      ta.value = fila.plantilla;
+      delete ta.dataset.heredada;
+    }
+    pintarPrevia();
+  }
+
+  function plantillaHeredada(hotel) {
+    var lista = CRUDO.plantillas || [];
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].hotel === hotel && !String(lista[i].asesor || '').trim()) {
+        return lista[i].plantilla;
+      }
+    }
+    return '';
+  }
+
+  /**
+   * La vista previa con una cotizacion de ejemplo.
+   *
+   * Se arma con el motor de verdad, no con texto de relleno: si la plantilla
+   * tiene una llave mal escrita, aqui aparece tal cual y no como un hueco.
+   */
+  function pintarPrevia() {
+    var hotel = $('filtroHotel').value;
+    var quien = $('filtroTemp').value;
+    var texto = $('plantillaTexto').value;
+    var caja = $('plantillaPrevia');
+    var ta = $('plantillaTexto');
+
+    if (!CAT || !CAT.hoteles[hotel]) {
+      caja.textContent = 'Este hotel no está activo: no se puede previsualizar.';
+      return;
+    }
+
+    // Copia del catalogo con la plantilla que se esta escribiendo, sin tocar
+    // el borrador: escribir a medias no puede romper lo guardado.
+    var cat = Object.create(CAT);
+    cat.plantillas = Object.create(CAT.plantillas);
+    cat.plantillas[hotel + '|' + quien] = texto;
+    if (!quien) cat.plantillas[hotel + '|'] = texto;
+
+    var req = ejemploDe(hotel);
+    var r;
+    try {
+      r = Motor.calcular(cat, req);
+      if (!r.ok) throw new Error(r.errores[0]);
+      caja.textContent = Motor.render(cat, r, {
+        asesorIniciales: quien || 'MZ', cliente: 'María Sánchez'
+      });
+    } catch (e) {
+      caja.textContent = 'No se puede previsualizar: ' + e.message;
+      ta.classList.add('con-error');
+      $('plantillaMarcadores').innerHTML =
+        '<span class="falta">' + esc(e.message) + '</span>';
+      return;
+    }
+    ta.classList.remove('con-error');
+    pintarMarcadores(texto, caja.textContent);
+  }
+
+  /** Una cotizacion de ejemplo que funcione en ese hotel. */
+  function ejemploDe(hotel) {
+    var hab = (CRUDO.habitaciones || []).filter(function (h) {
+      return h.hotel === hotel && h.activo;
+    })[0];
+    var temp = (CRUDO.temporadas || []).filter(function (t) { return t.hotel === hotel; })[0];
+    var ci = temp ? temp.fecha_inicio : '2026-09-20';
+    var co = Motor.Fechas.sumarDias(ci, 3);
+    return {
+      hotel: hotel, checkin: ci, checkout: co, promos: [], extras: [],
+      lineas: [{ cod_hab: hab ? hab.cod_hab : '', cantidad: 1,
+                 adultos: hab ? Math.max(1, Number(hab.ocup_min_fisica) || 1) : 2,
+                 edades: [] }]
+    };
+  }
+
+  /**
+   * Las llaves usadas y, sobre todo, las que el motor NO sabe resolver: una
+   * llave mal escrita se imprime literal en el mensaje del cliente.
+   */
+  function pintarMarcadores(texto, salida) {
+    var usadas = (texto.match(/\{\{(\w+)\}\}/g) || [])
+      .filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var sinResolver = Motor.marcadoresNoResueltos(salida);
+
+    var h = [];
+    if (sinResolver.length) {
+      h.push('<span class="falta">Sin resolver: ' + esc(sinResolver.join(', ')) +
+             ' — saldrían así en el mensaje.</span><br>');
+    }
+    h.push('Disponibles: ' + Motor.MARCADORES.map(function (m) {
+      return '<code>{{' + m + '}}</code>';
+    }).join(' '));
+    if (usadas.length) {
+      h.push('<br>En uso: ' + usadas.length + ' de ' + Motor.MARCADORES.length + '.');
+    }
+    $('plantillaMarcadores').innerHTML = h.join('');
+  }
+
+  function alEditarPlantilla() {
+    var hotel = $('filtroHotel').value;
+    var quien = $('filtroTemp').value;
+    if (!hotel) return;
+
+    var fila = filaPlantilla();
+    if (!fila) {
+      // Recien ahora se crea el juego propio: hasta que no se edita, la
+      // asesora sigue usando el del hotel y no hay fila que mantener.
+      fila = { hotel: hotel, asesor: quien, plantilla: '' };
+      CRUDO.plantillas.push(fila);
+    }
+    fila.plantilla = $('plantillaTexto').value;
+    delete $('plantillaTexto').dataset.heredada;
+
+    guardarBorrador();
+    revalidar();
+    pintarPrevia();
+    pintarLateral();
+    pintarEstado();
+    pintarPips();
   }
 
   // ==========================================================================

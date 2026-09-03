@@ -32,11 +32,15 @@ html, body {
 
 .oculto { display: none !important; }
 
-/* Piezas que solo existen en un tamaño de pantalla. */
-.solo-pc, .solo-pc-inline { display: none; }
+/* Piezas que solo existen en un tamaño de pantalla.
+   Esconde con !important y NO reasigna display al mostrar: cada pieza conserva
+   el suyo. Sin el !important, cualquier regla posterior de la propia pieza
+   (.btn-cabecera es display:inline-flex) ganaba por orden y la dejaba visible
+   en el teléfono, que es justo donde no cabe. */
+@media (max-width: 899px) {
+  .solo-pc, .solo-pc-inline { display: none !important; }
+}
 @media (min-width: 900px) {
-  .solo-pc { display: inline-flex; }
-  .solo-pc-inline { display: inline; }
   .solo-movil { display: none !important; }
 }
 
@@ -271,6 +275,73 @@ select:focus-visible, input:focus-visible {
 
 .pista { margin: -4px 0 0; font-size: 12.5px; color: var(--tinta-45); }
 .pista.alerta { color: var(--alerta); font-weight: 500; }
+
+/* ---------------------------------------------------------------- Hoteles
+   Cinco botones, no un desplegable. Son cinco y no cambian nunca: esconderlos
+   detras de un toque y una lista, para lo primero que se elige en cada
+   cotizacion, es un peaje diario. Ademas asi se ve cual esta activo sin
+   abrir nada. */
+.hoteles {
+  display: grid;
+  /* 160 y no 104: con 104 entran tres por fila en un telefono y el nombre
+     se corta ('Isla Marg...'). La sigla identifica, pero el nombre es lo
+     que se lee. Dos por fila caben enteros. */
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--e2);
+}
+
+.hotel-op {
+  display: flex; align-items: center; gap: 8px;
+  min-height: var(--h-campo);
+  padding: 0 12px;
+  border: 1.5px solid var(--arena); border-radius: var(--r-medio);
+  background: var(--papel);
+  font-family: var(--cuerpo); font-size: 14px; font-weight: 500;
+  color: var(--tinta);
+  cursor: pointer; text-align: left;
+  transition: border-color .14s ease, background-color .14s ease,
+              transform .12s cubic-bezier(.23,1,.32,1);
+}
+.hotel-op:active:not([aria-checked="true"]) { transform: scale(.97); }
+
+/* El acento de CADA hotel, no el del elegido: es lo que permite reconocerlos
+   antes de leerlos. Se declara por boton con una variable propia. */
+.hotel-op[data-h="HBK"] { --h-acento: #17796E; --h-sut: #E9F5F3; --h-texto: #17796E; }
+.hotel-op[data-h="HIM"] { --h-acento: #D9AE2B; --h-sut: #FBF2DA; --h-texto: #7D5E06; }
+.hotel-op[data-h="HPA"] { --h-acento: #12688C; --h-sut: #E8F2F7; --h-texto: #12688C; }
+.hotel-op[data-h="WTC"] { --h-acento: #8C2F55; --h-sut: #FAEBF0; --h-texto: #8C2F55; }
+.hotel-op[data-h="HMC"] { --h-acento: #D96A22; --h-sut: #FDF2EA; --h-texto: #A84D0F; }
+
+.hotel-sigla {
+  display: grid; place-items: center;
+  min-width: 34px; height: 26px;
+  border-radius: 6px;
+  background: var(--h-sut, var(--arena-sut));
+  color: var(--h-texto, var(--tinta-70));
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+}
+.hotel-nombre {
+  min-width: 0;
+  line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.hotel-op[aria-checked="true"] {
+  border-color: var(--h-acento); background: var(--h-sut);
+  font-weight: 600;
+}
+.hotel-op[aria-checked="true"] .hotel-sigla {
+  background: var(--h-acento); color: #fff;
+}
+
+/* En el mini cotizador solo caben las siglas: el panel mide 380 y el nombre
+   completo obligaria a dos filas de botones. */
+.hoteles-mini { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.hoteles-mini .hotel-op {
+  min-height: 40px; padding: 0; justify-content: center;
+}
+.hoteles-mini .hotel-nombre { display: none; }
+.hoteles-mini .hotel-sigla { min-width: 0; width: 100%; height: 100%; border-radius: 0; }
 
 /* --------------------------------------------------------- Hotel y fechas */
 .fila-estadia { display: flex; flex-wrap: wrap; gap: var(--e2); }
@@ -794,3 +865,47 @@ body:not(.calc-suelta) .calc {
 .calc-acciones .btn { min-height: 48px; border-radius: var(--r-medio); }
 #calcCopiar { flex: 1.4; font-size: 16px; }
 #calcAbrir  { flex: 1; font-size: 14px; }
+
+/* ------------------------------------------------- Mini cotizador colapsado
+   Una burbuja que se arrastra por la pantalla y al pulsarla vuelve a abrir el
+   panel. Solo existe en el nivel 3 —el panel dentro de la página—: en una
+   ventana propia, mover y minimizar es cosa del sistema operativo.
+
+   Lleva el total encima. Colapsado y sin cifra sería un botón; con la cifra
+   sigue siendo un cotizador, que es la razón de tenerlo abierto. */
+.calc-burbuja {
+  position: fixed;
+  right: 20px; bottom: 20px;
+  z-index: 81;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 52px; padding: 0 18px 0 14px;
+  border: 0; border-radius: var(--r-chip);
+  background: var(--tinta); color: var(--papel);
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 600;
+  cursor: grab;
+  box-shadow: 0 10px 26px rgba(11, 37, 69, .32);
+  touch-action: none;             /* el arrastre lo maneja el código */
+  transition: transform .12s cubic-bezier(.23,1,.32,1), box-shadow .16s ease;
+}
+.calc-burbuja:active { cursor: grabbing; }
+.calc-burbuja.arrastrando {
+  transform: scale(1.04);
+  box-shadow: 0 16px 36px rgba(11, 37, 69, .40);
+  transition: box-shadow .16s ease;
+}
+.calc-burbuja:focus-visible { outline: var(--foco); outline-offset: 3px; }
+
+.calc-burbuja-signo {
+  display: grid; place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  font-family: var(--mono); font-size: 14px;
+}
+.calc-burbuja-monto {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 16px; font-weight: 600;
+}
+/* Sin cotización válida no hay cifra: la burbuja se encoge a solo el signo. */
+.calc-burbuja-monto:empty { display: none; }
+.calc-burbuja-monto:empty + * { margin: 0; }

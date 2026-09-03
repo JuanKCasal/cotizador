@@ -12,7 +12,7 @@ var Catalogo = (function () {
 
   var TABLAS = ['config', 'hoteles', 'habitaciones', 'temporadas', 'tarifas',
                 'stop-sales', 'politica-ninos', 'promociones', 'cargos-fecha',
-                'plantillas', 'adicionales', 'extras'];
+                'plantillas', 'adicionales', 'extras', 'asesoras'];
 
   // ==========================================================================
   // NORMALIZADORES
@@ -264,14 +264,33 @@ var Catalogo = (function () {
         });
       });
 
+    /**
+     * hotel|asesor -> plantilla, con la del hotel bajo la clave hotel|.
+     *
+     * Cada asesora escribe distinto, y el mensaje sale con sus iniciales: que
+     * lo firme una y suene a otra es raro para el cliente que ya habia hablado
+     * con ella. Quien no tenga juego propio usa el del hotel.
+     */
     var plantillas = {};
-    (crudo.plantillas || []).forEach(function (r) { plantillas[r.hotel] = r.plantilla; });
+    (crudo.plantillas || []).forEach(function (r) {
+      plantillas[r.hotel + '|' + String(r.asesor || '').trim().toUpperCase()] = r.plantilla;
+    });
+
+    var asesoras = (crudo.asesoras || [])
+      .filter(function (r) { return siNo(r.activo); })
+      .map(function (r) {
+        return {
+          iniciales: String(r.iniciales || '').trim().toUpperCase(),
+          nombre: String(r.nombre || '').trim()
+        };
+      });
 
     return {
       config: config, hoteles: hoteles, habitaciones: habitaciones,
       temporadas: temporadas, tarifas: tarifas, stopSales: stopSales,
       politica: politica, promociones: promociones, cargos: cargos,
       plantillas: plantillas, adicionales: adicionales, extras: extras,
+      asesoras: asesoras,
       generado: new Date().toISOString()
     };
   }
