@@ -1,5 +1,20 @@
 [
   {
+    "hotel": "WTC",
+    "cod_promo": "HOSP_WTC",
+    "nombre": "HOSPEDATE EN VALENCIA",
+    "vig_inicio": "2026-09-01",
+    "vig_fin": "2026-09-30",
+    "tipo": "DESCUENTO_MONTO",
+    "valor": 14,
+    "min_noches": "",
+    "activo": true,
+    "cod_hab": "",
+    "dias_semana": "",
+    "mensaje": "",
+    "prioridad": ""
+  },
+  {
     "hotel": "HIM",
     "cod_promo": "PRO_RESIDENTES",
     "nombre": "Promoción para Residentes",
