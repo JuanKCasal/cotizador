@@ -25,6 +25,11 @@
   --ancho-max: 1200px;
   --relleno-ancho: max(var(--e5), calc((100% - var(--ancho-max)) / 2));
 
+  /* Lo que asoma del mensaje con el panel plegado: el tirador, tres o cuatro
+     lineas de verdad y la barra del total. Menos que esto y el asomo no dice
+     nada; mas y se come el formulario. */
+  --h-asomo: calc(196px + var(--respiro-abajo));
+
   --respiro-abajo: env(safe-area-inset-bottom, 0px);
   --h-barra-real: calc(var(--h-barra-total) + var(--respiro-abajo));
 
@@ -319,6 +324,23 @@ select:focus-visible, input:focus-visible {
 }
 /* .t-precio y .t-seccion; la caja no aporta tipografia propia. */
 
+/* Las noches como parte de la frase, no como una caja aparte. La cifra en
+   tinta plena porque es el dato; la palabra hereda el gris de la pista. */
+.linea-fechas {
+  margin: calc(var(--e1) * -1) 0 0;
+  display: flex; align-items: baseline; flex-wrap: wrap;
+}
+.linea-fechas .pista { margin: 0; }
+
+.noches-linea {
+  display: inline-flex; align-items: baseline; gap: var(--e1);
+  margin-right: var(--e2); padding: 1px var(--e2);
+  border-radius: var(--r-chip);
+  background: var(--arena);
+  color: var(--tinta);
+}
+.noches-linea .caja-noches-t { color: var(--tinta-70); }
+
 /* --tinta-70 y no --tinta-45: las pistas viven sobre el fondo de página, donde
    --tinta-45 da 4.18:1 y no llega a AA. El sistema ya lo resolvió — .t-pista se
    define con --tinta-70 — y la hoja se había separado de él. */
@@ -521,6 +543,29 @@ select:focus-visible, input:focus-visible {
   .contador { flex: 1.1 1 0; }
   .hab-pie { display: none; }   /* el precio ya está arriba, junto al título */
 }
+
+/* ---------------------------------------------------------------- Hojas
+   La mesa de trabajo. Cada hoja agrupa un asunto -la estadia, las
+   habitaciones, quien firma- en vez de dejar una lista continua de campos
+   donde todo pesa lo mismo. Es papel: se edita. Lo que NO se edita -el
+   mensaje- vive abajo, con otro material y otra profundidad. */
+.hoja {
+  background: var(--papel);
+  border: 1px solid var(--arena); border-radius: var(--r-grande);
+  padding: var(--e3) var(--e4) var(--e4);
+  display: flex; flex-direction: column; gap: var(--e3);
+}
+.hoja-et { margin: 0; }
+
+/* Una habitacion dentro de una hoja no es otra tarjeta: seria una caja dentro
+   de una caja. Se queda con su barra de acento y pierde el resto. */
+.hoja .hab {
+  border: 0; border-radius: 0; background: none;
+}
+.hoja .hab + .hab { border-top: 1px solid var(--arena-sut); }
+.hoja .hab-cuerpo { padding: var(--e3) 0 var(--e3) var(--e3); }
+.hoja .lineas { gap: 0; }
+.hoja .hab::before { border-radius: 3px; }
 
 /* ------------------------------------------------------------- Tarjetas */
 .tarjeta {
@@ -762,19 +807,89 @@ select:focus-visible, input:focus-visible {
 
 /* ================================================================== MÓVIL */
 @media (max-width: 899px) {
-  /* La vista previa entra desde la derecha: en una pantalla de teléfono no
-     caben las dos columnas, y el mensaje se consulta, no se edita. */
+  /* El mensaje deja de estar detras de otra pantalla. En el aparato donde SI
+     se cotiza, lo que se va a mandar era lo unico que no se veia: o se mandaba
+     a ciegas o se pagaba un viaje de ida y vuelta para mirarlo. Ahora se asoma
+     siempre por debajo del formulario y se arrastra hacia arriba para leerlo
+     entero, sin perder de vista lo que se esta editando.
+
+     Otro material: el fondo de WhatsApp y una sombra hacia arriba. No es una
+     hoja mas de la mesa; es el resultado. */
   .columna-vista {
-    position: fixed; inset: 0 0 var(--h-barra-real);
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
     z-index: 70;
-    border: 0; border-radius: 0;
-    transform: translateX(100%);
-    transition: transform .22s ease;
+    height: 88vh;
+    display: flex; flex-direction: column;
+    border: 0; border-radius: var(--r-grande) var(--r-grande) 0 0;
+    background: var(--wa-fondo);
+    box-shadow: 0 -12px 32px -18px rgba(11, 37, 69, .55);
+    transform: translateY(calc(100% - var(--h-asomo)));
+    transition: transform .24s cubic-bezier(.23, 1, .32, 1);
+    will-change: transform;
   }
-  .columna-vista.abierta { transform: translateX(0); }
-  .chat { align-items: flex-start; }
+  .columna-vista.abierta { transform: translateY(0); }
+  /* Mientras se arrastra manda el dedo, no la animacion. */
+  .columna-vista.arrastrando { transition: none; }
+
+  /* Plegado, el encabezado sobra: el tirador ya dice lo que es y el boton de
+     copiar esta en la barra, que ahora vive aqui dentro. */
+  .vista-encabezado { display: none; }
+  .columna-vista.abierta .vista-encabezado {
+    display: flex;
+    background: var(--papel);
+    border-bottom: 1px solid var(--arena);
+  }
+
+  .chat {
+    align-items: flex-start;
+    padding: var(--e2) var(--e3);
+  }
   .burbuja { max-width: 100%; }
+
+  /* La barra se muda aqui dentro (logica.js la mueve) y pasa a ser el pie del
+     asomo: total y copiar, que es lo que cierra la tarea. */
+  .columna-vista .barra {
+    position: static;
+    order: 9;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(11, 37, 69, .16);
+  }
+
+  /* El formulario respira por encima del asomo plegado. */
+  .lienzo { padding-bottom: calc(var(--h-asomo) + var(--e4)); }
+
+  /* En el telefono la hoja aprieta por los lados, no por arriba: cada milimetro
+     horizontal que se quede el marco sale de los nombres de hotel, y con dos
+     botones por fila el margen para "Isla Margarita" es de pocos pixeles. */
+  .hoja { padding-left: var(--e2); padding-right: var(--e2); }
+  .hoja > .seccion-cabecera,
+  .hoja > .hoja-et,
+  .hoja > .pista,
+  .hoja > .fila-registro { padding-left: var(--e2); padding-right: var(--e2); }
+  .hoteles .hotel-op { padding: 0 var(--e2); }
+  .hoteles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+  /* Un solo boton de copiar: el de la barra. El del encabezado se repetiria. */
+  #btnCopiar { display: none; }
 }
+
+/* ------------------------------------------------------- Tirador del asomo */
+.asomo-tirador {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; gap: var(--e1);
+  width: 100%; padding: var(--e2) var(--e3) var(--e1);
+  border: 0; background: none;
+  color: var(--tinta-70);
+  cursor: grab; touch-action: none;
+}
+.asomo-tirador:active { cursor: grabbing; }
+.asomo-agarre {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: rgba(11, 37, 69, .24);
+}
+.asomo-et { color: var(--tinta-70); }
+.columna-vista.abierta .asomo-et { visibility: hidden; }
+.asomo-tirador:focus-visible { outline: var(--foco); outline-offset: -3px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; transition-duration: .01ms !important; }

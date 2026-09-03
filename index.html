@@ -61,7 +61,13 @@
            hotel es lo primero de cada cotizacion. Un desplegable esconde las
            opciones detras de un toque y una lista; los botones se tocan
            directo y dejan ver de un vistazo cual esta activo. -->
-      <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
+      <!-- Hojas por asunto, no una lista continua de campos: la mesa de
+           trabajo es una cosa y el mensaje que se manda es otra, y la
+           profundidad -no el color- es lo que las separa. El acento del hotel
+           queda libre para lo que de verdad es del hotel. -->
+      <section class="hoja">
+        <h2 class="t-seccion hoja-et">Estadía</h2>
+        <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
 
       <div class="fila-estadia">
         <label class="t-precio campo-caja">
@@ -74,32 +80,43 @@
           <input type="date" id="checkout">
         </label>
 
-        <div class="caja-noches" id="puenteNoches" aria-hidden="true">
+      </div>
+      <!-- Las noches, en la linea de la pista y no en una caja de la fila.
+           Con dos campos de fecha y una caja mas, en un telefono no quedaban
+           ni 105 px por fecha y el navegador recortaba el ano. Ademas
+           "3 noches · La noche de salida no se cobra" se lee de corrido; una
+           caja gris aparte hay que ir a buscarla. -->
+      <p class="linea-fechas">
+        <span class="noches-linea" id="puenteNoches">
           <span class="t-precio caja-noches-n">—</span>
-          <span class="t-pista caja-noches-t">noches</span>
+          <span class="caja-noches-t">noches</span>
+        </span><span class="t-pista pista" id="pistaFechas">La noche de salida no se cobra.</span>
+      </p>
+      </section>
+
+      <section class="hoja">
+        <div class="seccion-cabecera">
+          <h2 class="t-seccion titulo-seccion" id="tituloHabitaciones">Habitaciones</h2>
+          <button type="button" class="btn-borde" id="btnAgregar">
+            + Agregar<span class="solo-pc-inline"> habitación</span>
+          </button>
         </div>
-      </div>
-      <p class="t-pista pista" id="pistaFechas">La noche de salida no se cobra.</p>
 
-      <div class="seccion-cabecera">
-        <h2 class="t-seccion titulo-seccion" id="tituloHabitaciones">Habitaciones</h2>
-        <button type="button" class="btn-borde" id="btnAgregar">
-          + Agregar<span class="solo-pc-inline"> habitación</span>
-        </button>
-      </div>
+        <div id="lineas" class="lineas"></div>
+      </section>
 
-      <div id="lineas" class="lineas"></div>
-
-      <section class="tarjeta oculto" id="seccionPromos">
+      <section class="hoja oculto" id="seccionPromos">
         <h2 class="t-seccion titulo-seccion">Promociones</h2>
         <div id="promos" class="chips"></div>
       </section>
 
-      <section class="tarjeta oculto" id="seccionExtras">
+      <section class="hoja oculto" id="seccionExtras">
         <h2 class="t-seccion titulo-seccion">Servicios adicionales</h2>
         <div id="extras" class="chips"></div>
       </section>
 
+      <section class="hoja">
+        <h2 class="t-seccion hoja-et">Quién firma</h2>
       <div class="fila-registro">
         <label class="t-campo campo-caja campo-cliente">
           <span class="t-seccion campo-etiqueta">Cliente</span>
@@ -111,10 +128,22 @@
           <input type="text" id="asesor" maxlength="4" autocomplete="off">
         </label>
       </div>
+      </section>
     </div>
 
     <!-- ---------- Columna de la vista previa ---------- -->
+    <!-- En el telefono esto no es una columna sino el asomo del mensaje: se
+         ve siempre por debajo del formulario, con las primeras lineas de
+         verdad, y se arrastra hacia arriba para leerlo entero sin cambiar de
+         pantalla. La barra del total se muda aqui dentro (lo hace logica.js),
+         que es lo que lo convierte en el cierre de la tarea y no en una
+         franja mas. -->
     <div class="columna-vista" id="columnaVista">
+      <button type="button" class="asomo-tirador solo-movil" id="asomoTirador"
+              aria-expanded="false" aria-controls="columnaVista">
+        <span class="asomo-agarre" aria-hidden="true"></span>
+        <span class="asomo-et t-seccion">Así lo recibe el cliente</span>
+      </button>
       <div class="vista-encabezado">
         <div class="vista-titulos">
           <h2 class="t-titulo-tarjeta vista-titulo">Vista del cliente</h2>

@@ -561,10 +561,10 @@
     var hoy = new Date().toISOString().slice(0, 10);
     if (estado.checkin && estado.checkout && estado.checkout <= estado.checkin) {
       p.textContent = 'La salida debe ser posterior a la entrada.';
-      p.className = 'pista alerta';
+      p.classList.add('alerta');
     } else if (estado.checkin && estado.checkin < hoy) {
       p.textContent = 'La fecha de entrada ya pasó. Verifica antes de enviar.';
-      p.className = 'pista alerta';
+      p.classList.add('alerta');
     } else {
       var cierres = cierresDelRango(estado.hotel, estado.checkin, estado.checkout);
       if (cierres.length) {
@@ -572,10 +572,10 @@
         p.textContent = todoElHotel
           ? 'Ojo: el hotel tiene noches cerradas en ese rango.'
           : 'Ojo: hay habitaciones cerradas en ese rango.';
-        p.className = 'pista alerta';
+        p.classList.add('alerta');
       } else {
         p.textContent = 'La noche de salida no se cobra.';
-        p.className = 'pista';
+        p.classList.remove('alerta');
       }
     }
   }
@@ -722,15 +722,23 @@
   }
 
   /**
-   * El boton de la barra movil es la UNICA via para abrir el panel, y el panel
-   * es donde se explican los errores. Si se deshabilita al haber errores, la
-   * asesora ve "Revisa los datos" sin ninguna forma de saber que revisar.
+   * El boton de la barra, en movil.
+   *
+   * Con el mensaje asomado ya no hace falta un boton para "verlo": se ve. Asi
+   * que este boton pasa a ser lo que de verdad cierra la tarea, copiar. La
+   * excepcion son los errores: ahi el texto no existe todavia, no hay nada que
+   * copiar, y el boton lleva al sitio donde se explica que falta. Nunca se
+   * deshabilita con errores, porque seria dejar "Revisa los datos" sin ninguna
+   * forma de saber que revisar.
    */
+  var panelEnError = false;
+
   function botonPanel(estadoPanel) {
     var b = $('btnVerMensaje');
+    panelEnError = (estadoPanel === 'error');
     if (estadoPanel === 'vacio') {
       b.disabled = true;
-      b.textContent = 'Ver mensaje';
+      b.textContent = 'Copiar mensaje';
       b.classList.remove('btn-alerta');
     } else if (estadoPanel === 'error') {
       b.disabled = false;
@@ -738,9 +746,137 @@
       b.classList.add('btn-alerta');
     } else {
       b.disabled = false;
-      b.textContent = 'Ver mensaje';
+      b.textContent = 'Copiar mensaje';
       b.classList.remove('btn-alerta');
     }
+  }
+
+  // ==========================================================================
+  // EL ASOMO DEL MENSAJE
+  //
+  // En el telefono el mensaje se asoma por debajo del formulario y se arrastra
+  // para leerlo entero. Dos piezas hacen falta:
+  //
+  // 1. La barra del total se muda DENTRO del panel. Es lo que lo convierte en
+  //    el cierre de la tarea -mensaje, total y copiar juntos- en vez de dejar
+  //    una franja aparte por debajo. Se mueve, no se duplica: duplicarla
+  //    obligaria a mantener dos totales en pantalla y algun dia dirian cosas
+  //    distintas.
+  // 2. El arrastre. Un panel que solo se abre de un toque no deja mirar "un
+  //    poco": el dedo tiene que poder subirlo lo justo para leer una linea mas.
+  // ==========================================================================
+  var asomoAbierto = false;
+
+  /**
+   * El mismo corte que la hoja de estilos, preguntado de la misma forma.
+   *
+   * OJO: hay otro esMovil() mas abajo que detecta TACTIL, no ancho, y sirve
+   * para el ultimo recurso de copiado. Son dos preguntas distintas y no se
+   * pueden confundir: un portatil con pantalla tactil a 1440 es tactil pero no
+   * es un telefono, y ahi el asomo no va. Se pregunta por la media query para
+   * que el JS y el CSS no puedan discrepar nunca.
+   */
+  var mqMovil = (typeof window.matchMedia === 'function')
+    ? window.matchMedia('(max-width: 899px)')
+    : null;
+
+  function anchoDeMovil() {
+    return mqMovil ? mqMovil.matches : (window.innerWidth || 1024) < 900;
+  }
+
+  /** La barra vive dentro del panel en movil y fuera en escritorio. */
+  function colocarBarra() {
+    var barra = document.querySelector('.barra');
+    var panel = $('columnaVista');
+    var app = $('app');
+    if (!barra || !panel || !app) return;
+    if (anchoDeMovil()) {
+      if (barra.parentNode !== panel) panel.appendChild(barra);
+    } else if (barra.parentNode !== app) {
+      app.appendChild(barra);
+      asomoCerrar();
+    }
+  }
+
+  function asomoAbrir() {
+    $('columnaVista').classList.add('abierta');
+    $('asomoTirador').setAttribute('aria-expanded', 'true');
+    asomoAbierto = true;
+  }
+
+  function asomoCerrar() {
+    $('columnaVista').classList.remove('abierta');
+    var t = $('asomoTirador');
+    if (t) t.setAttribute('aria-expanded', 'false');
+    asomoAbierto = false;
+  }
+
+  /**
+   * Arrastre del asomo.
+   *
+   * Se sigue el dedo en vivo y al soltar se decide por dos cosas: cuanto se
+   * movio y con cuanta prisa. Solo por distancia, un gesto corto y rapido
+   * -que es como se abre una cosa asi- no alcanzaria el umbral y el panel se
+   * volveria a cerrar en la cara.
+   */
+  function montarAsomo() {
+    colocarBarra();
+    if (mqMovil && typeof mqMovil.addEventListener === 'function') {
+      mqMovil.addEventListener('change', colocarBarra);
+    } else if (mqMovil && typeof mqMovil.addListener === 'function') {
+      mqMovil.addListener(colocarBarra);       // Safari viejo
+    } else {
+      window.addEventListener('resize', colocarBarra);
+    }
+
+    var t = $('asomoTirador');
+    var panel = $('columnaVista');
+    if (!t || !panel) return;
+
+    var y0 = 0, t0 = 0, dy = 0, arrastrando = false, movio = false;
+
+    function alto() { return panel.getBoundingClientRect().height; }
+    function base() {
+      // Cuanto esta bajado el panel en cada estado, en pixeles.
+      var asomo = parseFloat(getComputedStyle(panel).getPropertyValue('--h-asomo')) || 196;
+      return asomoAbierto ? 0 : Math.max(0, alto() - asomo);
+    }
+
+    t.addEventListener('pointerdown', function (e) {
+      if (e.button !== undefined && e.button !== 0) return;
+      arrastrando = true; movio = false;
+      y0 = e.clientY; t0 = Date.now(); dy = 0;
+      panel.classList.add('arrastrando');
+      try { t.setPointerCapture(e.pointerId); } catch (err) { /* navegador viejo */ }
+    });
+
+    t.addEventListener('pointermove', function (e) {
+      if (!arrastrando) return;
+      dy = e.clientY - y0;
+      if (Math.abs(dy) > 4) movio = true;
+      // Sin pasarse de los dos topes: arriba del todo o asomado.
+      var y = Math.min(Math.max(base() + dy, 0), Math.max(0, alto() - 40));
+      panel.style.transform = 'translateY(' + y + 'px)';
+    });
+
+    function soltar(e) {
+      if (!arrastrando) return;
+      arrastrando = false;
+      panel.classList.remove('arrastrando');
+      panel.style.transform = '';
+      try { t.releasePointerCapture(e.pointerId); } catch (err) { /* ya liberado */ }
+
+      if (!movio) { (asomoAbierto ? asomoCerrar : asomoAbrir)(); return; }
+
+      var prisa = Math.abs(dy) / Math.max(1, Date.now() - t0);   // px por ms
+      var lejos = Math.abs(dy) > alto() * 0.22;
+      if (prisa > 0.5 || lejos) {
+        (dy < 0 ? asomoAbrir : asomoCerrar)();
+      }
+      // Ni lejos ni deprisa: se queda donde estaba.
+    }
+    t.addEventListener('pointerup', soltar);
+    t.addEventListener('pointercancel', soltar);
   }
 
   /** Convierte el formato de WhatsApp a HTML solo para la vista previa. */
@@ -1008,11 +1144,12 @@
     // --- Acciones ---
     $('btnCopiar').addEventListener('click', copiar);
     $('btnVerMensaje').addEventListener('click', function () {
-      $('columnaVista').classList.add('abierta');
+      // Con errores no hay texto que copiar: lleva a donde se explica.
+      if (panelEnError) { asomoAbrir(); return; }
+      copiar();
     });
-    $('btnCerrarVista').addEventListener('click', function () {
-      $('columnaVista').classList.remove('abierta');
-    });
+    $('btnCerrarVista').addEventListener('click', asomoCerrar);
+    montarAsomo();
     $('btnCerrarModal').addEventListener('click', function () {
       $('modalCopia').classList.add('oculto');
     });
@@ -1023,7 +1160,7 @@
       estado.lineas = []; estado.promos = []; estado.cliente = '';
       document.body.dataset.hotel = '';
       $('checkin').value = ''; $('checkout').value = ''; $('cliente').value = '';
-      $('columnaVista').classList.remove('abierta');
+      asomoCerrar();
       estado.extras = [];
       renderHoteles(); renderLineas(); renderPromos(); renderExtras(); recalcular();
       aviso('Cotización nueva', 'exito');
@@ -1036,7 +1173,7 @@
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
       $('modalCopia').classList.add('oculto');
-      $('columnaVista').classList.remove('abierta');
+      asomoCerrar();
     });
 
     renderLineas();
