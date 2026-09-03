@@ -21,8 +21,11 @@
      box-sizing: border-box un padding-bottom NO se suma a la altura, se la
      come, y en un iPhone los 68px de barra quedaban en 34 con el total y el
      botón dentro. Todo lo que reserva sitio para la barra usa la medida real. */
-  /* Ancho util maximo: mas alla de eso, aire a los lados. */
-  --ancho-max: 1200px;
+  /* Ancho util maximo: mas alla de eso, aire a los lados. 1300 y no 1200
+     porque con 1200 la columna del formulario se queda en unos 736 y la fila
+     de la habitacion -categoria, tipo, atributo, adultos, ninos- se corta por
+     la derecha. */
+  --ancho-max: 1300px;
   --relleno-ancho: max(var(--e5), calc((100% - var(--ancho-max)) / 2));
 
   /* Lo que asoma del mensaje con el panel plegado: el tirador, tres o cuatro
@@ -512,6 +515,8 @@ select:focus-visible, input:focus-visible {
 .hab-quitar:hover { background: var(--alerta-sut); }
 
 .hab-controles { display: flex; flex-wrap: wrap; gap: var(--e2); }
+.hab-controles .campo-select select { padding-right: var(--e5); }
+.hab-controles .campo-select::after { right: var(--e3); }
 .hab-controles .campo-select { flex: 1 0 100%; }
 .hab-controles .campo-select.corto { flex: 1 0 calc(50% - 4px); }
 
@@ -561,11 +566,20 @@ select:focus-visible, input:focus-visible {
 }
 
 @media (min-width: 900px) {
-  .hab-controles { flex-wrap: nowrap; }
-  .hab-controles .campo-select        { flex: 2 1 0; }
-  .hab-controles .campo-select.corto  { flex: 1.2 1 0; }
-  .hab-controles .campo-select.atributo { flex: 1.4 1 0; }
-  .contador { flex: 1.1 1 0; }
+  /* Envuelve, no se aprieta. Con nowrap y proporciones fijas la fila se
+     recortaba por la derecha en cuanto la columna se estrechaba -"Sin atribut"
+     y el contador de ninos a medias-, y afinar las proporciones solo mueve
+     donde se rompe. Con una base minima por control, lo que no cabe baja a una
+     segunda linea y nunca se corta nada. */
+  .hab-controles { flex-wrap: wrap; }
+  /* Las bases salen del texto mas largo de cada control, no de proporciones:
+     la categoria tiene que poder decir "ESTÁNDAR BÁSICA" entera. Suman menos
+     que la columna a 1300, asi que entran en una fila; en una pantalla mas
+     estrecha bajan a dos en vez de cortarse. */
+  .hab-controles .campo-select          { flex: 2 1 204px; }
+  .hab-controles .campo-select.corto    { flex: 1 1 112px; }
+  .hab-controles .campo-select.atributo { flex: 1 1 130px; }
+  .contador { flex: 1 1 142px; }
   .hab-pie { display: none; }   /* el precio ya está arriba, junto al título */
 }
 
@@ -990,10 +1004,21 @@ body:not(.calc-suelta) .calc {
 .calc-cabecera {
   flex-shrink: 0; height: 40px;
   display: flex; align-items: center; justify-content: space-between;
+  gap: var(--e2);
   padding: 0 var(--e1) 0 var(--e3);
   background: var(--tinta);
 }
-.calc-marca { display: flex; align-items: center; gap: var(--e2); }
+/* Los botones NUNCA se encogen y el titulo si. Plegado, Chrome no baja de unos
+   350 de ancho, y a esa medida el titulo se partia en dos lineas y empujaba el
+   boton de volver a abrir fuera de la ventana: quedaba plegado y sin forma de
+   restaurarlo salvo cerrarlo del todo. Quien manda es el control, no el
+   rotulo. */
+.calc-marca {
+  display: flex; align-items: center; gap: var(--e2);
+  min-width: 0; overflow: hidden;
+}
+.calc-titulo-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calc-botones-ventana { flex-shrink: 0; }
 
 /* Cuatro puntos: la marca de "esto se arrastra" de cualquier ventana. */
 .calc-agarre { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e1); width: 10px; }
@@ -1006,6 +1031,8 @@ body:not(.calc-suelta) .calc {
 .calc-titulo {
   margin: 0; font-family: var(--display); font-size: 15px; font-weight: 600;
   color: var(--papel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0;
 }
 
 /* Solo aparece cuando la ventana de verdad flota sobre todo: prometerlo
@@ -1016,17 +1043,24 @@ body:not(.calc-suelta) .calc {
   padding: var(--e1) var(--e1); border-radius: 4px; white-space: nowrap;
 }
 
-/* Plegado en su propia ventana: la ventana se encoge a esta cabecera y lo
-   unico que queda es de que hotel es, cuanto sale y como volver a abrirlo. */
+/* Plegado en su propia ventana: la ventana entera pasa a ser esta cabecera.
+   Lo unico que queda es cuanto sale y como volver a abrirlo. */
 .calc-total-barra {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   font-size: 15px; font-weight: 600; color: var(--papel);
-  white-space: nowrap;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .calc.colapsada .calc-cuerpo,
 .calc.colapsada .calc-pie { display: none; }
 .calc.colapsada .calc-chip { display: none !important; }
+/* Plegado sobra el rotulo: la ventana ya se llama "Mini cotizador" en su
+   propia barra, y el sitio hace falta para la cifra y los botones. */
+.calc.colapsada .calc-titulo { display: none; }
+
+/* La cabecera llena la ventana: sin esto quedaba una franja oscura arriba y
+   papel en blanco debajo, que se lee como algo a medio cargar. */
 body.calc-suelta .calc.colapsada { height: 100vh; }
+body.calc-suelta .calc.colapsada .calc-cabecera { height: 100%; }
 
 .calc-botones-ventana { display: flex; align-items: center; }
 .calc-btn-ventana {

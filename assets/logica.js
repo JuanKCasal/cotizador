@@ -1635,8 +1635,12 @@
   var burbujaPos = null;     // {x, y} en pixeles desde la esquina superior izquierda
 
   // Plegado en su propia ventana: cuanto se encoge.
-  var CALC_ANCHO_MIN = 240;
-  var CALC_ALTO_MIN = 48;
+  // Chrome no baja de unos 350 de ancho en una ventana de documento: se pide
+  // menos y el navegador lo sube a su minimo. Lo que no puede pasar es que a
+  // ESA medida se pierda el boton de volver a abrir, y de eso se encarga el
+  // CSS: los botones no se encogen nunca y el rotulo desaparece.
+  var CALC_ANCHO_MIN = 300;
+  var CALC_ALTO_MIN = 56;
 
   /**
    * Plegar.
