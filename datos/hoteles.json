@@ -17,7 +17,7 @@
   {
     "codigo": "HIM",
     "nombre_display": "HOTEL HESPERIA ISLA MARGARITA",
-    "nombre_corto": "Isla Margarita",
+    "nombre_corto": "Margarita",
     "emojis_titulo": "🏤 🌴",
     "hora_checkin": "3:00 PM",
     "hora_checkout": "12:00 PM",
@@ -32,7 +32,7 @@
   {
     "codigo": "HPA",
     "nombre_display": "HOTEL HESPERIA PLAYA EL AGUA",
-    "nombre_corto": "Playa el Agua",
+    "nombre_corto": "Playa Agua",
     "emojis_titulo": "🌊🌴",
     "hora_checkin": "3:00 PM",
     "hora_checkout": "12:00 PM",
@@ -47,7 +47,7 @@
   {
     "codigo": "WTC",
     "nombre_display": "HOTEL HESPERIA WTC VALENCIA",
-    "nombre_corto": "WTC Valencia",
+    "nombre_corto": "Valencia",
     "emojis_titulo": "🏨",
     "hora_checkin": "3:00 PM",
     "hora_checkout": "12:00 PM",

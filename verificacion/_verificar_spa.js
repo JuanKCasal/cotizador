@@ -566,6 +566,32 @@ function paso(ficha, campo, signo) {
   ok($('calcBurbuja').classList.contains('oculto'),
      'cerrar el mini tambien recoge la burbuja');
 
+  // ================================================ N. LA HOJA, EN CRUDO
+  // Dos atributos class en la misma etiqueta no dan error: el navegador se
+  // queda con el primero y tira el segundo, en silencio. Asi desaparecio
+  // .calc-titulo y el titulo del mini se quedo en azul oscuro sobre azul
+  // oscuro. Se comprueba sobre el archivo, no sobre el DOM, porque en el DOM
+  // ya no queda ni rastro de lo perdido.
+  const crudo = leerRaiz('index.html');
+  const dobles = crudo.match(/<[a-z][^>]*\sclass="[^"]*"[^>]*\sclass="/gi) || [];
+  eq(dobles.length, 0, 'ninguna etiqueta lleva dos atributos class',
+     dobles.join(' | '));
+
+  ok($('calcTitulo').classList.contains('calc-titulo'),
+     'el titulo del mini conserva su clase',
+     $('calcTitulo').className);
+
+  // El mini vive en una ventana de 380: dentro de ella se cumple la media
+  // query de movil, asi que sus reglas tienen que ganar por especificidad y no
+  // por orden. Se comprueba en la hoja, que es donde esta el riesgo.
+  const hoja = leerRaiz('assets/estilos.css');
+  ok(/\.hoteles\.hoteles-mini\s*\{[^}]*repeat\(5/.test(hoja),
+     'las siglas del mini se declaran con la clase doblada');
+  ok(/\.hoteles:not\(\.hoteles-mini\)/.test(hoja),
+     'y las reglas de ancho excluyen al mini explicitamente');
+  ok(/\[hidden\] \{ display: none !important; \}/.test(hoja),
+     'el atributo hidden pesa mas que cualquier maquetacion');
+
   // ---------- Reporte ----------
   console.log('========================================');
   console.log(`SPA en jsdom -> ${total} chequeos | fallan: ${fallos.length}`);

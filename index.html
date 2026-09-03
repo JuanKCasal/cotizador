@@ -196,8 +196,11 @@
   <div class="calc-cabecera">
     <div class="calc-marca">
       <span class="calc-agarre" aria-hidden="true"></span>
-      <h3 class="t-titulo-tarjeta" id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
+      <h3 id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
       <span class="calc-chip" id="calcChip" hidden>SIEMPRE ENCIMA</span>
+      <!-- Plegado, la cabecera es lo unico que queda: el total tiene que estar
+           ahi o el mini deja de ser un cotizador y pasa a ser un boton. -->
+      <span class="calc-total-barra" id="calcTotalBarra" hidden></span>
     </div>
     <div class="calc-botones-ventana">
       <button type="button" class="calc-btn-ventana" id="btnCalcVaciar"

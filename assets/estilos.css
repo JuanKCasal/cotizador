@@ -354,11 +354,24 @@ select:focus-visible, input:focus-visible {
    abrir nada. */
 .hoteles {
   display: grid;
-  /* 160 y no 104: con 104 entran tres por fila en un telefono y el nombre
-     se corta ('Isla Marg...'). La sigla identifica, pero el nombre es lo
-     que se lee. Dos por fila caben enteros. */
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  /* En el telefono, dos por fila: con tres el nombre se corta ('Isla
+     Marg...'), y la sigla identifica pero el nombre es lo que se lee. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--e2);
+}
+
+/* En escritorio, las cinco en una fila. Cabe porque los nombres son cortos de
+   verdad -es lo que `nombre_corto` significa- y porque con la sigla delante
+   "Margarita" no se confunde con nada. Si algun dia entra un hotel de nombre
+   largo, se acorta el nombre, no se agrega una fila: dos filas de hoteles
+   empujan las fechas fuera de la primera pantalla. */
+@media (min-width: 900px) {
+  .hoteles:not(.hoteles-mini) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--e1);
+  }
+  .hoteles:not(.hoteles-mini) .hotel-op { padding: 0 var(--e2); gap: var(--e1); }
+  .hoteles:not(.hoteles-mini) .hotel-sigla { min-width: 32px; }
 }
 
 .hotel-op {
@@ -405,17 +418,29 @@ select:focus-visible, input:focus-visible {
 }
 
 /* En el mini cotizador solo caben las siglas: el panel mide 380 y el nombre
-   completo obligaria a dos filas de botones. */
-.hoteles-mini { grid-template-columns: repeat(5, 1fr); gap: var(--e1); }
+   completo obligaria a dos filas de botones.
+
+   Se escribe .hoteles.hoteles-mini y no .hoteles-mini a secas a proposito. El
+   panel mide 380, asi que DENTRO de su ventana se cumple la media query de
+   movil, y ahi .hoteles vuelve a declarar sus columnas: con la misma
+   especificidad ganaba la de mas abajo y el mini acababa con dos pastillas
+   vacias por fila. Doblar la clase lo pone por encima sin depender del orden.
+
+   Las cinco en una sola linea, siempre: en 380 de ancho con 4 de hueco salen a
+   unos 68 cada una, que para tres letras en monoespaciada de 11 sobra. */
+.hoteles.hoteles-mini {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--e1);
+}
 /* La sigla llena el boton, asi que tiene que compartir su curva: con esquinas
    rectas dentro de un boton redondeado se veia un cuadro de color encima de
    una pastilla, que es dos formas donde hay una. */
-.hoteles-mini .hotel-op {
+.hoteles.hoteles-mini .hotel-op {
   min-height: 40px; padding: 0; justify-content: center;
   overflow: hidden;
 }
-.hoteles-mini .hotel-nombre { display: none; }
-.hoteles-mini .hotel-sigla {
+.hoteles.hoteles-mini .hotel-nombre { display: none; }
+.hoteles.hoteles-mini .hotel-sigla {
   min-width: 0; width: 100%; height: 100%;
   border-radius: inherit;
 }
@@ -861,13 +886,13 @@ select:focus-visible, input:focus-visible {
   /* En el telefono la hoja aprieta por los lados, no por arriba: cada milimetro
      horizontal que se quede el marco sale de los nombres de hotel, y con dos
      botones por fila el margen para "Isla Margarita" es de pocos pixeles. */
-  .hoja { padding-left: var(--e2); padding-right: var(--e2); }
+  body:not(.calc-suelta) .hoja { padding-left: var(--e2); padding-right: var(--e2); }
   .hoja > .seccion-cabecera,
   .hoja > .hoja-et,
   .hoja > .pista,
   .hoja > .fila-registro { padding-left: var(--e2); padding-right: var(--e2); }
-  .hoteles .hotel-op { padding: 0 var(--e2); }
-  .hoteles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .hoteles:not(.hoteles-mini) .hotel-op { padding: 0 var(--e2); }
+  .hoteles:not(.hoteles-mini) { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 
   /* Un solo boton de copiar: el de la barra. El del encabezado se repetiria. */
   #btnCopiar { display: none; }
@@ -990,6 +1015,18 @@ body:not(.calc-suelta) .calc {
   color: var(--tinta); background: #9FD9C8;
   padding: var(--e1) var(--e1); border-radius: 4px; white-space: nowrap;
 }
+
+/* Plegado en su propia ventana: la ventana se encoge a esta cabecera y lo
+   unico que queda es de que hotel es, cuanto sale y como volver a abrirlo. */
+.calc-total-barra {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-size: 15px; font-weight: 600; color: var(--papel);
+  white-space: nowrap;
+}
+.calc.colapsada .calc-cuerpo,
+.calc.colapsada .calc-pie { display: none; }
+.calc.colapsada .calc-chip { display: none !important; }
+body.calc-suelta .calc.colapsada { height: 100vh; }
 
 .calc-botones-ventana { display: flex; align-items: center; }
 .calc-btn-ventana {

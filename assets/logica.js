@@ -1404,9 +1404,9 @@
     // Solo el nivel 1 flota de verdad sobre otras aplicaciones. Prometerlo
     // cuando el navegador no puede cumplirlo seria peor que no decir nada.
     $c('calcChip').hidden = (calcNivel !== 1);
-    // Colapsar solo cuando el panel vive en la pagina: en una ventana propia,
-    // minimizar es cosa del sistema operativo.
-    $c('btnCalcColapsar').hidden = (calcNivel !== 3);
+    calcColapsado = false;
+    calcCaja().classList.remove('colapsada');
+    calcMarcarPlegado();
     $c('calcVersion').textContent = CAT.config.VERSION_TARIFAS || '';
     calcPintarPax();
     calcCalcular();
@@ -1634,25 +1634,99 @@
   var calcColapsado = false;
   var burbujaPos = null;     // {x, y} en pixeles desde la esquina superior izquierda
 
+  // Plegado en su propia ventana: cuanto se encoge.
+  var CALC_ANCHO_MIN = 240;
+  var CALC_ALTO_MIN = 48;
+
+  /**
+   * Plegar.
+   *
+   * Dos formas, porque el mini vive en dos sitios distintos y en cada uno "un
+   * icono flotante que no ocupe mucho espacio" quiere decir otra cosa:
+   *
+   * - En su propia ventana (niveles 1 y 2) lo que flota es la VENTANA. Plegar
+   *   es encogerla hasta su barra de titulo, con el total dentro. Se sigue
+   *   arrastrando por donde se arrastra cualquier ventana y sigue por encima
+   *   de WhatsApp, que es la razon de tenerlo abierto.
+   * - Dentro de la pagina (nivel 3) no hay ventana que encoger, asi que el
+   *   panel se cambia por una burbuja que se arrastra con el dedo.
+   *
+   * Antes el boton solo existia en el nivel 3, que es justo el que casi nadie
+   * ve: Chrome da ventana de documento y la funcion quedaba inalcanzable.
+   */
   function calcColapsar() {
-    if (calcNivel !== 3) return;
+    if (calcColapsado) return;
+
+    if (calcNivel === 3) {
+      calcColapsado = true;
+      calcCaja().classList.add('oculto');
+      var b = $('calcBurbuja');
+      b.classList.remove('oculto');
+      calcPintarBurbuja();
+      colocarBurbuja();
+      b.focus();
+      calcMarcarPlegado();
+      return;
+    }
+
+    var caja = calcCaja();
+    caja.classList.add('colapsada');
     calcColapsado = true;
-    calcCaja().classList.add('oculto');
-    var b = $('calcBurbuja');
-    b.classList.remove('oculto');
-    calcPintarBurbuja();
-    colocarBurbuja();
-    b.focus();
+    calcMarcarPlegado();
+
+    // Encoger la ventana es lo unico que puede negarnos el navegador. Si no se
+    // deja, el panel plegado quedaria como una barra dentro de una ventana
+    // vacia, que es peor que no plegar: se deshace y se avisa.
+    var w = calcVentana;
+    var anchoAntes = 0;
+    try { anchoAntes = w ? w.outerWidth : 0; } catch (e) { anchoAntes = 0; }
+    try { if (w) w.resizeTo(CALC_ANCHO_MIN, CALC_ALTO_MIN); } catch (e) { /* lo dice la comprobacion */ }
+
+    setTimeout(function () {
+      var ahora = 0;
+      try { ahora = w ? w.outerWidth : 0; } catch (e) { ahora = 0; }
+      if (anchoAntes && ahora >= anchoAntes) {
+        calcExpandir();
+        aviso('Este navegador no deja encoger la ventana del mini', 'error');
+      }
+    }, 120);
   }
 
   function calcExpandir() {
     calcColapsado = false;
-    $('calcBurbuja').classList.add('oculto');
-    calcCaja().classList.remove('oculto');
+    var caja = calcCaja();
+    caja.classList.remove('colapsada');
+    calcMarcarPlegado();
+
+    if (calcNivel === 3) {
+      $('calcBurbuja').classList.add('oculto');
+      caja.classList.remove('oculto');
+    } else if (calcVentana) {
+      try { calcVentana.resizeTo(CALC_ANCHO, CALC_ALTO); } catch (e) { /* daba igual */ }
+    }
     try { $c('calcHab').focus(); } catch (e) { /* aun sin foco */ }
   }
 
+  /** El boton y el total de la cabecera, segun este plegado o no. */
+  function calcMarcarPlegado() {
+    var b, t;
+    try { b = $c('btnCalcColapsar'); t = $c('calcTotalBarra'); } catch (e) { return; }
+    if (b) {
+      b.textContent = calcColapsado ? '□' : '−';
+      b.setAttribute('aria-label', calcColapsado
+        ? 'Volver a abrir el mini cotizador'
+        : 'Plegar el mini cotizador');
+      b.title = calcColapsado ? 'Volver a abrir' : 'Plegar a una barra';
+    }
+    if (t) {
+      var enVentana = (calcNivel === 1 || calcNivel === 2);
+      t.hidden = !(calcColapsado && enVentana);
+      t.textContent = calcRes ? '$' + Motor.fmtMoney(CAT, calcRes.total) : 'Sin cotizar';
+    }
+  }
+
   function calcPintarBurbuja() {
+    if (calcColapsado) calcMarcarPlegado();
     var m = $('calcBurbujaMonto');
     if (!m) return;
     m.textContent = calcRes ? '$' + Motor.fmtMoney(CAT, calcRes.total) : '';
