@@ -1,221 +1,258 @@
 # HANDOFF.md
 
-Estado del proyecto y plan de trabajo.
+Estado del proyecto. Lee esto y `CLAUDE.md` antes de tocar nada.
 
 **Repo:** https://github.com/JuanKCasal/cotizador (público)
+**Sitio:** https://juankcasal.github.io/cotizador/
 **Local:** `C:\dev\cotizador`
-**Última actualización:** 01/09/2026
+**Última actualización:** 03/09/2026
 
 ---
 
-## 1. Estado actual
+## 1. Qué es y dónde está
 
-El cotizador **está en producción y funcionando** sobre Google Apps Script + Google
-Sheets. Lo que sigue no arregla nada roto: cambia la plataforma y agrega funciones.
+Sitio estático en GitHub Pages. Sin servidor, sin base de datos, sin login. El catálogo
+son doce archivos JSON en `datos/`, versionados en Git. Cada push publica.
+
+**En producción y en uso diario.** La usa Marla Zuluaga desde el teléfono, casi siempre
+con un cliente esperando en WhatsApp. Ese es el escenario que manda en cualquier duda de
+diseño: una mano, de pie, con prisa.
 
 | | |
 |---|---|
-| Hoteles activos | Morrocoy (HBK), Isla Margarita (HIM), Playa el Agua (HPA) |
-| Hoteles preparados sin tarifas | WTC Valencia (WTC), Maracay (HMC) — `activo = NO` |
-| Hojas del catálogo | 13 |
-| Tipos de habitación | 19 |
-| Tarifas cargadas | 48 (reales, no demo) |
-| Temporadas | 20 (4 por hotel) |
-| Horizonte de tarifas | hasta **12/01/2027** |
-| Pruebas en el Sheet | 201 aserciones, todas en verde |
-| Pruebas en Node | 218 aserciones + 47 chequeos de interfaz, todas en verde |
+| Hoteles activos | Los cinco: HBK, HIM, HPA, WTC, HMC |
+| Asesores | MZ (Marla Zuluaga), LR (Lenin Rodrigues) |
+| Suites de prueba | 4 · `npm test` |
+| Aserciones del motor | 309 |
+| Chequeos del cotizador | 118 |
+| Chequeos de administración | 63 |
+| Chequeos de publicación | 29 |
+| Validador sobre el catálogo real | 0 errores, 2 advertencias |
+| Horizonte de tarifas | hasta **20/12/2026** en WTC y HMC ⚠ |
 
-### Lo que ya está resuelto
+Las dos advertencias son ese horizonte. No son un fallo del código.
 
-- Motor de cálculo compartido cliente/servidor, con recálculo obligatorio en el servidor
-- Cruce de temporadas con prioridad, promociones noche por noche, **stop sales**
-- Política de niños por edad exacta, distinta por hotel
-- Suplemento de habitación individual, mínimo facturable, cargos de fecha fija
-- Dos modos de tarifa: `POR_PERSONA` (playa) y `POR_HABITACION` con IVA 16% (ciudad)
-- Interfaz responsiva con copiado a WhatsApp en tres niveles de respaldo
-- Validador de integridad del catálogo con 8+ chequeos
-- Tres bugs de plataforma detectados en dispositivos reales y corregidos
+### Las tres cosas que un recién llegado suele romper
 
----
-
-## 2. Cambio de rumbo — decidido el 01/09/2026
-
-El proyecto deja Google. Las decisiones, con su motivo:
-
-| Decisión | Motivo |
-|---|---|
-| **Los datos pasan de Sheets a archivos JSON versionados en Git** | Los cambios de tarifa quedan en el historial, con autor y fecha, y se pueden revertir |
-| **Se elimina el registro de cotizaciones** | No se necesita. Desaparecen las hojas `Cotizaciones` y `CotizacionLineas` |
-| **La app pasa a sitio estático en GitHub Pages** | Sin datos en Sheets ni escritura, nada obliga a tener servidor. Se va la cuota de Apps Script y el iframe que rompe el copiado en móvil. El despliegue pasa a ser un push |
-| **Repo público** | Asumido a conciencia: las tarifas y los cierres de venta quedan legibles para quien tenga la URL |
-| **La gerencia edita con una pantalla de administración que descarga el JSON** | Sin servidor no hay login real. La pantalla valida y genera el archivo; una persona lo sube al repo. Ninguna credencial vive en el navegador |
-| **Early Check-In y Late Check-Out entran al total, por persona y una vez por estadía** | Hoy solo salen como texto informativo en la plantilla |
-| **Los menores pagan esos extras según `factor_pago` de `PoliticaNinos`** | Reutiliza el mecanismo que ya rige las tarifas; no agrega conceptos al modelo |
-
-### Los dos invariantes que cambian
-
-`CLAUDE.md` §Invariantes queda editado al ejecutar la migración:
-
-- **#2 "un solo motor, cliente y servidor"** pierde la mitad servidor. `02_Motor.html`
-  pasa a ser `motor.js`, cargado una sola vez. El invariante se conserva en su forma
-  útil: **una sola implementación del cálculo, en ningún otro archivo.**
-- **#3 "el servidor siempre recalcula"** desaparece con el registro de cotizaciones.
-
-Los invariantes **#1 (cero lógica de negocio en el código), #4 (fechas ISO), #5 (nunca
-un 0 silencioso) y #6 (cálculo en el cliente) siguen intactos** y mandan igual que antes.
+1. **Publicar sin sellar los assets.** `cd verificacion && npm run versionar` antes de
+   comitear, o la asesora sigue viendo la versión vieja.
+2. **Tocar `tokens.css`.** Es el entregable del sistema visual que definió la propia
+   asesora. Se consume; si una auditoría propone cambiarlo, se pregunta antes.
+3. **Asumir que el mini cotizador es "la app en pequeño".** Vive en una ventana de 380 px,
+   así que las media queries de móvil se le aplican dentro aunque el monitor sea enorme.
+   Ver `CLAUDE.md` §Trampas.
 
 ---
 
-## 3. Lo que falta y lo que no
+## 2. Cómo se publica un cambio de tarifa
 
-### Stop Sales — el motor ya lo tiene, faltan los datos
+Esto ya no pasa por un programador, y es el flujo que más importa entender.
 
-Cuidado con darlo por inexistente. Ya está construido de punta a punta:
+1. La asesora entra a `admin.html` desde el botón **Administración**.
+2. Corrige la tarifa en la tabla. El validador corre en cada tecla; con errores el botón
+   de publicar está apagado.
+3. Pulsa **Publicar**, elige quién publica y pega la clave.
+4. Un solo commit con los archivos que cambiaron. En un par de minutos Pages lo sirve.
 
-- Esquema `StopSales`: `hotel, cod_hab, fecha_inicio, fecha_fin, motivo, activo`
-- `stopSaleDe()` en el motor, que bloquea **noche por noche**
-- Cuatro chequeos en el validador: hotel inexistente, habitación inexistente, rango
-  invertido, cierre vencido, y una advertencia de hotel sin ninguna habitación libre
-- Caso de prueba T19, a nivel hotel y a nivel habitación
+La clave es un *fine-grained token* de GitHub con `Contents: read and write` sobre este
+repositorio y nada más. **Se pide cada vez y no se guarda en ningún sitio** — ni en
+`localStorage`. Es una decisión, no un pendiente: la pantalla vive en una URL pública y
+una credencial guardada en el navegador sobrevive a la persona que la escribió.
 
-Un `cod_hab` vacío cierra el hotel completo; con código, solo esa habitación.
+Si GitHub no responde o la clave caducó, abajo del diálogo está **Descargar los
+archivos** para subirlos a mano. Nunca se puede quedar sin poder cambiar una tarifa.
 
-**Lo que falta:** la tabla está vacía (nadie ha cargado un cierre), y la interfaz no
-tiene una forma cómoda de gestionarlos ni de explicarle a la asesora por qué un hotel
-no se puede vender esas noches.
-
-### Early Check-In / Late Check-Out — existen, pero no cobran
-
-La tabla `Hoteles` ya trae `early_checkin_pp`, `late_checkout_pp`, `hora_late_checkout`
-y `brazalete_vip_dia`, y la plantilla los imprime como línea informativa. **No entran al
-cálculo y no hay dónde marcarlos.**
-
-Lo pedido es que sean seleccionables y sumen. El brazalete VIP es el mismo patrón (por
-día en vez de por estadía) y quedó fuera de este alcance, pero conviene modelar los tres
-como una tabla `extras` en vez de tres casos especiales en el código — invariante #1.
+Los detalles de por qué es un solo commit y por qué sin `force` están en `CLAUDE.md`
+§Publicar el catálogo.
 
 ---
 
-## 4. Plan de trabajo, en orden
+## 3. Lo que falta
 
-**Fase 0 — Commit del estado actual.** Antes de reescribir nada, dejar el legacy
-funcionando en Git como punto de retorno.
+En orden de urgencia real, no de tamaño.
 
-**Fase 1 — Generar los JSON.** ✅ hecho (01/09/2026). Ver §10: los datos salieron del
-**export real del Sheet**, no de `cargarDatosDemo_()`, que estaba desactualizado.
+### ⚠ Cargar las temporadas de fin de año de WTC y HMC
 
-Las 13 hojas quedaron en 10 archivos bajo `datos/`: se fueron `Cotizaciones` y
-`CotizacionLineas` (sin registro) y `Validacion` (era la salida del validador, ahora se
-muestra en pantalla). Falta agregar `extras.json`.
+**Es lo único con fecha límite.** Valencia y Maracay tienen una sola temporada que
+termina el **20/12/2026**. Cotizar el 31/12 en esos hoteles **falla hoy**, no en 2027.
+También faltan las temporadas de 2027 de los hoteles de playa.
 
-**Fase 2 — Convertir a sitio estático.** ✅ hecho (01/09/2026). Ver §11.
+### Cargar los cierres de venta reales
 
-**Fase 3 — Stop Sales de cara al usuario.** ✅ hecho el motor y la interfaz. Un cierre
-ya no se lee como un error de datos: tiene su propio aviso, con el motivo y las noches
-afectadas, y las fechas avisan antes de terminar de armar la cotización. **Falta cargar
-los cierres reales** — la tabla sigue vacía.
+`stop-sales.json` está vacío. El motor, el validador y la interfaz están hechos y
+probados de punta a punta: falta que alguien cargue los cierres. Un `cod_hab` vacío
+cierra el hotel completo; con código, solo esa habitación.
 
-**Fase 4 — Extras cobrables.** ✅ hecho (02/09/2026). `extras.json`, casilla en la
-interfaz, suma en el motor, `{{BLOQUE_EXTRAS}}` en el mensaje y 27 aserciones nuevas.
-El brazalete VIP quedó modelado como `POR_PERSONA_DIA` aunque nadie lo active todavía:
-así activarlo es marcar una fila, no tocar el motor.
+### Probar en el teléfono de Marla
 
-**Fase 5 — Pantalla de administración.** ✅ hecha (02/09/2026). Ver §14.
+Cinco de los seis bugs históricos de este proyecto aparecieron en dispositivos reales y
+ninguna suite los habría visto. Lo que hace falta comprobar ahí:
 
-**Fase 6 — Estilo.** Aplicar el sistema visual que defina Marla
-(`docs/GUIA-ESTILOS-MARLA.md`).
+- El asomo del mensaje: que se arrastre con el dedo sin pelearse con el desplazamiento
+  de la página.
+- La barra del total contra la franja del gesto del iPhone.
+- Si los tres niveles de copiado siguen siendo necesarios fuera del iframe de Apps
+  Script. **No quites ninguno sin probarlo en un teléfono.**
 
----
+### Revisar el README
 
-## 5. Migración a Git — lo ya hecho (01/09/2026)
+Sigue describiendo la arquitectura de Apps Script y dice "20 tipos de habitación" donde
+el catálogo carga 19.
 
-- ✅ Contenido movido de `legacy/` a la raíz; `INSTALACION-RAPIDA.txt` a `docs/`
-- ✅ `.gitignore` en la raíz
-- ✅ **Duplicación corregida.** `verificacion/` contenía copias de ocho archivos de
-  `apps-script/` (todos menos `03_Api.gs`). Se verificó que eran idénticas, los arneses
-  se apuntaron a la carpeta real y las copias se borraron:
+### Lo que se decidió NO hacer
 
-  ```js
-  const path = require('path');
-  const SRC = path.join(__dirname, '..', 'apps-script');
-  const leer = (f) => fs.readFileSync(path.join(SRC, f), 'utf8');
-  ```
-
-  Las once llamadas a `fs.readFileSync('X', 'utf8')` pasaron a `leer('X')`. Al usar
-  `__dirname`, las suites corren igual desde `verificacion/` o desde la raíz.
-  Suites después del cambio: **218/218** y **47 chequeos, 0 fallos**.
-- ⏸ Primer commit — pendiente
-
-Los pasos de `clasp` del plan anterior quedaron **sin efecto**: no habrá Apps Script.
+- **Opción B de la auditoría ("el pulgar").** Sus piezas táctiles entraron con A y C,
+  pero contraer los hoteles a un chip esconde los otros cuatro, y si es común cotizar el
+  mismo caso en dos hoteles para comparar, eso estorba. Lo decide quien cotiza.
+- **Brazalete VIP.** Está modelado como `POR_PERSONA_DIA` y nadie lo ha activado.
+  Activarlo es marcar una fila, no tocar el motor.
 
 ---
 
-## 6. Decisiones anteriores y por qué
+## 4. Pendientes de decisión del negocio
 
-Contexto para que nadie las revierta sin saber qué resolvían.
-
-| Decisión | Motivo |
-|---|---|
-| Toda la lógica de negocio fuera del código | La gerencia cambia tarifas sin programador. Agregar un hotel son filas, no código. **Sigue vigente con los JSON** |
-| Una sola implementación del cálculo | Imposible que diverjan dos copias |
-| Fechas como texto ISO, un solo punto toca `Date` | Los corrimientos de zona horaria eran el bug recurrente |
-| Prioridad en temporadas en vez de fragmentar rangos | Permite cargar feriados como capa encima de la temporada base sin recortar fechas a mano |
-| Promociones opt-in, evaluadas noche por noche | Una promo puede cubrir parte de la estadía; el requisito lo pedía explícitamente |
-| Copiado en tres niveles desde el día uno | El iframe de Apps Script bloquea la API moderna en móvil. Al salir del iframe conviene revisar si los tres niveles siguen haciendo falta — **probar en un celular real antes de quitar ninguno** |
-| Arneses en Node además de las pruebas del catálogo | Un ciclo de prueba en segundos en vez de minutos |
-
----
-
-## 7. Pendientes de decisión del negocio
-
-Ninguno bloquea el uso. Están en §9 del `README.md`; resumen:
+Ninguno bloquea el uso. **No los resuelvas por tu cuenta.**
 
 1. **`DESCUENTO_MONTO` y los niños.** El descuento se resta de la tarifa por persona, así
    que con la Promoción para Residentes (−$5) un niño al 50% recibe $2,50. Si son $5 por
    cabeza sin importar el factor, hay que cambiarlo en el motor.
-2. **Promoción para Residentes:** no existe en Morrocoy y vence el **15/09/2026** — es
-   decir, en dos semanas.
+2. **Promoción para Residentes:** no existe en Morrocoy y venció el **15/09/2026**.
+   Confirmar si se renueva o se borra.
 3. **1 adulto + 1 niño de 10–17 años** queda sin suplemento. Son $20–30 por noche si
    comercialmente deciden lo contrario.
-4. **`pax_min_cobrados = 3`** en las cuádruples de Morrocoy anula el descuento del menor
-   cuando el pax facturable baja de 3. Verificar que sea la intención.
+4. **La King de Maracay admite hasta 4 huéspedes por decisión del programador, no del
+   negocio.** Se copió el criterio de la Twin. Si son 3, o 2, es cambiar un número en
+   `datos/habitaciones.json`.
+5. **La quinta persona de la Family Suite de Valencia paga $20 a cualquier edad.** En
+   Maracay los adicionales sí distinguen edad; en Valencia no se indicó.
+
+`pax_min_cobrados` vacío en las cuádruples de Morrocoy **ya está confirmado** como
+correcto por el negocio. No lo cambies de vuelta.
 
 ---
 
-## 8. Riesgos y mantenimiento
+## 5. Riesgos y mantenimiento
 
-**El horizonte de tarifas termina el 12/01/2027.** Una cotización posterior devuelve un
-error explícito — correcto, pero inútil para la asesora. El validador avisa cuando quedan
-menos de 120 días. **Cargar las temporadas de 2027 antes de octubre de 2026**, o sea el
-mes que viene.
+**Las tarifas son públicas.** El repo es público y Pages sirve `datos/` a quien tenga la
+URL. Decisión asumida. No metas ahí nada de clientes ni ninguna credencial.
 
-**Tarifas públicas.** Decisión asumida: quien tenga la URL puede leer precios y cierres.
+**`datos/` no tiene respaldo fuera de Git.** El historial es el respaldo. Y ahora el repo
+se mueve desde dos sitios —la PC y la administración—, así que **`git pull` antes de
+trabajar en local**, o el próximo push choca.
 
-**Migrar los datos es la operación de más riesgo del plan.** Un error de conversión
-cambia precios en silencio. Comparar el JSON generado contra el Sheet fila por fila, con
-un script, no a ojo.
+**El token caduca.** Cuando pase, la administración dirá "La clave no vale o caducó" y
+hay que generar otro. No es un fallo.
 
 **Cadencia sugerida:** correr el validador una vez al mes y antes de cada temporada alta.
 
-**Discrepancia menor detectada.** El `README.md` §8 dice "20 tipos de habitación"; el
-código carga **19**. Corregir el README en algún commit.
+---
+
+## 6. Para retomar el trabajo
+
+1. Lee `CLAUDE.md`: invariantes, convenciones, los seis bugs que no hay que reintroducir
+   y las trampas de este repositorio.
+2. `cd verificacion && npm install && npm test` — cuatro suites, todas en `FALLAN: 0`.
+3. `git pull`, por si la administración publicó algo.
+4. Recién entonces, plantea el cambio.
+
+El error más caro es tocar el motor sin correr las pruebas antes. Son 309 aserciones que
+existen porque cada una atrapó algo.
+
+Y el segundo más caro es dar por bueno un cambio visual sin verlo en un navegador de
+verdad. jsdom valida la lógica; la maquetación solo la valida el navegador, y a 390 px,
+que es el ancho desde el que se cotiza.
 
 ---
 
-## 9. Para retomar el trabajo
+## 7. Sesión del 03/09/2026
 
-1. Lee `CLAUDE.md` — invariantes, convenciones y los tres bugs que no hay que reintroducir
-2. Lee `README.md` §5 (modelo de datos) y §9 (pendientes)
-3. Corre las dos suites de `verificacion/` para confirmar el punto de partida
-4. Recién entonces, plantea el cambio
+Cuatro bloques, todos en `main`.
 
-El error más caro que se puede cometer aquí es tocar el motor sin correr las pruebas
-antes. Son 218 aserciones que existen porque cada una atrapó algo.
+### Cambios de la app
 
+- **Hoteles como botones**, no desplegable: son cinco, no cambian nunca, y elegir hotel
+  es lo primero de cada cotización. Las cinco en una fila en escritorio, dos en teléfono.
+- **Mini cotizador:** vaciar y plegar. Plegado en su propia ventana, la ventana entera
+  pasa a ser una barra oscura con el total; dentro de la página, una burbuja arrastrable.
+- **Mensajes por asesor** con juego propio y caída al del hotel, con pestaña propia en la
+  administración y vista previa armada con el motor de verdad.
+- **La marca Hesperia** en la cabecera, en la burbuja del mini y como favicon. Un solo
+  archivo con `currentColor`: tinta sobre claro, blanca sobre oscuro, como la usa la
+  cadena.
+
+### Las cinco correcciones de la auditoría
+
+Todas verificadas. La barra del total ya no se aplasta contra el borde del iPhone
+(`box-sizing` hacía que el respiro de la franja del gesto le comiera la altura),
+`btn-alerta` existe, `--acento` tiene valor sin hotel elegido, las pistas pasan AA y todo
+lo que se pulsa responde al toque.
+
+### Opción A — el sistema, cumplido
+
+De diecisiete tamaños de letra a seis, todos de la escala del sistema. Los papeles que
+`tokens.css` nombra usan su clase; los controles de formulario llevan `font: inherit`
+para que la clase vaya en la etiqueta que los envuelve. Los 73 espacios en px crudos
+pasan a `--e1`…`--e6`. Ver `CLAUDE.md` §El sistema visual manda.
+
+### Opción C — jerarquía material
+
+El mensaje deja de estar detrás de otra pantalla. En el teléfono se asoma siempre por
+debajo del formulario con las primeras líneas de verdad y se arrastra para leerlo entero.
+La barra del total **se muda dentro** del panel —se mueve, no se duplica: con dos barras
+habría dos totales y algún día dirían cosas distintas—. Y con el mensaje a la vista, el
+botón de la barra pasa a ser copiar.
+
+El formulario se agrupa en hojas por asunto. Una habitación dentro de una hoja pierde su
+tarjeta propia: una caja dentro de una caja no es jerarquía.
+
+### Publicar a GitHub
+
+Ver §2. Suite nueva de 29 chequeos contra un GitHub de mentira, que comprueba lo que
+importa: que el commit sea uno, que lo subido sea exactamente lo editado, que un fallo a
+mitad no mueva la rama, y que después no quede rastro de la clave.
+
+### Lo que se aprendió, y está en CLAUDE.md
+
+Tres roturas del mismo tipo en un solo día: **una regla que debía mandar, perdiendo por
+orden de cascada en vez de ganar por especificidad.** `.solo-pc` contra `.btn-cabecera`,
+el atributo `hidden` contra `display: grid`, y las reglas del mini contra las de móvil.
+Están documentadas juntas a propósito, porque va a volver a pasar.
 
 ---
 
-## 10. Migración de los datos — hecho el 01/09/2026
+# Registro histórico
+
+Lo que sigue es el diario de las sesiones anteriores. Describe estados que ya no son el
+actual —hay secciones que hablan de Apps Script o de pushes pendientes— pero se conserva
+porque es el **por qué** de cada decisión, y es lo que evita que alguien revierta algo
+sin saber qué resolvía. Para saber cómo está el proyecto hoy, lee de la §1 a la §7.
+
+---
+
+## Decisiones de arquitectura y por qué
+
+| Decisión | Motivo |
+|---|---|
+| Toda la lógica de negocio fuera del código | La gerencia cambia tarifas sin programador. Agregar un hotel son filas, no código |
+| Una sola implementación del cálculo | Imposible que diverjan dos copias |
+| Fechas como texto ISO, un solo punto toca `Date` | Los corrimientos de zona horaria eran el bug recurrente |
+| Prioridad en temporadas en vez de fragmentar rangos | Permite cargar feriados como capa encima de la temporada base sin recortar fechas a mano |
+| Promociones opt-in, evaluadas noche por noche | Una promo puede cubrir parte de la estadía; el requisito lo pedía explícitamente |
+| Copiado en tres niveles desde el día uno | El iframe de Apps Script bloqueaba la API moderna en móvil |
+| Arneses en Node además de las pruebas del catálogo | Un ciclo de prueba en segundos en vez de minutos |
+| Los datos de Sheets a JSON en Git | Los cambios de tarifa quedan en el historial, con autor y fecha, y se pueden revertir |
+| Se eliminó el registro de cotizaciones | No se necesitaba |
+| Sitio estático en GitHub Pages | Sin escritura en Sheets, nada obliga a tener servidor. Se fue la cuota de Apps Script y el iframe que rompía el copiado en móvil |
+| Repo público | Asumido a conciencia: las tarifas quedan legibles para quien tenga la URL |
+
+**Dos invariantes cambiaron al migrar.** "Un solo motor, cliente y servidor" perdió la
+mitad servidor y se conserva en su forma útil: **una sola implementación del cálculo**.
+"El servidor siempre recalcula" desapareció con el registro de cotizaciones. Los demás
+—cero lógica de negocio en el código, fechas ISO, nunca un 0 silencioso— siguen mandando.
+
+---
+
+## 01/09/2026 · Migración de los datos
 
 Los JSON de `datos/` se generaron desde **`BD_Cotizador_Hesperia.xlsx`**, el export del
 Sheet de producción (`VERSION_TARIFAS` = **v2026.08.21**), y **no** desde
@@ -263,8 +300,7 @@ corto. Producción tenía:
    sola temporada, `BAJA_26`, hasta esa fecha. No tienen Navidad ni Fin de Año: cotizar
    el 31/12 en Valencia o Maracay falla **hoy**, no en 2027.
 
-3. **`pax_min_cobrados` vacío en las cuádruples de Morrocoy.** Resuelve el pendiente #4
-   de §7 — o lo borró alguien sin querer. Hay que confirmarlo con el negocio.
+3. **`pax_min_cobrados` vacío en las cuádruples de Morrocoy.** Resuelve un pendiente de negocio — o lo borró alguien sin querer. Hay que confirmarlo con el negocio.
 
 4. **El validador no se ha vuelto a correr desde que se activaron WTC y HMC.** La hoja
    `Validacion` es del 21/08/2026 y todavía los reporta inactivos. Nadie ha validado el
@@ -273,7 +309,7 @@ corto. Producción tenía:
 
 ---
 
-## 11. Conversión a sitio estático — hecha el 01/09/2026
+## 01/09/2026 · Conversión a sitio estático
 
 Google Apps Script desapareció del proyecto. El sitio se sirve desde la raíz del repo.
 
@@ -311,7 +347,7 @@ Al migrar, ocho aserciones fallaron. Ninguna era un error de conversión: todas
 reflejaban cambios que el Sheet ya tenía y el código no.
 
 - `pax_min_cobrados` vacío: las cuádruples de Morrocoy cobran 2,5 pax donde antes
-  forzaban 3. **Cambia el precio al público** — es el pendiente 3 de §10
+  forzaban 3. **Cambia el precio al público** — quedó confirmado con el negocio
 - `ocup_min_fisica` en 1: ahora se acepta una pareja en una cuádruple
 - WTC y HMC activos: dejaron de estar ocultos
 
@@ -343,7 +379,7 @@ de la pantalla.
 
 ---
 
-## 12. Sistema visual aplicado — 02/09/2026
+## 02/09/2026 · Sistema visual aplicado
 
 Marla definió el sistema con Claude Design y `assets/tokens.css` es el entregable tal
 cual: los colores, la tipografía, las alturas de lo táctil, los radios, los espacios y
@@ -401,7 +437,7 @@ lógica, la plataforma solo la valida la plataforma.**
 
 ---
 
-## 13. Listo para publicar — 02/09/2026
+## 02/09/2026 · Listo para publicar
 
 Ocho commits locales. **Falta el push**, que necesita las credenciales de GitHub del
 usuario y no se puede hacer desde el entorno de trabajo.
@@ -436,7 +472,7 @@ Las dos advertencias son el horizonte de Valencia y Maracay, que termina el 20/1
 
 ---
 
-## 14. Pantalla de administración — hecha el 02/09/2026
+## 02/09/2026 · Pantalla de administración
 
 `admin.html` + `assets/admin.js` + `assets/admin.css`. Se llega desde el botón
 **Administración** de la cabecera del cotizador, en escritorio.

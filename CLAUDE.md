@@ -23,8 +23,10 @@ index.html       El cotizador. Una sola página.
 admin.html       La administración del catálogo. Solo escritorio.
 assets/          tokens.css (sistema visual), estilos.css, admin.css,
                  motor.js, catalogo.js, validador.js, logica.js, admin.js
-datos/           El catálogo, en once archivos JSON. Es la base de datos.
+datos/           El catálogo, en doce archivos JSON. Es la base de datos.
 verificacion/    Arneses de prueba en Node. NO se publican.
+mejoras/         Auditoría de diseño y las tres direcciones que salieron de ella.
+                 Es registro, no pendientes: ya está ejecutado lo que se eligió.
 docs/            Guías de instalación y de estilo.
 .agents/skills/  Skills de diseño instalados. Ver "Agentes y skills".
 .claude/agents/  Agentes de Impeccable.
@@ -47,9 +49,22 @@ HANDOFF.md       Estado del proyecto y plan de trabajo.
 
 ### Los archivos de `datos/`
 
-`config.json` (objeto clave→valor) y diez arreglos de objetos: `hoteles`,
+`config.json` (objeto clave→valor) y once arreglos de objetos: `hoteles`,
 `habitaciones`, `temporadas`, `tarifas`, `adicionales`, `stop-sales`, `politica-ninos`,
-`promociones`, `cargos-fecha`, `extras`, `plantillas`.
+`promociones`, `cargos-fecha`, `extras`, `plantillas`, `asesoras`.
+
+Dos claves de `config.json` no son datos de negocio sino de publicación:
+`REPO_GITHUB` y `RAMA_GITHUB`, que la administración usa para saber dónde escribir.
+
+`plantillas.json` lleva `{hotel, asesor, plantilla}`: cada asesor puede tener su propio
+juego de mensajes y quien no tenga uno cae al del hotel (`asesor` vacío). El mensaje sale
+firmado con iniciales, así que que lo firme uno y suene a otro es raro para el cliente
+que ya habló con él.
+
+`nombre_corto` de `hoteles.json` es **solo para la interfaz** —los botones, el chip de la
+cabecera, los selectores de administración—. El mensaje al cliente usa `nombre`. Por eso
+`nombre_corto` puede acortarse sin consultar a nadie: es lo que permite que los cinco
+hoteles quepan en una fila.
 
 Las claves de cada objeto son las columnas del Sheet original. `catalogo.js` los lee por
 nombre, así que el orden no importa, pero **el nombre sí es parte del contrato**.
@@ -268,6 +283,22 @@ Aparecieron en producción, no en las pruebas. Si "simplificas" alguno, vuelven.
    → El `min` del campo de salida es la **fecha de entrada**, no entrada+1. El orden lo
    valida el motor, que ya devuelve un mensaje claro.
 
+5. **Un segundo atributo `class` en la misma etiqueta.** Al aplicar las clases del
+   sistema quedó `<h3 class="t-titulo-tarjeta" id="calcTitulo" class="calc-titulo">`. Eso
+   no da error en ningún sitio: el navegador se queda con el primero y tira el segundo en
+   silencio, así que `.calc-titulo` dejó de existir y el título del mini quedó en azul
+   oscuro sobre azul oscuro.
+   → Hay un chequeo que lo busca **en el archivo**, no en el DOM: en el DOM no queda
+   rastro de lo que se perdió. Nunca hagas un reemplazo de marcado que pueda añadir un
+   `class` a una etiqueta que ya tiene uno.
+
+6. **Un control escondido que empuja a otro fuera de la ventana.** Plegado, el mini pedía
+   encogerse a 240 de ancho pero Chrome no baja de unos 350. A esa medida el título se
+   partía en dos líneas y expulsaba el botón de volver a abrir: quedaba plegado y sin
+   salida salvo cerrarlo del todo.
+   → En una cabecera que puede encogerse, **los controles no se encogen nunca y los
+   rótulos sí**. Un estado del que no se puede salir es peor que no tener el estado.
+
 El patrón común: todos viven en la frontera entre el código y algo real —una plataforma,
 un dispositivo, una persona escribiendo datos. Las pruebas validan la lógica; **solo un
 dispositivo real valida la plataforma.**
@@ -283,13 +314,30 @@ sobrescribas los archivos con datos generados sin comparar antes contra lo que h
 
 **El horizonte de tarifas se acaba.** Una cotización posterior a la última temporada
 cargada devuelve un error explícito: correcto, pero inútil para la asesora. El validador
-avisa cuando quedan menos de 120 días. Ver `HANDOFF.md` §8.
+avisa cuando quedan menos de 120 días. Ver `HANDOFF.md` §3.
+
+**La caché de GitHub Pages.** Sirve el CSS y el JS con caché, así que sin sellar los
+assets una asesora puede seguir con la versión vieja después de publicar. `npm run
+versionar` antes de comitear, siempre.
+
+**Hay dos anchos que no significan lo mismo.** El mini cotizador vive en una ventana de
+unos 380 px, así que *dentro de ella* se cumple la media query de móvil aunque el monitor
+sea de 27 pulgadas. Cualquier regla de móvil que pueda afectarle lleva
+`:not(.hoteles-mini)` o `body:not(.calc-suelta)`, y las reglas del mini doblan su clase
+(`.hoteles.hoteles-mini`) para ganar por especificidad y no por orden.
+
+**Un control cuyo contenido no tiene tope se lleva su fila entera.** Los nombres de
+habitación los pone el negocio: darle al selector una medida sacada del nombre más largo
+que conocemos hoy solo mueve el problema al siguiente nombre. Por eso la categoría ocupa
+el ancho completo y los otros cuatro controles —contenido acotado— comparten la fila
+siguiente.
 
 ## Definición de "listo"
 
 Un cambio está terminado cuando:
 
-- [ ] Las dos suites pasan con 0 fallos
+- [ ] Las cuatro suites pasan con 0 fallos (`npm test`)
+- [ ] Si tocaste CSS o JS, `npm run versionar` antes de comitear
 - [ ] El validador no reporta errores nuevos
 - [ ] Si tocaste el motor, hay un caso de prueba nuevo que cubre el cambio
 - [ ] Si tocaste la interfaz, se probó en un celular real (no solo en jsdom)
@@ -298,7 +346,7 @@ Un cambio está terminado cuando:
 ## Al proponer cambios
 
 - **Pregunta antes de asumir reglas de negocio.** Varias decisiones de precio quedaron
-  abiertas a propósito; están en §9 del `README.md` y en §7 de `HANDOFF.md`. No las
+  abiertas a propósito; están en §9 del `README.md` y en §4 de `HANDOFF.md`. No las
   resuelvas por tu cuenta.
 - **Prefiere una fila en un JSON antes que una línea de código.**
 - Si un cambio obliga a tocar el motor para soportar un hotel nuevo, dilo explícitamente:
