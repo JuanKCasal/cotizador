@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="assets/tokens.css">
-  <link rel="stylesheet" href="assets/estilos.css">
+  <link rel="stylesheet" href="assets/tokens.css?v=2026.09.03">
+  <link rel="stylesheet" href="assets/estilos.css?v=2026.09.03">
 </head>
 <body data-hotel="">
 
@@ -64,25 +64,25 @@
       <div class="hoteles" id="hoteles" role="radiogroup" aria-label="Hotel"></div>
 
       <div class="fila-estadia">
-        <label class="campo-caja">
-          <span class="campo-etiqueta">Entrada</span>
+        <label class="t-precio campo-caja">
+          <span class="t-seccion campo-etiqueta">Entrada</span>
           <input type="date" id="checkin">
         </label>
 
-        <label class="campo-caja">
-          <span class="campo-etiqueta">Salida</span>
+        <label class="t-precio campo-caja">
+          <span class="t-seccion campo-etiqueta">Salida</span>
           <input type="date" id="checkout">
         </label>
 
         <div class="caja-noches" id="puenteNoches" aria-hidden="true">
-          <span class="caja-noches-n">—</span>
-          <span class="caja-noches-t">noches</span>
+          <span class="t-precio caja-noches-n">—</span>
+          <span class="t-pista caja-noches-t">noches</span>
         </div>
       </div>
-      <p class="pista" id="pistaFechas">La noche de salida no se cobra.</p>
+      <p class="t-pista pista" id="pistaFechas">La noche de salida no se cobra.</p>
 
       <div class="seccion-cabecera">
-        <h2 class="titulo-seccion" id="tituloHabitaciones">Habitaciones</h2>
+        <h2 class="t-seccion titulo-seccion" id="tituloHabitaciones">Habitaciones</h2>
         <button type="button" class="btn-borde" id="btnAgregar">
           + Agregar<span class="solo-pc-inline"> habitación</span>
         </button>
@@ -91,23 +91,23 @@
       <div id="lineas" class="lineas"></div>
 
       <section class="tarjeta oculto" id="seccionPromos">
-        <h2 class="titulo-seccion">Promociones</h2>
+        <h2 class="t-seccion titulo-seccion">Promociones</h2>
         <div id="promos" class="chips"></div>
       </section>
 
       <section class="tarjeta oculto" id="seccionExtras">
-        <h2 class="titulo-seccion">Servicios adicionales</h2>
+        <h2 class="t-seccion titulo-seccion">Servicios adicionales</h2>
         <div id="extras" class="chips"></div>
       </section>
 
       <div class="fila-registro">
-        <label class="campo-caja campo-cliente">
-          <span class="campo-etiqueta">Cliente</span>
+        <label class="t-campo campo-caja campo-cliente">
+          <span class="t-seccion campo-etiqueta">Cliente</span>
           <input type="text" id="cliente" placeholder="Nombre del cliente"
                  autocomplete="off">
         </label>
-        <label class="campo-caja campo-iniciales">
-          <span class="campo-etiqueta">Iniciales</span>
+        <label class="t-campo campo-caja campo-iniciales">
+          <span class="t-seccion campo-etiqueta">Iniciales</span>
           <input type="text" id="asesor" maxlength="4" autocomplete="off">
         </label>
       </div>
@@ -117,8 +117,8 @@
     <div class="columna-vista" id="columnaVista">
       <div class="vista-encabezado">
         <div class="vista-titulos">
-          <h2 class="vista-titulo">Vista del cliente</h2>
-          <p class="vista-sub" id="vistaSub">WhatsApp</p>
+          <h2 class="t-titulo-tarjeta vista-titulo">Vista del cliente</h2>
+          <p class="t-pista vista-sub" id="vistaSub">WhatsApp</p>
         </div>
         <button type="button" class="btn btn-primario" id="btnCopiar" disabled>
           Copiar mensaje
@@ -138,8 +138,8 @@
   <!-- ---------- Barra del total ---------- -->
   <div class="barra">
     <div class="barra-total">
-      <span class="barra-etiqueta" id="barraEtiqueta">Sin cotizar</span>
-      <span class="barra-monto apagado" id="barraMonto">$ —</span>
+      <span class="t-pista barra-etiqueta" id="barraEtiqueta">Sin cotizar</span>
+      <span class="t-total barra-monto apagado" id="barraMonto">$ —</span>
     </div>
     <div class="barra-acciones">
       <span class="barra-sello" id="barraSello"></span>
@@ -167,7 +167,7 @@
   <div class="calc-cabecera">
     <div class="calc-marca">
       <span class="calc-agarre" aria-hidden="true"></span>
-      <h3 id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
+      <h3 class="t-titulo-tarjeta" id="calcTitulo" class="calc-titulo">Mini cotizador</h3>
       <span class="calc-chip" id="calcChip" hidden>SIEMPRE ENCIMA</span>
     </div>
     <div class="calc-botones-ventana">
@@ -186,42 +186,42 @@
     <div class="hoteles hoteles-mini" id="calcHotel" role="radiogroup"
          aria-label="Hotel"></div>
 
-    <label class="campo-select">
+    <label class="t-campo campo-select">
       <select id="calcHab" aria-label="Habitación"></select>
     </label>
 
     <div class="calc-fechas">
-      <label class="campo-caja">
-        <span class="campo-etiqueta">Entrada</span>
+      <label class="t-precio campo-caja">
+        <span class="t-seccion campo-etiqueta">Entrada</span>
         <input type="date" id="calcIn">
       </label>
-      <label class="campo-caja">
-        <span class="campo-etiqueta">Salida</span>
+      <label class="t-precio campo-caja">
+        <span class="t-seccion campo-etiqueta">Salida</span>
         <input type="date" id="calcOut">
       </label>
       <div class="caja-noches" id="calcNoches" aria-hidden="true">
-        <span class="caja-noches-n">—</span>
-        <span class="caja-noches-t">noches</span>
+        <span class="t-precio caja-noches-n">—</span>
+        <span class="t-pista caja-noches-t">noches</span>
       </div>
     </div>
 
     <div class="calc-pax">
       <div class="contador">
-        <span class="contador-et">Adultos</span>
+        <span class="t-pista contador-et">Adultos</span>
         <div class="pasos">
           <button type="button" data-calcpaso="adultos" data-delta="-1"
                   aria-label="Menos adultos">−</button>
-          <span id="calcAdultos" class="cifra" aria-live="polite">2</span>
+          <span id="calcAdultos" class="t-precio cifra" aria-live="polite">2</span>
           <button type="button" data-calcpaso="adultos" data-delta="1"
                   aria-label="Más adultos">+</button>
         </div>
       </div>
       <div class="contador">
-        <span class="contador-et">Niños</span>
+        <span class="t-pista contador-et">Niños</span>
         <div class="pasos">
           <button type="button" data-calcpaso="ninos" data-delta="-1"
                   aria-label="Menos niños">−</button>
-          <span id="calcNinos" class="cifra" aria-live="polite">0</span>
+          <span id="calcNinos" class="t-precio cifra" aria-live="polite">0</span>
           <button type="button" data-calcpaso="ninos" data-delta="1"
                   aria-label="Más niños">+</button>
         </div>
@@ -265,8 +265,8 @@
 <div id="modalCopia" class="modal oculto" role="dialog" aria-modal="true"
      aria-labelledby="modalCopiaTitulo">
   <div class="modal-caja">
-    <h3 id="modalCopiaTitulo">Copia el mensaje a mano</h3>
-    <p class="modal-pista" id="modalCopiaPista">
+    <h3 class="t-titulo-tarjeta" id="modalCopiaTitulo">Copia el mensaje a mano</h3>
+    <p class="t-pista modal-pista" id="modalCopiaPista">
       El texto ya está seleccionado. Mantén presionado y elige <strong>Copiar</strong>.
     </p>
     <textarea id="modalCopiaTexto" class="modal-texto" readonly></textarea>
@@ -276,8 +276,8 @@
 
 <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
 
-<script src="assets/motor.js"></script>
-<script src="assets/catalogo.js"></script>
-<script src="assets/logica.js"></script>
+<script src="assets/motor.js?v=2026.09.03"></script>
+<script src="assets/catalogo.js?v=2026.09.03"></script>
+<script src="assets/logica.js?v=2026.09.03"></script>
 </body>
 </html>

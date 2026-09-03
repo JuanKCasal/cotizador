@@ -13,11 +13,11 @@ const leerRaiz = (f) => fs.readFileSync(path.join(RAIZ, f), 'utf8');
 
 let pagina = leerRaiz('admin.html');
 pagina = pagina.replace(
-  /<link rel="stylesheet" href="(assets\/[^"]+)">/g,
+  /<link rel="stylesheet" href="(assets\/[^"?]+)(?:\?[^"]*)?">/g,
   (_, ruta) => '<style>\n' + leerRaiz(ruta) + '\n</style>'
 );
 pagina = pagina.replace(
-  /<script src="(assets\/[^"]+)"><\/script>/g,
+  /<script src="(assets\/[^"?]+)(?:\?[^"]*)?"><\/script>/g,
   (_, ruta) => '<script>\n' + leerRaiz(ruta) + '\n</script>'
 );
 // El favicon no se inserta: jsdom no lo pide y no es parte de la conducta

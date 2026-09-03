@@ -15,9 +15,37 @@
   --display: 'Bricolage Grotesque', Georgia, serif;
   --cuerpo:  'Instrument Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --mono:    'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* La franja del gesto del iPhone. Cero en todo lo demás.
+     La barra del total mide --h-barra-real, no --h-barra-total: con
+     box-sizing: border-box un padding-bottom NO se suma a la altura, se la
+     come, y en un iPhone los 68px de barra quedaban en 34 con el total y el
+     botón dentro. Todo lo que reserva sitio para la barra usa la medida real. */
+  /* Ancho util maximo: mas alla de eso, aire a los lados. */
+  --ancho-max: 1200px;
+  --relleno-ancho: max(var(--e5), calc((100% - var(--ancho-max)) / 2));
+
+  --respiro-abajo: env(safe-area-inset-bottom, 0px);
+  --h-barra-real: calc(var(--h-barra-total) + var(--respiro-abajo));
+
+  /* El acento sin hotel elegido, que es como abre la app en cada cotización.
+     tokens.css solo lo declara por hotel; sin este respaldo las siete
+     referencias a var(--acento…) no resuelven a nada y la franja del hotel
+     desaparece en vez de mostrarse neutra. Cada hotel lo pisa igual que antes. */
+  --acento: var(--arena);
+  --acento-sut: var(--arena-sut);
+  --acento-texto: var(--tinta-70);
 }
 
 * { box-sizing: border-box; }
+
+/* Las clases del sistema nombran la fuente sin pila de respaldo. Si no carga
+   -en el telefono, con mala red- el navegador caeria a su serif y la app
+   cambiaria de cara. Esto solo devuelve la pila: la familia y las medidas
+   siguen siendo las que eligio el sistema, no se toca tokens.css. */
+.t-titulo-grande, .t-titulo-tarjeta { font-family: var(--display); }
+.t-seccion, .t-normal, .t-campo, .t-pista { font-family: var(--cuerpo); }
+.t-precio, .t-total, .t-total-mini { font-family: var(--mono); }
 
 html, body {
   margin: 0; padding: 0;
@@ -31,6 +59,12 @@ html, body {
 }
 
 .oculto { display: none !important; }
+
+/* El navegador esconde [hidden] con display:none, pero es una regla suya y
+   cualquier regla nuestra le gana: .calc-btn-ventana declara display:grid y
+   dejaba el boton de colapsar visible dentro de la ventana flotante, donde no
+   hace nada. Que el atributo pese mas que la maquetacion, siempre. */
+[hidden] { display: none !important; }
 
 /* Piezas que solo existen en un tamaño de pantalla.
    Esconde con !important y NO reasigna display al mostrar: cada pieza conserva
@@ -48,7 +82,7 @@ html, body {
 .cargando {
   position: fixed; inset: 0; z-index: 90;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px;
+  gap: var(--e4);
   background: var(--tinta);
   color: #fff;
 }
@@ -68,7 +102,7 @@ html, body {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(350%); }
 }
-.cargando p { margin: 0; font-size: 14px; color: rgba(255,255,255,.72); }
+.cargando p { margin: 0; font-size: 15px; color: rgba(255,255,255,.72); }
 
 /* ---------------------------------------------------------------- Cabecera */
 #app { display: flex; flex-direction: column; min-height: 100vh; }
@@ -76,13 +110,13 @@ html, body {
 .cabecera {
   flex-shrink: 0;
   height: 56px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
+  padding: 0 var(--e4);
   background: var(--papel);
   border-bottom: 1px solid var(--arena);
 }
 
-.cabecera-marca { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cabecera-marca { display: flex; align-items: center; gap: var(--e2); min-width: 0; }
 /* -------------------------------------------------------------- La marca */
 /* Un solo dibujo para la cabecera, la burbuja y el favicon. La H usa
    currentColor, asi que se pone en tinta sobre papel y en blanco sobre el
@@ -98,7 +132,7 @@ html, body {
 
 
 .marca-nombre {
-  font-family: var(--display); font-weight: 800; font-size: 19px;
+  font-family: var(--display); font-weight: 800; font-size: 20px;
   letter-spacing: -.01em;
   white-space: nowrap;
 }
@@ -106,8 +140,8 @@ html, body {
 /* El hotel elegido, siempre visible: el acento solo no basta para saber cuál
    se está cotizando, así que viaja con la sigla y el nombre. */
 .chip-hotel {
-  display: inline-flex; align-items: center; gap: 6px;
-  height: 32px; padding: 0 12px;
+  display: inline-flex; align-items: center; gap: var(--e1);
+  height: 32px; padding: 0 var(--e3);
   border-radius: var(--r-chip);
   background: var(--acento-sut);
   min-width: 0;
@@ -117,14 +151,14 @@ html, body {
   color: var(--acento-texto);
 }
 .chip-nombre {
-  font-size: 13px; font-weight: 600; color: var(--acento-texto);
+  font-size: 12.5px; font-weight: 600; color: var(--acento-texto);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.cabecera-acciones { display: flex; align-items: center; gap: 12px; }
+.cabecera-acciones { display: flex; align-items: center; gap: var(--e3); }
 
 .version {
-  font-family: var(--mono); font-size: 11.5px; color: var(--tinta-45);
+  font-family: var(--mono); font-size: 11px; color: var(--tinta-45);
   white-space: nowrap;
 }
 @media (max-width: 899px) { .version { display: none; } }
@@ -134,17 +168,17 @@ html, body {
   display: grid; place-items: center;
   border: 1px solid var(--arena); border-radius: 50%;
   background: var(--papel);
-  color: var(--tinta-70); font-size: 17px; cursor: pointer;
+  color: var(--tinta-70); font-size: 16px; cursor: pointer;
 }
 .btn-icono:hover { border-color: var(--tinta-45); }
 
 .btn-cabecera {
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 40px; padding: 0 14px;
+  display: inline-flex; align-items: center; gap: var(--e2);
+  height: 40px; padding: 0 var(--e3);
   border: 1.5px solid var(--tinta); border-radius: 10px;
   background: transparent;
   color: var(--tinta);
-  font-family: var(--cuerpo); font-size: 14px; font-weight: 600;
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 600;
   cursor: pointer;
 }
 .btn-cabecera:hover  { background: var(--sal); }
@@ -175,20 +209,29 @@ html, body {
 .lienzo {
   flex: 1;
   min-height: 0;
-  padding: 16px;
-  padding-bottom: calc(var(--h-barra-total) + 16px);
+  padding: var(--e4);
+  padding-bottom: calc(var(--h-barra-real) + var(--e4));
 }
 
 .columna-form { display: flex; flex-direction: column; gap: var(--e3); }
 
 /* -------------------------------------------------------- Campos genéricos */
+/* Un input o un select no heredan la fuente de su contenedor a menos que se
+   les pida. Pidiendoselo, la clase del sistema puesta en la etiqueta que los
+   envuelve manda sobre el control, y no hay que repetir las medidas en cada
+   uno de ellos. */
+.campo-select select,
+.campo-caja input,
+.campo-caja select,
+.calc-cuerpo select,
+.calc-cuerpo input { font: inherit; }
+
 .campo-select { position: relative; display: block; }
 .campo-select select {
   width: 100%; height: var(--h-campo);
-  padding: 0 36px 0 14px;
+  padding: 0 var(--e6) 0 var(--e3);
   border: 1px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel);
-  font-family: var(--cuerpo); font-size: 16px; font-weight: 500;
   color: var(--tinta);
   appearance: none; cursor: pointer;
 }
@@ -209,27 +252,22 @@ html, body {
   background: var(--acento);
   pointer-events: none;
 }
-.campo-hotel select { padding-left: 28px; }
+.campo-hotel select { padding-left: var(--e5); }
 
 .campo-caja {
   display: flex; flex-direction: column; justify-content: center;
   min-width: 0; height: var(--h-campo);
-  padding: 0 12px;
+  padding: 0 var(--e3);
   border: 1px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel);
 }
-.campo-etiqueta {
-  font-size: 10px; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--tinta-45);
-}
+/* La tipografia la pone .t-seccion. Aqui solo queda lo que el sistema no
+   dice: como se comporta la etiqueta dentro de su caja. */
+.campo-etiqueta { display: block; }
 .campo-caja input {
   width: 100%;
   border: 0; padding: 0; background: none;
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 15px; font-weight: 600; color: var(--tinta);
-}
-.campo-caja input[type="text"] {
-  font-family: var(--cuerpo); font-size: 16px; font-weight: 500;
+  color: var(--tinta);
 }
 .campo-caja input::placeholder { color: var(--tinta-45); font-weight: 400; }
 
@@ -238,8 +276,7 @@ html, body {
 .campo-caja select {
   width: 100%;
   border: 0; padding: 0; background: none;
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 600; color: var(--tinta);
+  color: var(--tinta);
   appearance: none; cursor: pointer;
 }
 /* Foco de teclado idéntico en todos los controles. Si cambiara de forma o de
@@ -280,13 +317,12 @@ select:focus-visible, input:focus-visible {
   border-radius: var(--r-medio);
   background: var(--arena);
 }
-.caja-noches-n {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 17px; font-weight: 600;
-}
-.caja-noches-t { font-size: 10px; color: var(--tinta-70); }
+/* .t-precio y .t-seccion; la caja no aporta tipografia propia. */
 
-.pista { margin: -4px 0 0; font-size: 12.5px; color: var(--tinta-45); }
+/* --tinta-70 y no --tinta-45: las pistas viven sobre el fondo de página, donde
+   --tinta-45 da 4.18:1 y no llega a AA. El sistema ya lo resolvió — .t-pista se
+   define con --tinta-70 — y la hoja se había separado de él. */
+.pista { margin: calc(var(--e1) * -1) 0 0; }
 .pista.alerta { color: var(--alerta); font-weight: 500; }
 
 /* ---------------------------------------------------------------- Hoteles
@@ -304,18 +340,17 @@ select:focus-visible, input:focus-visible {
 }
 
 .hotel-op {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: var(--e2);
   min-height: var(--h-campo);
-  padding: 0 12px;
+  padding: 0 var(--e3);
   border: 1.5px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel);
-  font-family: var(--cuerpo); font-size: 14px; font-weight: 500;
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 500;
   color: var(--tinta);
   cursor: pointer; text-align: left;
   transition: border-color .14s ease, background-color .14s ease,
               transform .12s cubic-bezier(.23,1,.32,1);
 }
-.hotel-op:active:not([aria-checked="true"]) { transform: scale(.97); }
 
 /* El acento de CADA hotel, no el del elegido: es lo que permite reconocerlos
    antes de leerlos. Se declara por boton con una variable propia. */
@@ -331,7 +366,7 @@ select:focus-visible, input:focus-visible {
   border-radius: 6px;
   background: var(--h-sut, var(--arena-sut));
   color: var(--h-texto, var(--tinta-70));
-  font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
 }
 .hotel-nombre {
   min-width: 0;
@@ -349,12 +384,19 @@ select:focus-visible, input:focus-visible {
 
 /* En el mini cotizador solo caben las siglas: el panel mide 380 y el nombre
    completo obligaria a dos filas de botones. */
-.hoteles-mini { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.hoteles-mini { grid-template-columns: repeat(5, 1fr); gap: var(--e1); }
+/* La sigla llena el boton, asi que tiene que compartir su curva: con esquinas
+   rectas dentro de un boton redondeado se veia un cuadro de color encima de
+   una pastilla, que es dos formas donde hay una. */
 .hoteles-mini .hotel-op {
   min-height: 40px; padding: 0; justify-content: center;
+  overflow: hidden;
 }
 .hoteles-mini .hotel-nombre { display: none; }
-.hoteles-mini .hotel-sigla { min-width: 0; width: 100%; height: 100%; border-radius: 0; }
+.hoteles-mini .hotel-sigla {
+  min-width: 0; width: 100%; height: 100%;
+  border-radius: inherit;
+}
 
 /* --------------------------------------------------------- Hotel y fechas */
 .fila-estadia { display: flex; flex-wrap: wrap; gap: var(--e2); }
@@ -368,19 +410,15 @@ select:focus-visible, input:focus-visible {
 
 /* ------------------------------------------------------- Título de sección */
 .seccion-cabecera {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
 }
-.titulo-seccion {
-  margin: 0;
-  font-size: 11px; font-weight: 600; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--tinta-45);
-}
+.titulo-seccion { margin: 0; }
 
 .btn-borde {
-  height: 40px; padding: 0 14px;
+  height: 40px; padding: 0 var(--e3);
   border: 1.5px solid var(--tinta); border-radius: 10px;
   background: transparent; color: var(--tinta);
-  font-family: var(--cuerpo); font-size: 14px; font-weight: 600;
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 600;
   cursor: pointer; white-space: nowrap;
 }
 .btn-borde:hover:not(:disabled) { background: var(--sal); }
@@ -401,29 +439,22 @@ select:focus-visible, input:focus-visible {
 }
 .hab-cuerpo {
   flex: 1; min-width: 0;
-  padding: 12px 16px;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: var(--e3) var(--e4);
+  display: flex; flex-direction: column; gap: var(--e2);
 }
 
 .hab-cabecera {
   min-height: 44px;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e2);
 }
-.hab-idet { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.hab-idet { display: flex; align-items: center; gap: var(--e2); min-width: 0; }
 .hab-sigla {
-  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
   background: var(--acento-sut); color: var(--acento-texto);
-  padding: 3px 6px; border-radius: 5px;
+  padding: var(--e1) var(--e1); border-radius: 5px;
 }
-.hab-indice {
-  font-family: var(--display); font-weight: 600; font-size: 17px;
-  white-space: nowrap;
-}
-.hab-derecha { display: flex; align-items: center; gap: 12px; }
-.hab-precio {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 600;
-}
+.hab-indice { white-space: nowrap; }
+.hab-derecha { display: flex; align-items: center; gap: var(--e3); }
 .hab-precio.pendiente { color: var(--tinta-45); }
 .hab-quitar {
   width: 44px; height: 44px; flex-shrink: 0;
@@ -441,24 +472,20 @@ select:focus-visible, input:focus-visible {
   flex: 1 0 calc(50% - 4px);
   min-width: 0; height: var(--h-campo);
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 2px 0 10px;
+  padding: 0 var(--e1) 0 var(--e2);
   border: 1px solid var(--arena); border-radius: var(--r-medio);
   background: var(--papel);
 }
-.contador-et { font-size: 13px; }
+
 .pasos { display: flex; align-items: center; }
 .pasos button {
   width: 36px; height: 44px;
   border: 0; border-radius: 8px; background: none;
-  font-family: var(--cuerpo); font-size: 18px; font-weight: 600;
+  font-family: var(--cuerpo); font-size: 20px; font-weight: 600;
   color: var(--tinta); cursor: pointer;
 }
 .pasos button:disabled { opacity: .3; cursor: default; }
-.cifra {
-  min-width: 16px; text-align: center;
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 15px; font-weight: 600;
-}
+.cifra { min-width: var(--e4); text-align: center; }
 
 .hab-edades { display: flex; flex-wrap: wrap; gap: var(--e2); }
 .campo-edad { width: 140px; position: relative; }
@@ -469,20 +496,16 @@ select:focus-visible, input:focus-visible {
   border-top: 5px solid var(--tinta-70);
   pointer-events: none;
 }
-.campo-edad select { padding-right: 16px; }
+.campo-edad select { padding-right: var(--e4); }
 /* Sin edad declarada no se puede cotizar: el campo lo dice antes de que la
    asesora vaya a buscar el error en la vista previa. */
 .campo-edad.falta { border-color: var(--alerta); }
 .campo-edad.falta .campo-etiqueta { color: var(--alerta); }
 
-.hab-pie {
-  display: flex; align-items: center; justify-content: space-between;
-  font-size: 12.5px; color: var(--tinta-70);
-}
-.hab-pie-monto {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 16px; font-weight: 600; color: var(--tinta);
-}
+.hab-pie { display: flex; align-items: center; justify-content: space-between; }
+/* El monto en tinta plena: .hab-pie lo pinta en --tinta-70 porque es una linea
+   de apoyo, pero la cifra es el dato. */
+.hab-pie-monto { color: var(--tinta); }
 
 /* En el celular el precio vive al pie de la ficha, junto a las noches: arriba,
    al lado del titulo, competiria con la × y apretaria el nombre. */
@@ -503,16 +526,16 @@ select:focus-visible, input:focus-visible {
 .tarjeta {
   background: var(--papel);
   border: 1px solid var(--arena); border-radius: var(--r-grande);
-  padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: var(--e3) var(--e4);
+  display: flex; flex-direction: column; gap: var(--e2);
 }
 
 /* ---------------------------------------------------------------- Chips */
 .chips { display: flex; flex-wrap: wrap; gap: var(--e2); }
 
 .chip {
-  height: var(--h-chip); padding: 0 16px;
-  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--h-chip); padding: 0 var(--e4);
+  display: inline-flex; align-items: center; gap: var(--e2);
   border: 1.5px solid var(--arena); border-radius: var(--r-chip);
   background: var(--papel);
   font-family: var(--cuerpo); font-size: 15px; font-weight: 500;
@@ -524,12 +547,12 @@ select:focus-visible, input:focus-visible {
 }
 /* El check no es decorativo: sin él, un chip elegido y uno sin elegir se
    distinguirían solo por el color. */
-.chip[aria-checked="true"]::before { content: '✓'; font-size: 13px; }
+.chip[aria-checked="true"]::before { content: '✓'; font-size: 12.5px; }
 .chip:disabled {
   border-color: var(--arena-sut); background: var(--arena-sut);
   color: #9FAEC0; cursor: default;
 }
-.chip-detalle { font-size: 12.5px; opacity: .78; font-weight: 400; }
+.chip-detalle { opacity: .78; }
 
 /* --------------------------------------------------------------- Registro */
 .fila-registro { display: flex; gap: var(--e2); }
@@ -546,21 +569,19 @@ select:focus-visible, input:focus-visible {
 
 .vista-encabezado {
   flex-shrink: 0;
-  padding: 14px 16px;
+  padding: var(--e3) var(--e4);
   border-bottom: 1px solid var(--arena);
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
 }
-.vista-titulo {
-  margin: 0; font-family: var(--display); font-weight: 600; font-size: 16px;
-}
+.vista-titulo { margin: 0; }
 .vista-sub {
-  margin: 0; font-size: 12px; color: var(--tinta-70);
+  margin: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .chat {
   flex: 1; min-height: 0; overflow-y: auto;
-  padding: 14px;
+  padding: var(--e3);
   display: flex; align-items: flex-start; justify-content: flex-end;
   background: var(--wa-fondo);
   background-image:
@@ -571,16 +592,16 @@ select:focus-visible, input:focus-visible {
 
 .burbuja {
   max-width: 360px;
-  padding: 12px 14px;
+  padding: var(--e3) var(--e3);
   border-radius: 14px 14px 4px 14px;
   background: var(--wa-burbuja);
   color: var(--wa-texto);
-  font-size: 14.5px; line-height: 1.55;
+  font-size: 15px; line-height: 1.55;
   white-space: pre-wrap; word-wrap: break-word;
   box-shadow: 0 1px 2px rgba(0,0,0,.10);
 }
-.burbuja-vacio { margin: 0; color: #5B6B63; font-size: 13.5px; white-space: normal; }
-.burbuja-titulo { margin: 0 0 4px; font-weight: 600; font-size: 14px; }
+.burbuja-vacio { margin: 0; color: #5B6B63; font-size: 12.5px; white-space: normal; }
+.burbuja-titulo { margin: 0 0 var(--e1); font-weight: 600; font-size: 15px; }
 .burbuja b { font-weight: 600; }
 
 .burbuja-error {
@@ -589,7 +610,7 @@ select:focus-visible, input:focus-visible {
   color: var(--tinta);
   white-space: normal;
 }
-.burbuja-error ul { margin: 6px 0 0; padding-left: 18px; }
+.burbuja-error ul { margin: var(--e1) 0 0; padding-left: var(--e4); }
 
 /* Un cierre de venta no es un error de datos y no se pinta como tal: no hay
    nada que corregir, hay que ofrecer otra cosa. */
@@ -600,23 +621,23 @@ select:focus-visible, input:focus-visible {
   white-space: normal;
 }
 .burbuja-sincupo .burbuja-titulo { color: var(--aviso); }
-.burbuja-sincupo ul { margin: 6px 0 0; padding-left: 18px; }
-.burbuja-sincupo li { margin-bottom: 4px; }
-.burbuja-pie { margin: 10px 0 0; font-size: 13px; color: var(--tinta-70); }
+.burbuja-sincupo ul { margin: var(--e1) 0 0; padding-left: var(--e4); }
+.burbuja-sincupo li { margin-bottom: var(--e1); }
+.burbuja-pie { margin: var(--e2) 0 0; font-size: 12.5px; color: var(--tinta-70); }
 
 /* --------------------------------------------------- Etiquetas de severidad
    El color nunca informa solo. Quien no distingue rojo de ámbar tiene que
    poder separar "no se puede cotizar" de "revisa esto" leyendo la palabra. */
 .sev {
-  display: inline-flex; align-items: center; gap: 7px;
-  margin: 0 0 6px;
-  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  display: inline-flex; align-items: center; gap: var(--e2);
+  margin: 0 0 var(--e1);
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
   letter-spacing: .1em; text-transform: uppercase;
 }
 .sev-marca {
   display: grid; place-items: center;
   width: 20px; height: 20px; flex-shrink: 0;
-  font-size: 14px; font-weight: 700; color: #fff;
+  font-size: 15px; font-weight: 700; color: #fff;
 }
 .sev-error            { color: var(--alerta); }
 .sev-error .sev-marca { background: var(--alerta); border-radius: 50%; }
@@ -626,41 +647,65 @@ select:focus-visible, input:focus-visible {
 /* --------------------------------------------------------- Barra del total */
 .barra {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-  height: var(--h-barra-total);
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 16px;
-  padding-bottom: env(safe-area-inset-bottom);
+  height: var(--h-barra-real);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--e3);
+  padding: 0 var(--e4);
+  padding-bottom: var(--respiro-abajo);
   background: var(--papel);
   border-top: 2px solid var(--tinta);
 }
 .barra-total { display: flex; flex-direction: column; min-width: 0; }
 .barra-etiqueta {
-  font-size: 12.5px; color: var(--tinta-70);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.barra-monto {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 21px; font-weight: 600;
 }
 /* Un guion suelto se lee como "todavía no calculo"; "$ —" en gris se lee como
    "no hay precio". Con un error activo es imposible copiar. */
 .barra-monto.apagado { color: #9FAEC0; }
 
-.barra-acciones { display: flex; align-items: center; gap: 12px; }
+.barra-acciones { display: flex; align-items: center; gap: var(--e3); }
 .barra-sello {
-  font-family: var(--mono); font-size: 11.5px; color: var(--tinta-45);
+  font-family: var(--mono); font-size: 11px; color: var(--tinta-45);
   white-space: nowrap;
 }
 @media (max-width: 899px) { .barra-sello { display: none; } }
 
+/* ------------------------------------------------------- Respuesta al toque */
+/* En un teléfono no existe :hover. El :active es la única confirmación de que
+   el dedo dio en el sitio: sin ella, ante cualquier demora se toca dos veces,
+   y en los contadores de personas eso suma un adulto de más a la cotización.
+   Es al foco de teclado lo que --foco es al ratón, y se declara una sola vez
+   para todo lo que se pulsa.
+
+   Se hunde y se oscurece: dos señales, porque en pantallas al sol el cambio
+   de color solo no se ve. Solo donde hay puntero grueso — con ratón el
+   :hover ya cumple y el rebote estorba. */
+@media (hover: none), (pointer: coarse) {
+  .btn:not(:disabled):active,
+  .btn-borde:not(:disabled):active,
+  .btn-icono:active,
+  .btn-cabecera:active,
+  .btn-cerrar:active,
+  .chip:not(:disabled):active,
+  .pasos button:not(:disabled):active,
+  .calc-btn-ventana:active {
+    transform: scale(.96);
+    filter: brightness(.93);
+  }
+  .hotel-op:active { transform: scale(.97); filter: brightness(.97); }
+}
+.btn, .btn-borde, .btn-icono, .btn-cabecera, .btn-cerrar,
+.chip, .pasos button, .calc-btn-ventana {
+  transition: transform .1s cubic-bezier(.23,1,.32,1), filter .1s ease,
+              background-color .15s ease, border-color .15s ease;
+}
+
 /* ---------------------------------------------------------------- Botones */
 .btn {
-  min-height: var(--h-boton); padding: 0 18px;
+  min-height: var(--h-boton); padding: 0 var(--e4);
   display: inline-flex; align-items: center; justify-content: center;
   font-family: inherit; font-size: 16px; font-weight: 600;
   border-radius: var(--r-medio); border: 1.5px solid transparent;
   cursor: pointer; white-space: nowrap;
-  transition: opacity .15s ease, background .15s ease;
 }
 .btn:disabled { opacity: .42; cursor: default; }
 /* Tinta, no el acento del hotel. El botón más importante de la aplicación no
@@ -670,7 +715,16 @@ select:focus-visible, input:focus-visible {
 .btn-primario:hover:not(:disabled) { filter: brightness(1.15); }
 .btn-secundario { background: var(--papel); color: var(--tinta); border-color: var(--tinta); }
 .btn-secundario:hover:not(:disabled) { background: var(--sal); }
-.btn-barra      { background: var(--tinta); color: #fff; padding: 0 20px; }
+.btn-barra      { background: var(--tinta); color: #fff; padding: 0 var(--e4); }
+
+/* Con errores el botón cambia de texto a "Ver qué falta"; logica.js le pone
+   esta clase en tres sitios y hasta ahora no estaba declarada en ninguna hoja,
+   así que el aviso se emitía y no se veía. Sigue habilitado a propósito: es la
+   única vía para abrir el panel donde se explica qué falta. */
+.btn-alerta {
+  background: var(--alerta); color: #fff;
+}
+.btn-alerta:hover:not(:disabled) { filter: brightness(1.12); }
 
 .btn-cerrar {
   width: 40px; height: 40px;
@@ -683,24 +737,27 @@ select:focus-visible, input:focus-visible {
 @media (min-width: 900px) {
   #app { height: 100vh; overflow: hidden; }
 
-  .cabecera { height: 64px; padding: 0 24px; }
-  .marca-nombre { font-size: 20px; }
+  /* Un maximo de 1200 y el resto en aire a los lados. En una pantalla ancha
+     el titulo y los botones se iban a las esquinas opuestas y la vista del
+     cliente quedaba a un palmo del formulario: se leia como dos aplicaciones.
+     El fondo sigue llegando de borde a borde; lo que se centra es el
+     contenido, con relleno calculado en vez de una caja extra en el marcado. */
+  .cabecera { height: 64px; padding: 0 var(--relleno-ancho); }
 
   .lienzo {
     display: grid;
     grid-template-columns: 1fr 440px;
     gap: var(--e5);
-    padding: var(--e5);
-    padding-bottom: var(--e5);
+    padding: var(--e5) var(--relleno-ancho);
     overflow: hidden;
   }
 
   /* La columna del formulario se desplaza sola; la vista previa se queda
      quieta, para que el mensaje no se mueva mientras se ajustan las fechas. */
-  .columna-form { overflow-y: auto; padding-right: 4px; }
+  .columna-form { overflow-y: auto; padding-right: var(--e1); }
   .columna-vista { overflow: hidden; }
 
-  .barra { position: static; padding: 0 24px; }
+  .barra { position: static; padding: 0 var(--relleno-ancho); }
 }
 
 /* ================================================================== MÓVIL */
@@ -708,7 +765,7 @@ select:focus-visible, input:focus-visible {
   /* La vista previa entra desde la derecha: en una pantalla de teléfono no
      caben las dos columnas, y el mensaje se consulta, no se edita. */
   .columna-vista {
-    position: fixed; inset: 0 0 var(--h-barra-total);
+    position: fixed; inset: 0 0 var(--h-barra-real);
     z-index: 70;
     border: 0; border-radius: 0;
     transform: translateX(100%);
@@ -727,37 +784,35 @@ select:focus-visible, input:focus-visible {
 .modal {
   position: fixed; inset: 0; z-index: 95;
   display: grid; place-items: center;
-  padding: 16px;
+  padding: var(--e4);
   background: rgba(11,37,69,.55);
 }
 .modal-caja {
   width: 100%; max-width: 420px;
-  display: flex; flex-direction: column; gap: 12px;
-  padding: 18px;
+  display: flex; flex-direction: column; gap: var(--e3);
+  padding: var(--e4);
   background: var(--papel); border-radius: var(--r-grande);
 }
-.modal-caja h3 {
-  margin: 0; font-family: var(--display); font-weight: 600; font-size: 18px;
-}
-.modal-pista { margin: 0; font-size: 13.5px; color: var(--tinta-70); }
+.modal-caja h3 { margin: 0; }
+.modal-pista { margin: 0; }
 .modal-texto {
   width: 100%; height: 190px;
-  padding: 12px;
+  padding: var(--e3);
   border: 1px solid var(--arena); border-radius: var(--r-chico);
-  font-family: var(--cuerpo); font-size: 14px; line-height: 1.5;
+  font-family: var(--cuerpo); font-size: 15px; line-height: 1.5;
   resize: none;
 }
 
 /* ----------------------------------------------------------------- Avisos */
 .aviso {
-  position: fixed; left: 50%; bottom: calc(var(--h-barra-total) + 16px);
+  position: fixed; left: 50%; bottom: calc(var(--h-barra-real) + 16px);
   z-index: 96;
   transform: translate(-50%, 16px);
   max-width: calc(100vw - 32px);
-  padding: 11px 18px;
+  padding: var(--e3) var(--e4);
   border-radius: var(--r-chip);
   background: var(--tinta); color: #fff;
-  font-size: 14px; font-weight: 500;
+  font-size: 15px; font-weight: 500;
   opacity: 0; pointer-events: none;
   transition: opacity .18s ease, transform .18s ease;
 }
@@ -795,13 +850,13 @@ body:not(.calc-suelta) .calc {
 .calc-cabecera {
   flex-shrink: 0; height: 40px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 6px 0 12px;
+  padding: 0 var(--e1) 0 var(--e3);
   background: var(--tinta);
 }
-.calc-marca { display: flex; align-items: center; gap: 10px; }
+.calc-marca { display: flex; align-items: center; gap: var(--e2); }
 
 /* Cuatro puntos: la marca de "esto se arrastra" de cualquier ventana. */
-.calc-agarre { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 10px; }
+.calc-agarre { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e1); width: 10px; }
 .calc-agarre::before, .calc-agarre::after {
   content: '';
   width: 4px; height: 4px; border-radius: 1px;
@@ -816,9 +871,9 @@ body:not(.calc-suelta) .calc {
 /* Solo aparece cuando la ventana de verdad flota sobre todo: prometerlo
    cuando el navegador no puede cumplirlo sería peor que no decir nada. */
 .calc-chip {
-  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
   color: var(--tinta); background: #9FD9C8;
-  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+  padding: var(--e1) var(--e1); border-radius: 4px; white-space: nowrap;
 }
 
 .calc-botones-ventana { display: flex; align-items: center; }
@@ -832,20 +887,20 @@ body:not(.calc-suelta) .calc {
 
 .calc-cuerpo {
   flex: 1; min-height: 0; overflow-y: auto;
-  padding: 12px;
+  padding: var(--e3);
   display: flex; flex-direction: column; gap: var(--e2);
 }
 .calc-cuerpo .campo-select select { height: 44px; font-size: 15px; }
-.calc-cuerpo .campo-hotel select  { padding-left: 24px; }
+.calc-cuerpo .campo-hotel select  { padding-left: var(--e5); }
 .calc-cuerpo .acento-barra { left: 12px; margin-top: -9px; width: 4px; height: 18px; }
-.calc-cuerpo .campo-caja   { height: 44px; padding: 0 10px; }
-.calc-cuerpo .campo-etiqueta { font-size: 9.5px; }
-.calc-cuerpo .campo-caja input { font-size: 14px; }
+.calc-cuerpo .campo-caja   { height: 44px; padding: 0 var(--e2); }
+.calc-cuerpo .campo-etiqueta { font-size: 11px; }
+.calc-cuerpo .campo-caja input { font-size: 15px; }
 .calc-cuerpo .caja-noches  { width: 52px; height: 44px; background: var(--arena-sut); }
 .calc-cuerpo .caja-noches-n { font-size: 15px; }
-.calc-cuerpo .caja-noches-t { font-size: 9.5px; }
+.calc-cuerpo .caja-noches-t { font-size: 11px; }
 .calc-cuerpo .contador { height: 44px; }
-.calc-cuerpo .pasos button { width: 32px; font-size: 17px; }
+.calc-cuerpo .pasos button { width: 32px; font-size: 16px; }
 
 .calc-fechas { display: flex; gap: var(--e2); }
 .calc-fechas .campo-caja { flex: 1; min-width: 0; }
@@ -856,13 +911,13 @@ body:not(.calc-suelta) .calc {
 .calc-pie {
   flex-shrink: 0;
   border-top: 1px solid var(--arena);
-  padding: 12px;
-  display: flex; flex-direction: column; gap: 10px;
+  padding: var(--e3);
+  display: flex; flex-direction: column; gap: var(--e2);
   background: var(--papel);
 }
-.calc-resumen { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.calc-resumen { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--e2); }
 .calc-cifras { display: flex; flex-direction: column; min-width: 0; }
-.calc-detalle { font-size: 12px; color: var(--tinta-70); }
+.calc-detalle { font-size: 12.5px; color: var(--tinta-70); }
 .calc-detalle.error { color: var(--alerta); }
 .calc-total {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
@@ -871,13 +926,13 @@ body:not(.calc-suelta) .calc {
 .calc-total.apagado { color: #9FAEC0; }
 .calc-version {
   flex-shrink: 0;
-  font-family: var(--mono); font-size: 10.5px; color: var(--tinta-45);
+  font-family: var(--mono); font-size: 11px; color: var(--tinta-45);
 }
 
 .calc-acciones { display: flex; gap: var(--e2); }
 .calc-acciones .btn { min-height: 48px; border-radius: var(--r-medio); }
 #calcCopiar { flex: 1.4; font-size: 16px; }
-#calcAbrir  { flex: 1; font-size: 14px; }
+#calcAbrir  { flex: 1; font-size: 15px; }
 
 /* ------------------------------------------------- Mini cotizador colapsado
    Una burbuja que se arrastra por la pantalla y al pulsarla vuelve a abrir el
@@ -890,8 +945,8 @@ body:not(.calc-suelta) .calc {
   position: fixed;
   right: 20px; bottom: 20px;
   z-index: 81;
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 52px; padding: 0 18px 0 14px;
+  display: inline-flex; align-items: center; gap: var(--e2);
+  min-height: 52px; padding: 0 var(--e4) 0 var(--e3);
   border: 0; border-radius: var(--r-chip);
   background: var(--tinta); color: var(--papel);
   font-family: var(--cuerpo); font-size: 15px; font-weight: 600;

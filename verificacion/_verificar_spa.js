@@ -17,14 +17,14 @@ const leerRaiz = (f) => fs.readFileSync(path.join(RAIZ, f), 'utf8');
 let pagina = leerRaiz('index.html');
 
 pagina = pagina.replace(
-  /<link rel="stylesheet" href="(assets\/[^"]+)">/g,
+  /<link rel="stylesheet" href="(assets\/[^"?]+)(?:\?[^"]*)?">/g,
   (_, ruta) => '<style>\n' + leerRaiz(ruta) + '\n</style>'
 );
 
 // Funcion de reemplazo, no string: el codigo contiene $('...') y "$'" es un
 // patron especial de String.replace que corromperia el resultado.
 pagina = pagina.replace(
-  /<script src="(assets\/[^"]+)"><\/script>/g,
+  /<script src="(assets\/[^"?]+)(?:\?[^"]*)?"><\/script>/g,
   (_, ruta) => '<script>\n' + leerRaiz(ruta) + '\n</script>'
 );
 

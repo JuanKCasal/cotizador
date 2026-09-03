@@ -49,6 +49,18 @@
   cursor: pointer; white-space: nowrap;
 }
 .adm-btn:disabled { opacity: .4; cursor: default; }
+
+/* La administración se usa con ratón, pero también desde una tableta: el
+   :hover no llega ahí y sin :active no hay confirmación de que el toque entró.
+   Publicar dos veces por creer que el primer toque no contó es justo lo que no
+   puede pasar en la pantalla que decide el precio de todas las cotizaciones. */
+.adm-btn, .adm-pestana, .adm-borrar {
+  transition: transform .1s cubic-bezier(.23,1,.32,1), filter .1s ease,
+              background-color .15s ease, border-color .15s ease;
+}
+.adm-btn:not(:disabled):active,
+.adm-borrar:active { transform: scale(.96); filter: brightness(.93); }
+.adm-pestana:active { filter: brightness(.85); }
 .adm-btn-borde  { border: 1.5px solid var(--tinta-70); background: transparent; color: var(--papel); }
 .adm-btn-claro  { background: var(--papel); color: var(--tinta); }
 .adm-btn-oscuro { border: 1.5px solid var(--tinta); background: transparent; color: var(--tinta); }

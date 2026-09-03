@@ -225,7 +225,7 @@
     $('btnAgregar').disabled = !estado.hotel;
 
     if (!estado.hotel) {
-      cont.innerHTML = '<p class="pista">Selecciona un hotel para elegir habitaciones.</p>';
+      cont.innerHTML = '<p class="t-pista pista">Selecciona un hotel para elegir habitaciones.</p>';
       $('tituloHabitaciones').textContent = 'Habitaciones';
       return;
     }
@@ -265,10 +265,10 @@
     h.push('<div class="hab-cabecera">');
     h.push(  '<span class="hab-idet">');
     h.push(    '<span class="hab-sigla">' + esc(estado.hotel) + '</span>');
-    h.push(    '<span class="hab-indice">Habitación ' + (i + 1) + '</span>');
+    h.push(    '<span class="t-titulo-tarjeta hab-indice">Habitación ' + (i + 1) + '</span>');
     h.push(  '</span>');
     h.push(  '<span class="hab-derecha">');
-    h.push(    '<span class="hab-precio pendiente" data-precio>$ —</span>');
+    h.push(    '<span class="t-precio hab-precio pendiente" data-precio>$ —</span>');
     if (estado.lineas.length > 1) {
       h.push(  '<button type="button" class="hab-quitar" data-act="quitar" ' +
                  'aria-label="Quitar esta habitación">×</button>');
@@ -289,10 +289,10 @@
 
     // En el celular el precio de la habitación va al pie: arriba, junto al
     // título, no cabe sin apretar el resto.
-    h.push('<div class="hab-pie">');
+    h.push('<div class="t-pista hab-pie">');
     h.push(  '<span data-noches>' + textoNoches() +
              (l.cantidad > 1 ? ' · ' + l.cantidad + ' habitaciones iguales' : '') + '</span>');
-    h.push(  '<span class="hab-pie-monto" data-precio>$ —</span>');
+    h.push(  '<span class="t-precio hab-pie-monto" data-precio>$ —</span>');
     h.push('</div>');
 
     return h.join('');
@@ -315,14 +315,14 @@
         op.push('<option value="' + e + '"' + (String(edad) === String(e) ? ' selected' : '') +
                 '>' + e + (e === 1 ? ' año' : ' años') + '</option>');
       }
-      h.push('<label class="campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
-               '<span class="campo-etiqueta">Niño ' + (i + 1) + '</span>' +
+      h.push('<label class="t-campo campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
+               '<span class="t-seccion campo-etiqueta">Niño ' + (i + 1) + '</span>' +
                '<select data-campo="edad" data-idx="' + i + '" ' +
                  'aria-label="Edad del niño ' + (i + 1) + '">' + op.join('') + '</select>' +
              '</label>');
     });
     h.push('</div>');
-    h.push('<p class="pista">' + esc(leyendaRangos()) + '</p>');
+    h.push('<p class="t-pista pista">' + esc(leyendaRangos()) + '</p>');
     return h.join('');
   }
 
@@ -339,7 +339,7 @@
       return '<option value="' + esc(v) + '"' + (v === valor ? ' selected' : '') + '>' +
              esc(f(v)) + '</option>';
     }).join('');
-    return '<label class="campo-select' + (clase ? ' ' + clase : '') + '">' +
+    return '<label class="t-campo campo-select' + (clase ? ' ' + clase : '') + '">' +
              '<select data-campo="' + campo + '" aria-label="' + esc(etiqueta) + '"' +
              (unica ? ' disabled' : '') + '>' + o + '</select>' +
            '</label>';
@@ -347,13 +347,13 @@
 
   function contador(campo, nombre, valor, min, max) {
     return '<div class="contador">' +
-             '<span class="contador-et">' + esc(nombre) + '</span>' +
+             '<span class="t-pista contador-et">' + esc(nombre) + '</span>' +
              '<span class="pasos" data-campo="' + campo + '" data-min="' + min +
                    '" data-max="' + max + '">' +
                '<button type="button" data-paso="-1"' +
                  (valor <= min ? ' disabled' : '') + ' aria-label="Restar ' + esc(nombre) +
                  '">−</button>' +
-               '<span class="cifra">' + valor + '</span>' +
+               '<span class="t-precio cifra">' + valor + '</span>' +
                '<button type="button" data-paso="1"' +
                  (valor >= max ? ' disabled' : '') + ' aria-label="Sumar ' + esc(nombre) +
                  '">+</button>' +
@@ -409,7 +409,7 @@
     }
     seccion.classList.remove('oculto');
     if (!aplicables.length) {
-      cont.innerHTML = '<p class="pista">No hay promociones vigentes para estas fechas.</p>';
+      cont.innerHTML = '<p class="t-pista pista">No hay promociones vigentes para estas fechas.</p>';
       return;
     }
     cont.innerHTML = aplicables.map(function (p) {
@@ -421,7 +421,7 @@
       return '<button type="button" class="chip" data-promo="' + esc(p.cod) + '"' +
                ' role="checkbox" aria-checked="' + sel + '">' +
                esc(p.nombre) +
-               '<span class="chip-detalle">' + esc(det) + '</span>' +
+               '<span class="t-pista chip-detalle">' + esc(det) + '</span>' +
              '</button>';
     }).join('');
   }
@@ -451,7 +451,7 @@
       return '<button type="button" class="chip" data-extra="' + esc(x.cod) + '"' +
                ' role="checkbox" aria-checked="' + sel + '">' +
                esc(x.nombre) +
-               '<span class="chip-detalle">' + esc(det) + '</span>' +
+               '<span class="t-pista chip-detalle">' + esc(det) + '</span>' +
              '</button>';
     }).join('');
   }
@@ -1353,8 +1353,8 @@
         op.push('<option value="' + e + '"' + (String(edad) === String(e) ? ' selected' : '') +
                 '>' + e + (e === 1 ? ' año' : ' años') + '</option>');
       }
-      return '<label class="campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
-               '<span class="campo-etiqueta">Niño ' + (i + 1) + '</span>' +
+      return '<label class="t-campo campo-caja campo-edad' + (edad === '' ? ' falta' : '') + '">' +
+               '<span class="t-seccion campo-etiqueta">Niño ' + (i + 1) + '</span>' +
                '<select data-edad="' + i + '">' + op.join('') + '</select>' +
              '</label>';
     }).join('');
