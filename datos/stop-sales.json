@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMAR",
+    "fecha_inicio": "2026-09-18",
+    "fecha_fin": "2026-09-20",
+    "motivo": "STOP SALE",
+    "activo": true
+  },
+  {
+    "hotel": "HIM",
+    "cod_hab": "DLX_VMON",
+    "fecha_inicio": "2026-09-18",
+    "fecha_fin": "2026-09-20",
+    "motivo": "STOP SALE",
+    "activo": true
+  }
+]
