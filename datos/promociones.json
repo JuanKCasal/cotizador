@@ -5,7 +5,7 @@
     "nombre": "Promoción niño gratis",
     "vig_inicio": "2026-09-16",
     "vig_fin": "2026-10-15",
-    "tipo": "DESCUENTO_PCT",
+    "tipo": "SUSTITUYE",
     "valor": 35,
     "min_noches": 0,
     "activo": true,
