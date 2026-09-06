@@ -1,5 +1,20 @@
 [
   {
+    "hotel": "HBK",
+    "cod_promo": "HBK_NIÑO",
+    "nombre": "Promoción niño gratis",
+    "vig_inicio": "2026-09-16",
+    "vig_fin": "2026-10-15",
+    "tipo": "DESCUENTO_MONTO",
+    "valor": 35,
+    "min_noches": 1,
+    "activo": true,
+    "cod_hab": "",
+    "dias_semana": "",
+    "mensaje": "",
+    "prioridad": ""
+  },
+  {
     "hotel": "WTC",
     "cod_promo": "HOSP_WTC",
     "nombre": "HOSPEDATE EN VALENCIA",
