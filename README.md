@@ -80,7 +80,7 @@ de objetos cuyas claves son las columnas.
 | `adicionales.json` | Lo que paga cada huésped por encima de lo que cubre la tarifa |
 | `stop-sales.json` | Cierres de venta por rango de noches |
 | `politica-ninos.json` | Rangos de edad, factor de pago y si ocupan plaza, por hotel |
-| `promociones.json` | Vigencia, tipo, valor, mínimo de noches, días de la semana |
+| `promociones.json` | Vigencia, tipo, valor, mínimo de noches, días de la semana, y para `MENOR_GRATIS` el rango de edad y el mínimo de adultos |
 | `cargos-fecha.json` | Cargos obligatorios en fechas concretas |
 | `extras.json` | Servicios adicionales que se pueden cobrar |
 | `plantillas.json` | El mensaje de WhatsApp de cada hotel, con marcadores |
@@ -214,6 +214,44 @@ ofrecer otra cosa.
   Cada una puede llevar un `mensaje` que se imprime debajo cuando aplica.
 - `DESCUENTO_MONTO` se resta de la **tarifa por persona**, así que un niño que paga el
   50% recibe la mitad del descuento. Ver §8.
+
+### Tipos de promoción
+
+Tres operan sobre la **tarifa por persona**. El cuarto no, y esa es la distinción que
+importa al cargar una campaña nueva.
+
+| Tipo | Qué hace | `valor` |
+|---|---|---|
+| `SUSTITUYE` | Reemplaza la tarifa por persona de la noche | La tarifa nueva |
+| `DESCUENTO_PCT` | Le quita un porcentaje | El porcentaje |
+| `DESCUENTO_MONTO` | Le quita un monto fijo | El monto |
+| `MENOR_GRATIS` | **No toca la tarifa: quita pax facturables** | Cuántos menores van gratis |
+
+`MENOR_GRATIS` existe porque "un niño gratis" no se puede expresar con los otros tres.
+En una Junior de Morrocoy con dos adultos y un niño de 6, la noche son 2,5 pax a $70 =
+$175, y el niño aporta $35 de esos. La promoción tiene que borrar ese aporte, no rebajar
+los $70. Cargada como `SUSTITUYE 35` —el único intento que parece funcionar— la noche
+cotiza `35 × 2,5 = $87,50`.
+
+Dos columnas propias, que no usa ningún otro tipo:
+
+- **`rango_menor`** nombra un `cod_rango` de `politica-ninos.json`, no unas edades. `NIN`
+  es 5-9 en Morrocoy y 5-10 en Isla Margarita y Playa el Agua: quien manda sobre las
+  edades es el hotel, así que la misma campaña sirve en los tres sin repetir nada.
+- **`min_adultos`** es el mínimo de adultos para que aplique. Vacío = sin mínimo.
+
+Y tres reglas que conviene tener presentes:
+
+- **El menor sigue contando en la ocupación.** Deja de pagar, no de existir: cuenta para
+  los máximos de la habitación y aparece en el mensaje al cliente. Un mensaje que dice
+  "2 adultos" cuando van tres es una reserva que falla en recepción.
+- **Uno por habitación**, no por cotización: se evalúa habitación por habitación.
+- **Si no puede aplicarse, no compite.** Sin menores del rango, o sin los adultos que
+  exige, la promoción no es candidata: no se anuncia como aplicada y deja pasar a otra
+  promoción de tarifa que sí sirva. Se puede marcar sin romper nada.
+
+En los hoteles de ciudad (`POR_HABITACION`) no tiene sentido —la tarifa no depende de la
+ocupación— y el validador lo reporta como error de carga.
 - **Cargos de fecha fija** aplican si la fecha pertenece a `[checkin, checkout)`. Si el
   cliente sale el 24 al mediodía, no paga la cena de Navidad.
 - Ante una noche sin tarifa: **error explícito con la fecha**, nunca un `0` ni un `NaN`.
@@ -254,16 +292,30 @@ allí sus campos dejan de pertenecer al documento principal: `getElementById` de
 ```bash
 cd verificacion
 npm install     # solo la primera vez (jsdom)
-npm test        # las dos suites
+npm test        # las cuatro suites
 ```
 
-- `_verificar.js` — **309 aserciones**. Corre `pruebas.js` contra el catálogo construido
+- `_verificar.js` — **335 aserciones**. Corre `pruebas.js` contra el catálogo construido
   desde `datos/`, y después un bloque propio para la lógica de cliente.
-- `_verificar_spa.js` — **95 chequeos**. Carga `index.html` en un DOM simulado con los
+- `_verificar_spa.js` — **131 chequeos**. Carga `index.html` en un DOM simulado con los
   assets embebidos y `datos/` servido por `fetch`.
+- `_verificar_admin.js` — **63 chequeos** sobre la pantalla de administración.
+- `_verificar_publicar.js` — **29 chequeos** de la publicación a GitHub, contra un
+  GitHub de mentira.
 
-Ambas leen los mismos archivos que descarga el navegador: lo que pasa en las pruebas es
+Todas leen los mismos archivos que descarga el navegador: lo que pasa en las pruebas es
 lo que va a pasar en producción.
+
+**El script encadena las cuatro con `&&`.** Si la primera falla, las de abajo no corren
+y su silencio parece aprobación. Ya pasó: un cierre de venta publicado desde la
+administración puso en rojo la suite de la interfaz y las de administración y publicación
+—92 chequeos— dejaron de ejecutarse sin que nadie lo notara. Al leer el resultado, cuenta
+que aparezcan las cuatro.
+
+Por eso los chequeos de interfaz **no dependen de la disponibilidad ni de una promoción
+vigente**: el arnés inyecta su propio cierre de venta y su propia promoción sobre los
+datos reales. Un dato que una asesora puede cambiar desde la administración no puede ser
+la premisa de una prueba.
 
 Lo que **no** cubren es la plataforma. Los cinco fallos históricos de este proyecto
 aparecieron en dispositivos y navegadores reales, no en jsdom. Un cambio en la interfaz

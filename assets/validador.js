@@ -192,8 +192,40 @@ var Validador = (function () {
 
     // --- 5. Promociones ------------------------------------------------------
     cat.promociones.forEach(function (p) {
-      if (['SUSTITUYE', 'DESCUENTO_PCT', 'DESCUENTO_MONTO'].indexOf(p.tipo) === -1) {
+      if (['SUSTITUYE', 'DESCUENTO_PCT', 'DESCUENTO_MONTO', 'MENOR_GRATIS'].indexOf(p.tipo) === -1) {
         add('ERROR', 'promociones', 'TIPO_INVALIDO', p.cod + ': tipo desconocido "' + p.tipo + '".');
+      }
+      if (p.tipo === 'MENOR_GRATIS') {
+        // Una MENOR_GRATIS mal cargada no da error al cotizar: simplemente no
+        // descuenta y nadie se entera. Por eso se revisa aqui pieza por pieza.
+        var rangos = cat.politica[p.hotel] || [];
+        var rg = null;
+        for (var ri = 0; ri < rangos.length; ri++) {
+          if (rangos[ri].cod === p.rangoMenor) rg = rangos[ri];
+        }
+        if (!p.rangoMenor) {
+          add('ERROR', 'promociones', 'RANGO_MENOR_VACIO',
+              p.cod + ': es MENOR_GRATIS y no dice a que rango de edad aplica.');
+        } else if (!rg) {
+          add('ERROR', 'promociones', 'RANGO_MENOR_INEXISTENTE',
+              p.cod + ': el rango "' + p.rangoMenor + '" no existe en la politica de ' +
+              p.hotel + '.');
+        } else if (rg.factor === 0) {
+          add('ADVERTENCIA', 'promociones', 'RANGO_MENOR_YA_GRATIS',
+              p.cod + ': el rango ' + p.rangoMenor + ' de ' + p.hotel + ' no paga (' +
+              rg.rango + '), asi que la promocion no descuenta nada.');
+        }
+        if (!(p.valor >= 1)) {
+          add('ERROR', 'promociones', 'VALOR_INVALIDO',
+              p.cod + ': en MENOR_GRATIS el valor es la cantidad de menores gratis y ' +
+              'debe ser 1 o mas (vale "' + p.valor + '").');
+        }
+        var hot = cat.hoteles[p.hotel];
+        if (hot && hot.modoTarifa === 'POR_HABITACION') {
+          add('ERROR', 'promociones', 'MENOR_GRATIS_POR_HABITACION',
+              p.cod + ': ' + p.hotel + ' cobra por habitacion, asi que quitar un pax ' +
+              'facturable no cambia el precio. Use un descuento sobre la tarifa.');
+        }
       }
       if (p.inicio > p.fin) {
         add('ERROR', 'promociones', 'RANGO_INVERTIDO', p.cod + ': vigencia invertida.');

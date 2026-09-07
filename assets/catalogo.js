@@ -220,6 +220,12 @@ var Catalogo = (function () {
           tipo: String(r.tipo).trim().toUpperCase(),
           valor: Number(r.valor),
           minNoches: Number(r.min_noches) || 0,
+          // MENOR_GRATIS nombra un rango de la politica de ninos, no unas
+          // edades: NIN es 5-9 en Morrocoy y 5-10 en Margarita, y quien manda
+          // sobre eso es el hotel. Asi la misma promocion sirve en los tres
+          // sin repetir edades en la fila.
+          rangoMenor: String(r.rango_menor || '').trim().toUpperCase(),
+          minAdultos: Number(r.min_adultos) || 0,
           diasSemana: parseDias(r.dias_semana),
           diasSemanaCrudo: r.dias_semana,
           mensaje: String(r.mensaje || '').trim(),

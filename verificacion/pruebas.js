@@ -72,6 +72,34 @@ function conStopSales_(cat, filas) {
  * volver a cargarlos en cualquier momento. Inyectarlos aqui mantiene esas
  * reglas cubiertas sin atarlas a un dato que hoy no existe.
  */
+/**
+ * Copia del catalogo con promociones inyectadas.
+ *
+ * Las promos reales tienen vigencia, y una vigencia se vence o la mueve una
+ * asesora desde la administracion. Atar la aritmetica de un tipo de promocion
+ * a la ventana de una promo real es firmar que la suite se pondra en rojo el
+ * dia que el negocio cambie de campana. Lo que se prueba aqui son las reglas
+ * del motor; que la fila real este bien cargada lo dice el validador.
+ */
+function conPromos_(cat, filas) {
+  var c = JSON.parse(JSON.stringify(cat));
+  c.promociones = c.promociones.concat(filas);
+  return c;
+}
+
+/** Fila MENOR_GRATIS ya normalizada, como la deja catalogo.js. */
+function menorGratis_(hotel, cambios) {
+  var p = {
+    hotel: hotel, cod: 'NINO_GRATIS_T', nombre: 'Nino gratis de prueba',
+    inicio: '2026-01-01', fin: '2027-12-31', codHab: 'TODAS',
+    tipo: 'MENOR_GRATIS', valor: 1, minNoches: 0,
+    rangoMenor: 'NIN', minAdultos: 2,
+    diasSemana: [], diasSemanaCrudo: '', mensaje: '', prioridad: 500
+  };
+  Object.keys(cambios || {}).forEach(function (k) { p[k] = cambios[k]; });
+  return p;
+}
+
 function conHab_(cat, clave, cambios) {
   var c = JSON.parse(JSON.stringify(cat));
   Object.keys(cambios).forEach(function (k) { c.habitaciones[clave][k] = cambios[k]; });
@@ -201,6 +229,96 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
   t.eq(r.lineas[0].detalleNoches[0].tarifa, 60, 'Tarifa 65 - 5 de descuento');
   t.eq(r.lineas[0].paxPagos, 1.5, 'pax = 1 + 0,5');
   t.eq(r.total, 110, '60 x 1,5 = 90, + 20 de suplemento single');
+
+  // ---- T09b. MENOR_GRATIS: un menor deja de pagar pero sigue ocupando ------
+  // El tipo existe porque los otros tres no podian expresarlo: SUSTITUYE,
+  // DESCUENTO_PCT y DESCUENTO_MONTO operan sobre la tarifa POR PERSONA, y "un
+  // nino gratis" no cambia la tarifa: quita un pax facturable. Cargada como
+  // SUSTITUYE 35, esta misma reserva cotizaba 35 x 2,5 = 87,50 la noche.
+  t.caso('T09b MENOR_GRATIS base');
+  var catNG = conPromos_(cat, [menorGratis_('HBK')]);
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_TPL', 2, [6])]));
+  t.eq(r.total, 525, 'Sin seleccionarla: 70 x 2,5 x 3 noches');
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_TPL', 2, [6])], ['NINO_GRATIS_T']));
+  t.ok(r.ok, 'Calculo sin errores', (r.errores || []).join('; '));
+  t.eq(r.lineas[0].detalleNoches[0].tarifa, 70, 'La tarifa por persona NO cambia');
+  t.eq(r.lineas[0].detalleNoches[0].neto, 140, 'La noche cobra 2 pax en vez de 2,5');
+  t.eq(r.total, 420, 'Total 140 x 3 noches');
+  t.eq(r.lineas[0].ocupacion, 3, 'El nino sigue contando en la ocupacion');
+  t.eq(r.promosAplicadas.length, 1, 'La promo se reporta aplicada');
+  t.eq(r.promosAplicadas[0].noches, 3, 'En las 3 noches');
+  txt = M.render(catNG, r, 'MZ');
+  t.contiene(txt, '2 adultos + 1 ni\u00F1o (6 a\u00F1os)',
+             'El mensaje sigue declarando al nino que no paga');
+
+  // ---- T09c. Cuando no aplica, no aplica y no lo dice ---------------------
+  // Y sobre todo: no compite. Si una MENOR_GRATIS inaplicable ganara por
+  // prioridad, taparia una promo de tarifa que si aplica y el cliente perderia
+  // un descuento al que tiene derecho.
+  t.caso('T09c MENOR_GRATIS que no aplica');
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_TPL', 2)], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas.length, 0, 'Sin menores no se aplica ni se anuncia');
+  t.eq(r.total, 420, 'Y el total es el de dos adultos, no uno rebajado');
+
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_TPL', 1, [6])], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas.length, 0, 'Con 1 adulto no llega al minimo de 2');
+  t.eq(r.total, 315, 'Total 70 x 1,5 x 3');
+
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_TPL', 2, [12])], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas.length, 0, 'Un nino de 12 esta en MAY, no en NIN');
+  t.eq(r.total, 630, 'Total 70 x 3 pax x 3');
+
+  // Un solo menor gratis, aunque haya dos elegibles.
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-23',
+                             [lin_('BAS_QUA', 2, [6, 7])], ['NINO_GRATIS_T']));
+  t.eq(r.lineas[0].detalleNoches[0].neto, 175, 'De 3 pax quedan 2,5: solo uno gratis');
+  t.eq(r.lineas[0].ocupacion, 4, 'Los dos ninos siguen ocupando');
+
+  // No tapa una promo de tarifa que si aplica: aqui MENOR_GRATIS no es
+  // candidata -no hay menores- y gana Residentes con prioridad mucho menor.
+  t.caso('T09d MENOR_GRATIS no tapa a otra promo');
+  r = M.calcular(conPromos_(cat, [menorGratis_('HIM')]),
+                 req_('HIM', '2026-09-14', '2026-09-15', [lin_('DLX_VMON', 2)],
+                      ['NINO_GRATIS_T', 'PRO_RESIDENTES']));
+  t.eq(r.promosAplicadas.length, 1, 'Se aplica una sola promocion');
+  t.eq(r.promosAplicadas[0].cod, 'PRO_RESIDENTES', 'Y es la que si podia aplicarse');
+  t.eq(r.total, 130, 'Tarifa 70 - 5, por 2 pax');
+
+  // ---- T09e. El rango lo pone el hotel, no el codigo ----------------------
+  // NIN es 5-9 en Morrocoy y 5-10 en Margarita. La fila de la promocion nombra
+  // el rango; las edades son de la politica de cada hotel. Es lo que permite
+  // que la misma campana sirva en los tres hoteles de playa sin repetir edades.
+  t.caso('T09e MENOR_GRATIS toma las edades de la politica');
+  r = M.calcular(conPromos_(cat, [menorGratis_('HIM')]),
+                 req_('HIM', '2026-09-21', '2026-09-23',
+                      [lin_('DLX_VMON', 2, [10])], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas.length, 1, 'En Margarita un nino de 10 entra en NIN');
+  t.eq(r.lineas[0].detalleNoches[0].neto, 110, 'Cobra 2 pax de 55');
+  r = M.calcular(catNG, req_('HBK', '2026-09-20', '2026-09-22',
+                             [lin_('BAS_TPL', 2, [10])], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas.length, 0, 'En Morrocoy el mismo nino de 10 ya es MAY');
+
+  // ---- T09f. Vigencia parcial y piso de pax facturables -------------------
+  t.caso('T09f MENOR_GRATIS parcial y minimo facturable');
+  r = M.calcular(conPromos_(cat, [menorGratis_('HBK', { fin: '2026-09-21' })]),
+                 req_('HBK', '2026-09-20', '2026-09-23',
+                      [lin_('BAS_TPL', 2, [6])], ['NINO_GRATIS_T']));
+  t.eq(r.promosAplicadas[0].noches, 2, 'Cubre 2 de las 3 noches');
+  t.eq(r.total, 455, 'Dos noches a 140 y una a 175');
+
+  // Un piso de facturacion se come el regalo antes que cobrar por debajo de el.
+  // Hoy ninguna habitacion carga pax_min_cobrados, pero el motor lo soporta.
+  var catPiso = conPromos_(conHab_(cat, 'HBK|BAS_TPL', { paxMinCobrados: 2.5 }),
+                           [menorGratis_('HBK')]);
+  r = M.calcular(catPiso, req_('HBK', '2026-09-20', '2026-09-21',
+                               [lin_('BAS_TPL', 2, [6])], ['NINO_GRATIS_T']));
+  t.eq(r.lineas[0].detalleNoches[0].neto, 175,
+       'Con minimo 2,5 el descuento no baja de ahi');
 
   // ---- T10. Cena de Navidad ------------------------------------------------
   t.caso('T10 Cena de Navidad');
@@ -692,5 +810,6 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ejecutarPruebas: ejecutarPruebas, req_: req_, lin_: lin_,
-                     conStopSales_: conStopSales_, conHab_: conHab_ };
+                     conStopSales_: conStopSales_, conHab_: conHab_,
+                     conPromos_: conPromos_, menorGratis_: menorGratis_ };
 }

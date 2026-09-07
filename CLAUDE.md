@@ -56,6 +56,14 @@ HANDOFF.md       Estado del proyecto y plan de trabajo.
 Dos claves de `config.json` no son datos de negocio sino de publicación:
 `REPO_GITHUB` y `RAMA_GITHUB`, que la administración usa para saber dónde escribir.
 
+`promociones.json` tiene cuatro tipos y **uno no se parece a los otros tres**:
+`SUSTITUYE`, `DESCUENTO_PCT` y `DESCUENTO_MONTO` operan sobre la tarifa por persona;
+`MENOR_GRATIS` no toca la tarifa, quita pax facturables. Sus dos columnas propias,
+`rango_menor` y `min_adultos`, están vacías en los demás tipos. `rango_menor` nombra un
+`cod_rango` de `politica-ninos.json`, **no unas edades**: `NIN` es 5-9 en Morrocoy y 5-10
+en Margarita, y esa asimetría es justo lo que hace que la misma campaña no necesite código
+por hotel. Ver `README.md` §4.
+
 `plantillas.json` lleva `{hotel, asesor, plantilla}`: cada asesor puede tener su propio
 juego de mensajes y quien no tenga uno cae al del hotel (`asesor` vacío). El mensaje sale
 firmado con iniciales, así que que lo firme uno y suene a otro es raro para el cliente
@@ -315,6 +323,23 @@ sobrescribas los archivos con datos generados sin comparar antes contra lo que h
 **El horizonte de tarifas se acaba.** Una cotización posterior a la última temporada
 cargada devuelve un error explícito: correcto, pero inútil para la asesora. El validador
 avisa cuando quedan menos de 120 días. Ver `HANDOFF.md` §3.
+
+**Una asesora puede poner las pruebas en rojo sin tocar código.** Los arneses leen
+`datos/` de verdad, y la administración escribe en `datos/` de verdad. El 18/09/2026 se
+publicaron dos cierres de venta en Isla Margarita y la suite de la interfaz —que cotizaba
+Margarita en esas fechas, escritas a mano— se puso en rojo. Peor: `npm test` encadena las
+cuatro suites con `&&`, así que las de administración y publicación, 92 chequeos, dejaron
+de correr sin que nadie lo notara.
+
+Por eso los chequeos de interfaz **inyectan su propio cierre de venta y su propia
+promoción** sobre los datos reales, en vez de depender de lo que haya cargado esa semana.
+La regla general: **un dato que una asesora puede cambiar desde la administración no puede
+ser la premisa de una prueba.** La disponibilidad y la vigencia de las campañas son los
+dos que se mueven; las tarifas también, y ahí los valores esperados están atados a
+propósito y documentados como tales al principio de `pruebas.js`.
+
+Y al leer el resultado de `npm test`, cuenta que aparezcan las cuatro suites. Con `&&`, el
+silencio de las de abajo parece aprobación.
 
 **La caché de GitHub Pages.** Sirve el CSS y el JS con caché, así que sin sellar los
 assets una asesora puede seguir con la versión vieja después de publicar. `npm run

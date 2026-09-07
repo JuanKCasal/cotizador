@@ -260,10 +260,15 @@
         { c: 'nombre', et: 'Nombre', w: '1.4fr', tipo: 'texto' },
         { c: 'vig_inicio', et: 'Desde', w: '.9fr', tipo: 'fecha' },
         { c: 'vig_fin', et: 'Hasta', w: '.9fr', tipo: 'fecha' },
-        { c: 'tipo', et: 'Tipo', w: '1fr',
-          tipo: 'lista', ops: ['SUSTITUYE', 'DESCUENTO_PCT', 'DESCUENTO_MONTO'] },
+        { c: 'tipo', et: 'Tipo', w: '1.2fr',
+          tipo: 'lista', ops: ['SUSTITUYE', 'DESCUENTO_PCT', 'DESCUENTO_MONTO', 'MENOR_GRATIS'] },
         { c: 'valor', et: 'Valor', w: '.6fr', tipo: 'num' },
-        { c: 'min_noches', et: 'Mín.', w: '.5fr', tipo: 'num' },
+        { c: 'min_noches', et: 'Mín. noches', w: '.6fr', tipo: 'num' },
+        // Solo las usa MENOR_GRATIS. Se dejan visibles en vez de aparecer y
+        // desaparecer segun el tipo: una columna que se mueve al cambiar un
+        // desplegable se lee como un error de la pantalla.
+        { c: 'rango_menor', et: 'Rango', w: '.6fr', tipo: 'texto' },
+        { c: 'min_adultos', et: 'Mín. adultos', w: '.6fr', tipo: 'num' },
         { c: 'activo', et: 'Activo', w: '.6fr', tipo: 'bool' }
       ]
     },

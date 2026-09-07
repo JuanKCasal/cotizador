@@ -156,7 +156,7 @@ var Motor = (function () {
     return mejor;
   }
 
-  function promoDe(cat, hotel, codHab, noche, nNoches, promosSel) {
+  function promoDe(cat, hotel, codHab, noche, nNoches, promosSel, comp) {
     if (!promosSel || !promosSel.length) return null;
     var mejor = null;
     for (var i = 0; i < cat.promociones.length; i++) {
@@ -167,6 +167,9 @@ var Motor = (function () {
       if (!F.enRango(noche, p.inicio, p.fin)) continue;
       if (p.minNoches && nNoches < p.minNoches) continue;
       if (p.diasSemana.length && p.diasSemana.indexOf(F.diaSemana(noche)) === -1) continue;
+      // Una MENOR_GRATIS que no descuenta nada no compite: si compitiera y
+      // ganara por prioridad, taparia una promo de tarifa que si aplica.
+      if (p.tipo === 'MENOR_GRATIS' && !paxGratisDe(cat, hotel, p, comp)) continue;
       if (!mejor || p.prioridad > mejor.prioridad) mejor = p;
     }
     return mejor;
@@ -200,7 +203,35 @@ var Motor = (function () {
     return null;
   }
 
-  function tarifaNoche(cat, hotel, codHab, noche, nNoches, promosSel, ocupacion) {
+  /**
+   * Pax facturables que quita una promo MENOR_GRATIS en esta habitacion.
+   *
+   * El tipo existe porque los otros tres no servian: SUSTITUYE, DESCUENTO_PCT
+   * y DESCUENTO_MONTO operan sobre la TARIFA POR PERSONA, y "un nino gratis"
+   * no cambia la tarifa: quita un pax facturable. Cargada como SUSTITUYE 35,
+   * una Junior de Morrocoy con dos adultos y un nino de 6 cotizaba 35 x 2,5 =
+   * 87,50 la noche en lugar de 140. El nino sigue contando en la ocupacion
+   * -los maximos de la habitacion y el mensaje al cliente no cambian porque el
+   * hotel lo regale-, solo deja de sumar su factor.
+   *
+   * Devuelve 0 cuando la promo no puede aprovecharse, y eso es lo que la saca
+   * de la competencia en promoDe: sin menores del rango o sin los adultos que
+   * exige no es candidata, otra promo de tarifa puede ganar, y el mensaje no
+   * anuncia una promocion que no descontó nada.
+   */
+  function paxGratisDe(cat, hotel, p, comp) {
+    if (!comp || !p.rangoMenor) return 0;
+    if (p.minAdultos && comp.adultos < p.minAdultos) return 0;
+    var rg = rangoPorCod(cat, hotel, p.rangoMenor);
+    if (!rg) return 0;
+    var hay = comp.porRango[p.rangoMenor] || 0;
+    if (!hay) return 0;
+    var cant = Math.min(Number(p.valor) || 0, hay);
+    if (cant <= 0) return 0;
+    return r2(cant * rg.factor);
+  }
+
+  function tarifaNoche(cat, hotel, codHab, noche, nNoches, promosSel, ocupacion, comp) {
     // La disponibilidad se revisa ANTES que el precio: si no hay cupo, el
     // precio es irrelevante y el mensaje debe hablar de cupo, no de tarifas.
     var ss = stopSaleDe(cat, hotel, codHab, noche);
@@ -232,8 +263,8 @@ var Motor = (function () {
         }
       }
     }
-    var promo = promoDe(cat, hotel, codHab, noche, nNoches, promosSel);
-    var final = base, origen = temp ? temp.nombre : null;
+    var promo = promoDe(cat, hotel, codHab, noche, nNoches, promosSel, comp);
+    var final = base, origen = temp ? temp.nombre : null, paxGratis = 0;
 
     if (promo) {
       if (promo.tipo === 'SUSTITUYE') {
@@ -244,6 +275,9 @@ var Motor = (function () {
         final = r2(base * (1 - promo.valor / 100));
       } else if (promo.tipo === 'DESCUENTO_MONTO') {
         final = Math.max(0, r2(base - promo.valor));
+      } else if (promo.tipo === 'MENOR_GRATIS') {
+        // No toca la tarifa. El descuento lo aplica calcular() sobre los pax.
+        paxGratis = paxGratisDe(cat, hotel, promo, comp);
       }
       origen = promo.nombre;
     }
@@ -258,7 +292,7 @@ var Motor = (function () {
       fecha: noche, tarifaBase: base, tarifaFinal: final, paxCubiertos: paxCubiertos,
       temporada: temp ? temp.cod : null, temporadaNombre: temp ? temp.nombre : null,
       promo: promo ? promo.cod : null, promoNombre: promo ? promo.nombre : null,
-      origen: origen
+      paxGratis: paxGratis, origen: origen
     };
   }
 
@@ -393,6 +427,12 @@ var Motor = (function () {
         if (m.rango.factor > 0) huespedesQuePagan += m.cant;
       });
 
+      // Quien va en la habitacion, por rango de la politica. Lo necesita
+      // MENOR_GRATIS: es la unica promo cuya aplicabilidad depende de la
+      // composicion y no solo de la fecha y la habitacion.
+      var comp = { adultos: adultos, porRango: {} };
+      detMenores.forEach(function (m) { comp.porRango[m.cod] = m.cant; });
+
       // Validaciones de ocupacion
       if (adultos < 1) res.errores.push(etq + ': debe haber al menos 1 adulto.');
       if (ocupacion > hab.ocupMaxTotal) {
@@ -441,7 +481,7 @@ var Motor = (function () {
       var detalleNoches = [], subLinea = 0, errLinea = false, adicTotales = [];
       for (var n = 0; n < noches.length; n++) {
         var tn = tarifaNoche(cat, req.hotel, L.cod_hab, noches[n], noches.length,
-                             promosSel, ocupacion);
+                             promosSel, ocupacion, comp);
         if (tn.error) {
           res.errores.push(tn.sinCupo ? hab.nombre + ': ' + tn.error
                                       : hab.nombre + ' - ' + tn.error);
@@ -464,9 +504,20 @@ var Motor = (function () {
         }
         if (adicDet.length) adicTotales = adicDet;
 
+        // Los pax de ESTA noche. Solo cambian con MENOR_GRATIS, que puede
+        // cubrir parte de la estadia como cualquier otra promocion. El minimo
+        // facturable se aplica despues del descuento: un piso es un piso, y si
+        // algun dia se carga uno se lo come antes que regalar por debajo de el.
+        var paxNoche = paxEfectivo;
+        if (tn.paxGratis) {
+          paxNoche = r2(paxPagos - tn.paxGratis);
+          if (hab.paxMinCobrados !== null && paxNoche < hab.paxMinCobrados) {
+            paxNoche = hab.paxMinCobrados;
+          }
+        }
         var neto = porHabitacion
           ? tn.tarifaFinal + adicNoche
-          : r2(tn.tarifaFinal * paxEfectivo + suplemento);
+          : r2(tn.tarifaFinal * paxNoche + suplemento);
         var costo = techo(neto);
         detalleNoches.push({
           fecha: tn.fecha, tarifa: tn.tarifaFinal, tarifaBase: tn.tarifaBase,

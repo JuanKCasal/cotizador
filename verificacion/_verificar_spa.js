@@ -66,10 +66,16 @@ const dom = new JSDOM(pagina, {
       }
       let datos = JSON.parse(fs.readFileSync(ruta, 'utf8'));
 
-      // El catalogo real no tiene cierres de venta cargados, asi que la
-      // interfaz de "no hay disponibilidad" no se ejercitaria nunca. Se agrega
-      // uno del arnes, en octubre, lejos de las fechas que usan los demas
-      // chequeos. El archivo real se sigue leyendo: si estuviera roto, se veria.
+      // Un cierre propio del arnes, en octubre, lejos de las fechas que usan
+      // los demas chequeos: sin el, la interfaz de "no hay disponibilidad" no
+      // se ejercitaria salvo por casualidad. Se AGREGA a los reales, no los
+      // reemplaza, porque el archivo real tiene que seguir pasando por
+      // catalogo.js: es ahi donde se atrapa una fecha fuera de ISO, que es el
+      // bug que dejo un cierre sin bloquear nada durante meses.
+      //
+      // Lo que ningun chequeo de abajo puede hacer es depender de la
+      // disponibilidad de un hotel en una fecha fija. Los cierres los publica
+      // una asesora desde la administracion, y los va a mover.
       if (nombre === 'stop-sales.json') {
         datos = datos.concat([{
           hotel: 'HBK', cod_hab: '', fecha_inicio: '2026-10-15',
@@ -77,6 +83,22 @@ const dom = new JSDOM(pagina, {
           activo: true
         }]);
       }
+      // Una promocion propia, del mismo tipo que la que se quiere probar y con
+      // vigencia larga. Las promos reales se vencen y las mueve una asesora: si
+      // los chequeos de la seccion de promociones dependieran de una campana
+      // viva, se apagarian solos el dia que termine. Prioridad alta para que el
+      // total cambie de forma predecible aunque coexista con una real.
+      if (nombre === 'promociones.json') {
+        datos = datos.concat([{
+          hotel: 'HBK', cod_promo: 'ARNES_NINO_GRATIS',
+          nombre: 'Un niño gratis (arnés)',
+          vig_inicio: '2026-01-01', vig_fin: '2027-12-31', cod_hab: 'TODAS',
+          tipo: 'MENOR_GRATIS', valor: 1, min_noches: 0,
+          rango_menor: 'NIN', min_adultos: 2,
+          dias_semana: '', mensaje: '', prioridad: 500, activo: true
+        }]);
+      }
+
       return Promise.resolve({
         ok: true, status: 200, json: () => Promise.resolve(datos)
       });
@@ -248,21 +270,68 @@ function paso(ficha, campo, signo) {
   eq(qa('#lineas .hab').length, 1, 'la × quita la habitacion');
 
   // ======================================================== 8. PROMOCIONES
-  click(q('#hoteles [data-hotel=HIM]'));
+  // Se queda en Morrocoy en vez de saltar a Margarita, y la razon merece
+  // quedar escrita: el 18/09/2026 una asesora cerro desde la administracion
+  // las dos unicas habitaciones de Margarita, justo en las fechas que usa este
+  // arnes. La suite se puso en rojo sin que nadie tocara una linea de codigo
+  // -y como el script encadena las suites con &&, las de administracion y
+  // publicacion, 92 chequeos, dejaron de correr sin que se notara-.
+  //
+  // La categoria se elige leyendo datos/, no escribiendo su nombre a mano:
+  // los nombres de habitacion los pone el negocio y cambian.
+  const habsTriples = JSON.parse(leerRaiz('datos/habitaciones.json'))
+    .filter((h) => h.hotel === 'HBK' && h.activo && h.ocup_max_total >= 3);
+  ok(habsTriples.length > 0, 'Morrocoy tiene alguna habitacion para tres');
+  setVal(q('#lineas [data-campo="categoria"]'), habsTriples[0].categoria);
+  await esperar(180);
+  paso(q('#lineas .hab'), 'menores', '1');
+  await esperar(140);
+  setVal(q('#lineas [data-campo="edad"]'), '6');
   await esperar(200);
-  ok(!$('seccionPromos').classList.contains('oculto'), 'Isla Margarita tiene promociones');
-  const promo = q('#promos .chip');
+  ok(!$('barraMonto').classList.contains('apagado'),
+     'dos adultos y un nino de 6 en una triple es una cotizacion valida',
+     $('barraMonto').textContent);
+
+  ok(!$('seccionPromos').classList.contains('oculto'),
+     'la seccion de promociones se muestra');
+  // Por codigo, no `#promos .chip`: con dos promociones vigentes el primer chip
+  // puede ser cualquiera, y el chequeo probaria una promo distinta cada vez que
+  // el negocio cargue una campana.
+  const promo = qa('#promos .chip').find((b) => b.dataset.promo === 'ARNES_NINO_GRATIS');
+  // Sin `if` alrededor de las aserciones: antes iban dentro de uno y, al vencer
+  // la promocion que se usaba, los cuatro chequeos se saltaban en silencio. La
+  // suite decia 118 en verde sin haber probado una sola promocion.
+  ok(!!promo, 'la promocion del arnes se ofrece para estas fechas');
   if (promo) {
     eq(promo.getAttribute('aria-checked'), 'false', 'la promocion arranca sin marcar');
+    ok(promo.textContent.indexOf('gratis') !== -1,
+       'el chip dice de que se trata', promo.textContent);
     const antes = $('barraMonto').textContent;
     click(promo);
-    await esperar(160);
-    eq(q('#promos .chip').getAttribute('aria-checked'), 'true', 'al pulsarla queda marcada');
+    await esperar(180);
+    eq(q('#promos [data-promo="ARNES_NINO_GRATIS"]').getAttribute('aria-checked'), 'true',
+       'al pulsarla queda marcada');
     ok($('barraMonto').textContent !== antes, 'y el total baja',
        antes + ' -> ' + $('barraMonto').textContent);
-    click(q('#promos .chip'));
-    await esperar(160);
+    ok($('burbuja').textContent.indexOf('PROMOCI\u00D3N APLICADA') !== -1,
+       'el mensaje al cliente la nombra');
+    // El menor gratis deja de pagar pero no desaparece: si el mensaje no lo
+    // menciona, el hotel recibe una reserva para dos y llegan tres.
+    ok($('burbuja').textContent.indexOf('2 adultos + 1 ni\u00F1o (6 a\u00F1os)') !== -1,
+       'y sigue declarando al nino, que ocupa aunque no pague',
+       $('burbuja').textContent.split('\n')[5]);
+    click(q('#promos [data-promo="ARNES_NINO_GRATIS"]'));
+    await esperar(180);
+    eq($('barraMonto').textContent, antes, 'al desmarcarla el total vuelve');
   }
+
+  // Se deshace el menor antes de seguir. Al cambiar de hotel la categoria
+  // vuelve a la primera -una doble- pero los ocupantes se conservan, asi que un
+  // menor olvidado aqui deja las secciones de mas abajo cotizando 3 huespedes
+  // en una habitacion para 2. Un chequeo que rompe a los siguientes es peor que
+  // un chequeo que falta.
+  paso(q('#lineas .hab'), 'menores', '-1');
+  await esperar(160);
 
   // ======================================================== 9. EXTRAS
   ok(!$('seccionExtras').classList.contains('oculto'), 'hay servicios adicionales');
@@ -604,6 +673,20 @@ function paso(ficha, campo, signo) {
      'y las reglas de ancho excluyen al mini explicitamente');
   ok(/\[hidden\] \{ display: none !important; \}/.test(hoja),
      'el atributo hidden pesa mas que cualquier maquetacion');
+
+  // En el telefono los cinco hoteles van en una fila, solo la sigla. jsdom no
+  // maqueta, asi que se comprueba en la hoja: que la fila sea de cinco y que
+  // esconder el nombre gane siempre, no por orden de cascada.
+  ok(/\.hoteles:not\(\.hoteles-mini\) \{[^}]*repeat\(5/.test(hoja),
+     'en movil los cinco hoteles caben en una fila');
+  ok(/\.hoteles:not\(\.hoteles-mini\) \.hotel-nombre \{ display: none !important; \}/
+       .test(hoja),
+     'y el nombre se esconde con !important, no reasignando display');
+
+  // El chip elegido invierte el fondo, asi que el detalle no puede quedarse con
+  // el color que le da .t-pista: sobre tinta llena da 1,9:1.
+  ok(/\.chip\[aria-checked="true"\] \.chip-detalle \{ color: inherit; \}/.test(hoja),
+     'el detalle del chip elegido hereda el color del chip');
 
   // ---------- Reporte ----------
   console.log('========================================');

@@ -357,8 +357,8 @@ select:focus-visible, input:focus-visible {
    abrir nada. */
 .hoteles {
   display: grid;
-  /* En el telefono, dos por fila: con tres el nombre se corta ('Isla
-     Marg...'), y la sigla identifica pero el nombre es lo que se lee. */
+  /* Reparto de respaldo. Los dos casos que existen de verdad -escritorio y
+     telefono- los declaran sus media queries mas abajo. */
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--e2);
 }
@@ -644,6 +644,13 @@ select:focus-visible, input:focus-visible {
   color: #9FAEC0; cursor: default;
 }
 .chip-detalle { opacity: .78; }
+/* El detalle usa .t-pista, que trae su color del sistema (--tinta-70). Sobre el
+   chip elegido -tinta llena, invertido- ese color queda en 1,9:1: ilegible, y
+   no se notaba porque los detalles eran de tres caracteres ("−$5 p/p"). Con
+   `inherit` toma el papel del chip y sube a 9,5:1.
+   Gana por especificidad, no por orden: .t-pista vive en tokens.css y el orden
+   de los archivos no es algo en lo que valga la pena confiar. */
+.chip[aria-checked="true"] .chip-detalle { color: inherit; }
 
 /* --------------------------------------------------------------- Registro */
 .fila-registro { display: flex; gap: var(--e2); }
@@ -904,16 +911,42 @@ select:focus-visible, input:focus-visible {
   /* El formulario respira por encima del asomo plegado. */
   .lienzo { padding-bottom: calc(var(--h-asomo) + var(--e4)); }
 
-  /* En el telefono la hoja aprieta por los lados, no por arriba: cada milimetro
-     horizontal que se quede el marco sale de los nombres de hotel, y con dos
-     botones por fila el margen para "Isla Margarita" es de pocos pixeles. */
+  /* En el telefono la hoja aprieta por los lados, no por arriba: el ancho es
+     el recurso escaso y los cinco botones de hotel se lo reparten. */
   body:not(.calc-suelta) .hoja { padding-left: var(--e2); padding-right: var(--e2); }
   .hoja > .seccion-cabecera,
   .hoja > .hoja-et,
   .hoja > .pista,
   .hoja > .fila-registro { padding-left: var(--e2); padding-right: var(--e2); }
-  .hoteles:not(.hoteles-mini) .hotel-op { padding: 0 var(--e2); }
-  .hoteles:not(.hoteles-mini) { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  /* En el telefono, solo la sigla y su color. El nombre corto obligaba a dos
+     filas de botones, y la segunda fila empuja las fechas fuera de la primera
+     pantalla -que es donde empieza cada cotizacion-. La sigla con el acento del
+     hotel identifica igual: es la misma pareja que se usa en el chip de la
+     cabecera y en la ficha de cada habitacion, y el nombre completo aparece en
+     ese chip en cuanto se elige, asi que no se pierde de vista.
+     Es el mismo tratamiento del mini, por la misma razon de ancho.
+
+     El nombre se esconde con !important y no reasignando display: una utilidad
+     que esconde tiene que ganar siempre, y .hotel-nombre no declara el suyo.
+     Ver arriba las dos trampas de cascada que costaron caro. */
+  .hoteles:not(.hoteles-mini) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--e1);
+  }
+  .hoteles:not(.hoteles-mini) .hotel-op {
+    min-height: var(--h-campo);
+    padding: 0;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .hoteles:not(.hoteles-mini) .hotel-nombre { display: none !important; }
+  /* La sigla llena el boton, asi que comparte su curva: con esquinas rectas
+     dentro de un boton redondeado se ven dos formas donde hay una. */
+  .hoteles:not(.hoteles-mini) .hotel-sigla {
+    min-width: 0; width: 100%; height: 100%;
+    border-radius: inherit;
+    font-size: 12px;
+  }
 
   /* Un solo boton de copiar: el de la barra. El del encabezado se repetiria. */
   #btnCopiar { display: none; }

@@ -416,6 +416,7 @@
       var sel = estado.promos.indexOf(p.cod) !== -1;
       var det = p.tipo === 'SUSTITUYE' ? 'tarifa $' + p.valor + ' p/p'
               : p.tipo === 'DESCUENTO_PCT' ? '−' + p.valor + '%'
+              : p.tipo === 'MENOR_GRATIS' ? detalleMenorGratis(p)
               : '−$' + p.valor + ' p/p';
       if (p.minNoches > 1) det += ' · mín. ' + p.minNoches + ' noches';
       return '<button type="button" class="chip" data-promo="' + esc(p.cod) + '"' +
@@ -424,6 +425,28 @@
                '<span class="t-pista chip-detalle">' + esc(det) + '</span>' +
              '</button>';
     }).join('');
+  }
+
+  /**
+   * El detalle de una MENOR_GRATIS en el chip.
+   *
+   * Las edades no se escriben aqui: salen de la politica del hotel, que es
+   * distinta en cada uno (5-9 en Morrocoy, 5-10 en Margarita). Decirlas importa
+   * porque la asesora las necesita para saber si el nino que le preguntan
+   * entra, y el chip es donde esta mirando.
+   */
+  function detalleMenorGratis(p) {
+    var rangos = (CAT.politica && CAT.politica[p.hotel]) || [];
+    var rg = null;
+    for (var i = 0; i < rangos.length; i++) {
+      if (rangos[i].cod === p.rangoMenor) rg = rangos[i];
+    }
+    var n = Number(p.valor) || 1;
+    var et = rg ? (n === 1 ? rg.sing : rg.plur) : (n === 1 ? 'menor' : 'menores');
+    var det = n + ' ' + et + ' gratis';
+    if (rg && rg.rango) det += ' (' + rg.rango + ')';
+    if (p.minAdultos) det += ' · desde ' + p.minAdultos + ' adultos';
+    return det;
   }
 
   /**

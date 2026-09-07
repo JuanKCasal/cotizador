@@ -5,7 +5,7 @@ Estado del proyecto. Lee esto y `CLAUDE.md` antes de tocar nada.
 **Repo:** https://github.com/JuanKCasal/cotizador (público)
 **Sitio:** https://juankcasal.github.io/cotizador/
 **Local:** `C:\dev\cotizador`
-**Última actualización:** 03/09/2026
+**Última actualización:** 07/09/2026
 
 ---
 
@@ -23,8 +23,8 @@ diseño: una mano, de pie, con prisa.
 | Hoteles activos | Los cinco: HBK, HIM, HPA, WTC, HMC |
 | Asesores | MZ (Marla Zuluaga), LR (Lenin Rodrigues) |
 | Suites de prueba | 4 · `npm test` |
-| Aserciones del motor | 309 |
-| Chequeos del cotizador | 118 |
+| Aserciones del motor | 335 |
+| Chequeos del cotizador | 131 |
 | Chequeos de administración | 63 |
 | Chequeos de publicación | 29 |
 | Validador sobre el catálogo real | 0 errores, 2 advertencias |
@@ -32,7 +32,7 @@ diseño: una mano, de pie, con prisa.
 
 Las dos advertencias son ese horizonte. No son un fallo del código.
 
-### Las tres cosas que un recién llegado suele romper
+### Las cuatro cosas que un recién llegado suele romper
 
 1. **Publicar sin sellar los assets.** `cd verificacion && npm run versionar` antes de
    comitear, o la asesora sigue viendo la versión vieja.
@@ -41,6 +41,9 @@ Las dos advertencias son ese horizonte. No son un fallo del código.
 3. **Asumir que el mini cotizador es "la app en pequeño".** Vive en una ventana de 380 px,
    así que las media queries de móvil se le aplican dentro aunque el monitor sea enorme.
    Ver `CLAUDE.md` §Trampas.
+4. **Leer el resultado de `npm test` por la última línea.** Las cuatro suites van
+   encadenadas con `&&`: si la primera falla, las otras no corren y no dicen nada. Cuenta
+   que aparezcan las cuatro.
 
 ---
 
@@ -77,11 +80,21 @@ En orden de urgencia real, no de tamaño.
 termina el **20/12/2026**. Cotizar el 31/12 en esos hoteles **falla hoy**, no en 2027.
 También faltan las temporadas de 2027 de los hoteles de playa.
 
-### Cargar los cierres de venta reales
+### ~~Cargar los cierres de venta reales~~ — hecho, y con una lección
 
-`stop-sales.json` está vacío. El motor, el validador y la interfaz están hechos y
-probados de punta a punta: falta que alguien cargue los cierres. Un `cod_hab` vacío
-cierra el hotel completo; con código, solo esa habitación.
+`stop-sales.json` ya tiene cierres reales: las dos habitaciones de Isla Margarita, del
+18 al 20/09/2026, publicados desde la administración. El camino completo funcionó sin que
+pasara por un programador, que era el objetivo.
+
+**Y puso `npm test` en rojo.** El arnés de la interfaz cotizaba Margarita del 20 al 23/09
+con fechas escritas a mano, así que la primera noche pasó a estar sin cupo. Como el script
+encadena las suites con `&&`, las de administración y publicación —92 chequeos— dejaron de
+correr. Ya está arreglado: los chequeos de interfaz inyectan su propio cierre y su propia
+promoción, y no dependen de lo que haya en el catálogo esa semana.
+
+La lección, que no estaba escrita: **una asesora puede poner las pruebas en rojo desde la
+administración, sin tocar código.** Cualquier chequeo nuevo que fije una fecha y un hotel
+está firmando lo mismo para más adelante.
 
 ### Probar en el teléfono de Marla
 
@@ -96,8 +109,9 @@ ninguna suite los habría visto. Lo que hace falta comprobar ahí:
 
 ### Revisar el README
 
-Sigue describiendo la arquitectura de Apps Script y dice "20 tipos de habitación" donde
-el catálogo carga 19.
+Ya no describe Apps Script y las cuentas de habitaciones y temporadas coinciden con
+`datos/` (21 y 14). Lo que queda es leerlo entero de una vez: es el documento que más ha
+acumulado parches.
 
 ### Lo que se decidió NO hacer
 
@@ -118,6 +132,13 @@ Ninguno bloquea el uso. **No los resuelvas por tu cuenta.**
    cabeza sin importar el factor, hay que cambiarlo en el motor.
 2. **Promoción para Residentes:** no existe en Morrocoy y venció el **15/09/2026**.
    Confirmar si se renueva o se borra.
+
+2b. **Prioridad entre "niño gratis" y Residentes.** Hoy no se solapan —Residentes acaba
+   el 15/09 y niño gratis arranca el 16/09—, así que la prioridad no decide nada. Se
+   cargó `110` en niño gratis contra el `100` de Residentes, es decir: si algún día se
+   solapan gana niño gratis, que es la que más descuenta. Si el negocio prefiere lo
+   contrario, es cambiar un número. **No se acumulan**, por decisión del negocio: se
+   aplica una sola, la de mayor prioridad.
 3. **1 adulto + 1 niño de 10–17 años** queda sin suplemento. Son $20–30 por noche si
    comercialmente deciden lo contrario.
 4. **La King de Maracay admite hasta 4 huéspedes por decisión del programador, no del
@@ -217,6 +238,72 @@ Tres roturas del mismo tipo en un solo día: **una regla que debía mandar, perd
 orden de cascada en vez de ganar por especificidad.** `.solo-pc` contra `.btn-cabecera`,
 el atributo `hidden` contra `display: grid`, y las reglas del mini contra las de móvil.
 Están documentadas juntas a propósito, porque va a volver a pasar.
+
+---
+
+## 8. Sesión del 07/09/2026
+
+### Tipo de promoción nuevo: `MENOR_GRATIS`
+
+La campaña "un niño gratis" no se podía expresar con los tres tipos que había: los tres
+operan sobre la tarifa por persona y esta promoción quita un pax facturable. Estaba
+cargada como `SUSTITUYE 35`, que en la Junior de Morrocoy con dos adultos y un niño de 6
+cotizaba **$87,50 la noche en lugar de $140** —$52,50 por debajo del precio correcto—, y
+entraba en vigencia el 16/09. Se corrigió antes de que aplicara.
+
+El detalle del tipo está en `README.md` §4. Lo que importa de la decisión:
+
+- **El rango de edad lo nombra la fila, no el código.** `rango_menor: NIN` y las edades
+  las pone `politica-ninos.json` de cada hotel: 5-9 en Morrocoy, 5-10 en Margarita y
+  Playa el Agua. La misma campaña sirve en los tres sin una línea de código por hotel.
+- **El menor sigue contando en la ocupación** y sigue apareciendo en el mensaje. Deja de
+  pagar, no de existir.
+- **Si no puede aplicarse, no compite.** No se anuncia y deja pasar a otra promoción de
+  tarifa. La asesora puede marcarla sin romper nada.
+- Uno por habitación. Mínimo 2 adultos (`min_adultos`). No se acumula con otra promoción.
+
+Cargada en los tres hoteles de playa como `PRO_NINO_GRATIS`, del 16/09 al 15/10/2026.
+**Antes se llamaba `HBK_NIÑO` y solo existía en Morrocoy**: se unificó el código, como
+`PRO_RESIDENTES`, para que una campaña sea una fila por hotel y no un código por hotel.
+
+### Los cinco hoteles en una fila en el teléfono
+
+Solo la sigla y su color, como en el mini y por la misma razón de ancho: el nombre corto
+obligaba a dos filas y la segunda empuja las fechas fuera de la primera pantalla. Medido
+en Chromium a 390 px: cinco botones de 65×48, una fila, sin desborde horizontal. El nombre
+completo sigue a la vista en el chip de la cabecera en cuanto se elige el hotel.
+
+### Dos cosas que estaban rotas en `main` y no se sabía
+
+- **`npm test` estaba en rojo**, por un cierre de venta publicado desde la
+  administración. Ver §3. Se arregló haciendo que los chequeos de interfaz inyecten su
+  propio cierre y su propia promoción en vez de depender del catálogo de esa semana.
+- **El detalle de un chip elegido era ilegible: 1,9:1.** Usa `.t-pista`, que trae su
+  color del sistema, y sobre el chip invertido —tinta llena— ese color desaparece. No se
+  notaba porque los detalles eran de tres caracteres (`−$5 p/p`); con una etiqueta larga
+  quedó a la vista. Ahora hereda el papel del chip: 9,5:1.
+
+Los dos son del mismo tipo que las tres roturas del 03/09: **una regla que debía mandar,
+perdiendo por orden de cascada o por una premisa que se movió debajo.**
+
+### Lo que queda pendiente de esta sesión
+
+- **Probarlo en el teléfono de Marla.** Chromium a 390 px no es un teléfono: la fila de
+  siglas y el chip de la promoción son lo que hay que mirar.
+- **Nada que hacer con los finales de línea, y la razón vale la pena.** Durante la
+  sesión pareció que ocho archivos estaban modificados sin un solo cambio real, por CRLF
+  contra LF. Era un falso positivo: se leyó el repositorio con el git del puente
+  —Linux, donde `core.autocrlf` no está puesta— y no con el de Windows, donde el
+  instalador deja `core.autocrlf=true` en la configuración del sistema. Con esa
+  configuración un árbol de trabajo en CRLF **está limpio**: git normaliza a LF al hacer
+  `add`, y el repositorio guarda LF, que es exactamente lo que se quiere.
+  **No hace falta `.gitattributes`**, y añadir `eol=lf` renormalizaría los 48 archivos
+  del repo para nada.
+  La lección: **el git del puente no es el git de esta máquina.** Comparten los archivos
+  pero no la configuración, así que el estado del repositorio se diagnostica desde
+  PowerShell. Es el mismo patrón de siempre en este proyecto —una premisa que se mira
+  con la herramienta equivocada—, solo que esta vez el equivocado fue el diagnóstico y no
+  el código.
 
 ---
 
