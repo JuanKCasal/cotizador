@@ -1,5 +1,37 @@
 [
   {
+    "hotel": "HPA",
+    "cod_hab": "HOL_GARD",
+    "fecha_inicio": "2026-09-25",
+    "fecha_fin": "2026-09-26",
+    "motivo": "STOP SALE",
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "HOL_POOL",
+    "fecha_inicio": "2026-09-25",
+    "fecha_fin": "2026-09-26",
+    "motivo": "STOP SALE",
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_GARD",
+    "fecha_inicio": "2026-09-25",
+    "fecha_fin": "2026-09-26",
+    "motivo": "STOP SALE",
+    "activo": true
+  },
+  {
+    "hotel": "HPA",
+    "cod_hab": "PRE_POOL",
+    "fecha_inicio": "2026-09-25",
+    "fecha_fin": "2026-09-26",
+    "motivo": "STOP SALE",
+    "activo": true
+  },
+  {
     "hotel": "HIM",
     "cod_hab": "DLX_VMAR",
     "fecha_inicio": "2026-09-18",
