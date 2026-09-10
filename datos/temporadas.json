@@ -20,15 +20,15 @@
     "cod_temp": "NAV_26",
     "nombre": "Navidad 2026",
     "fecha_inicio": "2026-12-21",
-    "fecha_fin": "2026-12-27",
+    "fecha_fin": "2026-12-26",
     "prioridad": 50
   },
   {
     "hotel": "HBK",
     "cod_temp": "FIN_26",
     "nombre": "Fin de año 2026-27",
-    "fecha_inicio": "2026-12-28",
-    "fecha_fin": "2027-01-12",
+    "fecha_inicio": "2026-12-27",
+    "fecha_fin": "2027-01-11",
     "prioridad": 50
   },
   {
