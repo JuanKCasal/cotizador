@@ -26,6 +26,22 @@
   var $ = function (id) { return document.getElementById(id); };
 
   /**
+   * La fecha de hoy en la zona del equipo, no en UTC.
+   *
+   * toISOString() devuelve la fecha UTC: pasadas las 8 de la noche en
+   * Venezuela (UTC-4) ya es el dia siguiente alla, y una cotizacion armada esa
+   * noche saldria fechada un dia adelante. El motor no calcula esto a
+   * proposito, asi que le toca a la interfaz, que es la unica que sabe donde
+   * esta el equipo.
+   */
+  function hoyLocalISO() {
+    var d = new Date();
+    var mm = d.getMonth() + 1, dd = d.getDate();
+    return d.getFullYear() + '-' + (mm < 10 ? '0' : '') + mm +
+           '-' + (dd < 10 ? '0' : '') + dd;
+  }
+
+  /**
    * Asigna una fecha verificando que el navegador la haya aceptado.
    *
    * Algunos selectores nativos moviles rechazan en silencio un valor que
@@ -568,7 +584,8 @@
     try {
       TEXTO = Motor.render(CAT, res, {
         asesorIniciales: estado.asesor,
-        cliente: estado.cliente
+        cliente: estado.cliente,
+        fechaCotizacion: hoyLocalISO()
       });
     } catch (e) {
       TEXTO = '';
@@ -581,7 +598,7 @@
   function avisoFechas() {
     pintarNoches();
     var p = $('pistaFechas');
-    var hoy = new Date().toISOString().slice(0, 10);
+    var hoy = hoyLocalISO();
     if (estado.checkin && estado.checkout && estado.checkout <= estado.checkin) {
       p.textContent = 'La salida debe ser posterior a la entrada.';
       p.classList.add('alerta');
@@ -1597,7 +1614,9 @@
     if (!calcRes) return;
     var texto;
     try {
-      texto = Motor.render(CAT, calcRes, { asesorIniciales: estado.asesor, cliente: '' });
+      texto = Motor.render(CAT, calcRes, {
+        asesorIniciales: estado.asesor, cliente: '', fechaCotizacion: hoyLocalISO()
+      });
     } catch (err) {
       aviso('No se pudo armar el mensaje', 'error');
       return;

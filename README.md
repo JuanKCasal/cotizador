@@ -67,7 +67,7 @@ Están en `CLAUDE.md` con su explicación. En resumen:
 
 ## 3. Modelo de datos
 
-Once archivos en `datos/`. `config.json` es un objeto clave→valor; el resto son arreglos
+Doce archivos en `datos/`. `config.json` es un objeto clave→valor; el resto son arreglos
 de objetos cuyas claves son las columnas.
 
 | Archivo | Qué guarda |
@@ -83,7 +83,8 @@ de objetos cuyas claves son las columnas.
 | `promociones.json` | Vigencia, tipo, valor, mínimo de noches, días de la semana, y para `MENOR_GRATIS` el rango de edad y el mínimo de adultos |
 | `cargos-fecha.json` | Cargos obligatorios en fechas concretas |
 | `extras.json` | Servicios adicionales que se pueden cobrar |
-| `plantillas.json` | El mensaje de WhatsApp de cada hotel, con marcadores |
+| `plantillas.json` | El mensaje de WhatsApp, con marcadores: una fila por hotel y, opcionalmente, una por hotel y asesora |
+| `asesoras.json` | Quién firma: iniciales, nombre y si está activa |
 
 ---
 
@@ -214,6 +215,22 @@ ofrecer otra cosa.
   Cada una puede llevar un `mensaje` que se imprime debajo cuando aplica.
 - `DESCUENTO_MONTO` se resta de la **tarifa por persona**, así que un niño que paga el
   50% recibe la mitad del descuento. Ver §8.
+
+### El mensaje y sus marcadores
+
+`plantillas.json` guarda el texto; el motor sustituye los marcadores `{{...}}`. La lista
+completa la muestra la pestaña **Mensajes** de la administración, que la lee de
+`Motor.MARCADORES`: no hay una segunda copia que se pueda quedar vieja.
+
+Cada asesora puede tener su propio juego de mensajes; quien no lo tenga usa el del hotel
+(la fila con `asesor` vacío). Hoy tienen juego propio Lenin (`LR`) y Luisana (`LV`).
+
+**`{{FECHA_COTIZACION}}` lo pone quien llama al motor, no el motor.** Es el único
+marcador cuyo valor no sale del catálogo ni del cálculo: el cotizador le pasa la fecha
+de hoy en la zona del equipo, porque un `new Date()` dentro del motor volvería a meter
+la zona horaria en el único archivo que se cuidó de no tocarla. Si llega vacío el
+marcador sale vacío; si llega con un formato que no es ISO, el render **falla** en vez
+de imprimir una fecha inventada.
 
 ### Tipos de promoción
 

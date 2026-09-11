@@ -822,6 +822,22 @@ var Motor = (function () {
     return out.join('\n');
   }
 
+  /**
+   * La fecha del dia en que se cotiza, con el formato del hotel.
+   *
+   * La pone quien llama, no este archivo: un new Date() aqui volveria a meter
+   * la zona horaria en el unico modulo que se cuido de no tocarla, y ademas
+   * haria irrepetible el render en los arneses. Si no viene, el marcador sale
+   * vacio; si viene mal, se rompe con un mensaje claro en vez de imprimir una
+   * fecha inventada, que es la leccion del bug de los cierres de venta.
+   */
+  function fechaCotizacion(datos, formato) {
+    var iso = (datos && datos.fechaCotizacion) || '';
+    if (!iso) return '';
+    if (!F.esISO(iso)) throw new Error('fechaCotizacion debe ser ISO YYYY-MM-DD, llego: ' + iso);
+    return F.fmt(iso, formato);
+  }
+
   function render(cat, res, datos) {
     if (!res.ok) throw new Error('No se puede renderizar una cotizacion con errores.');
     var h = cat.hoteles[res.hotel];
@@ -856,7 +872,8 @@ var Motor = (function () {
       DEPOSITO: fmtMoney(cat, h.deposito),
       LABEL_DEPOSITO: h.labelDeposito,
       HORA_LATE: h.horaLate,
-      MENSAJE_CASHEA: (cat.config && cat.config.MENSAJE_CASHEA) || ''
+      MENSAJE_CASHEA: (cat.config && cat.config.MENSAJE_CASHEA) || '',
+      FECHA_COTIZACION: fechaCotizacion(datos, ff)
     };
 
     var texto = plantilla.replace(/\{\{(\w+)\}\}/g, function (m, clave) {
@@ -877,7 +894,7 @@ var Motor = (function () {
   var MARCADORES = ['HOTEL_NOMBRE','EMOJIS','ASESOR_INICIALES','CLIENTE','HORA_IN','HORA_OUT',
     'FECHA_IN','FECHA_OUT','BLOQUE_HABITACIONES','BLOQUE_CARGOS','BLOQUE_EXTRAS','BLOQUE_PROMO',
     'TOTAL','SUBTOTAL','DIAS','NOCHES','DIAS_N','NOCHES_N','PALABRA_NOCHES','PALABRA_DIAS',
-    'DEPOSITO','LABEL_DEPOSITO','HORA_LATE','MENSAJE_CASHEA'];
+    'DEPOSITO','LABEL_DEPOSITO','HORA_LATE','MENSAJE_CASHEA','FECHA_COTIZACION'];
 
   return {
     Fechas: F,

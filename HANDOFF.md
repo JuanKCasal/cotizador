@@ -5,7 +5,7 @@ Estado del proyecto. Lee esto y `CLAUDE.md` antes de tocar nada.
 **Repo:** https://github.com/JuanKCasal/cotizador (público)
 **Sitio:** https://juankcasal.github.io/cotizador/
 **Local:** `C:\dev\cotizador`
-**Última actualización:** 07/09/2026
+**Última actualización:** 11/09/2026
 
 ---
 
@@ -21,9 +21,9 @@ diseño: una mano, de pie, con prisa.
 | | |
 |---|---|
 | Hoteles activos | Los cinco: HBK, HIM, HPA, WTC, HMC |
-| Asesores | MZ (Marla Zuluaga), LR (Lenin Rodrigues) |
+| Asesores | MZ (Marla Zuluaga), LR (Lenin Rodrigues), LV (Luisana Villalobos) |
 | Suites de prueba | 4 · `npm test` |
-| Aserciones del motor | 335 |
+| Aserciones del motor | 384 |
 | Chequeos del cotizador | 131 |
 | Chequeos de administración | 63 |
 | Chequeos de publicación | 29 |
@@ -304,6 +304,84 @@ perdiendo por orden de cascada o por una premisa que se movió debajo.**
   PowerShell. Es el mismo patrón de siempre en este proyecto —una premisa que se mira
   con la herramienta equivocada—, solo que esta vez el equivocado fue el diagnóstico y no
   el código.
+
+---
+
+## 9. Sesión del 11/09/2026
+
+### Luisana Villalobos (`LV`), con juego propio en los cinco hoteles
+
+Fila en `asesoras.json` y cinco en `plantillas.json`. `asesoras.json` **no se edita
+desde la administración** —es estructural, como hoteles y habitaciones—, así que un alta
+sigue siendo un commit; sus mensajes, en cambio, ya los puede corregir ella misma desde
+la pestaña Mensajes.
+
+Su formato venía en un Word y se reprodujo, con tres cosas que **no** se copiaron tal
+cual, y conviene saber por qué:
+
+- **Los precios no se escribieron en el texto donde ya existen como dato.** El
+  brazalete, el early y el late de los hoteles de playa salen por `{{BLOQUE_EXTRAS}}`
+  desde `extras.json`, así que el día que cambie un monto no hay que tocar cinco
+  plantillas. En Valencia y Maracay sí quedaron escritos a mano, porque esos dos hoteles
+  no tienen filas en `extras.json`. Ver "lo que queda".
+- **"Promoción Mes Septiembre" y "Super Hot Sale" no entraron.** Un mes escrito a mano
+  queda viejo el día 1 y nadie se enteraría. Las campañas salen por `{{BLOQUE_PROMO}}`,
+  que imprime la que de verdad se aplicó y las noches que cubre.
+- **"IVA incluido" tampoco.** Invariante 6: ninguna tarifa lleva impuestos encima y el
+  mensaje no los menciona en ningún hotel. Hay un chequeo que lo vigila en las cinco
+  plantillas, no solo en las de ciudad.
+
+La política de niños quedó como texto literal en sus plantillas, por decisión explícita.
+**Tiene una consecuencia:** si el negocio cambia un rango en `politica-ninos.json`, su
+mensaje sigue diciendo el viejo y ninguna prueba lo nota. Si algún día molesta, el
+arreglo es un bloque más generado desde los datos, como `{{BLOQUE_EXTRAS}}`.
+
+### Marcador nuevo: `{{FECHA_COTIZACION}}`
+
+Su formato lleva la fecha del día y no había marcador. **Lo pasa la interfaz, no lo
+calcula el motor:** `motor.js` sigue sin llamar a `new Date()` fuera de
+`Fechas.sumarDias()`, y el render sigue siendo repetible en los arneses. Si llega vacío
+sale vacío; si llega fuera de ISO **rompe**, que es la lección del bug de los cierres de
+venta. Detalle en `README.md` §4.
+
+De paso apareció un desfase real: `new Date().toISOString()` da la fecha **UTC**, así
+que pasadas las 8 de la noche en Venezuela ya es mañana allá. La cotización habría
+salido fechada al día siguiente, y el aviso de "la fecha de entrada ya pasó" se adelantaba
+esas cuatro horas. Ahora `logica.js` tiene `hoyLocalISO()` y los dos usos pasan por ahí.
+**`admin.js` todavía usa la fecha UTC** para el horizonte del validador, donde un día de
+diferencia no cambia nada; si alguna vez importa, es el mismo arreglo.
+
+### La promo de niño gratis, extendida
+
+`PRO_NINO_GRATIS` hasta el **20/12/2026** en Isla Margarita y Playa el Agua. En Morrocoy
+se queda en el **15/10/2026**, que es donde ya estaba. Verificado renderizando el 01/12
+en los dos hoteles de playa: la promoción aplica y se anuncia.
+
+### Lo que queda de esta sesión
+
+Cuatro hallazgos de datos. **Ninguno es del código y ninguno lo decido yo:**
+
+1. **`politica-ninos.json` de Maracay se contradice.** Las edades dicen `INF 0-2`,
+   `NIN 3-9`, `MAY 10-17`, pero las etiquetas que ve el cliente dicen `0-4 años`,
+   `5-10 años` y `11-17 años`. El motor cobra por las edades e imprime las etiquetas:
+   hoy un mensaje de Maracay puede decirle al cliente un rango distinto del que se le
+   cobró. El Word de Luisana coincide con las **edades** (3 a 9 y 10 a 17), así que lo
+   más probable es que las etiquetas sean las viejas. Son tres campos.
+2. **Valencia y Maracay no tienen `extras.json`.** Por eso el early y el late quedaron
+   escritos a mano en sus plantillas. Cargarlos como filas los haría cobrables desde el
+   cotizador — salvo el de Maracay, que es "50% de la tarifa" y el motor no tiene ese
+   tipo: sería un tipo nuevo, no una fila.
+3. **El "pax adicional por niño" de Valencia no cuadra con `adicionales.json`.** El Word
+   dice 3-9 años $10 y 10-17 años $20; los datos solo tienen la Family Suite a $20 desde
+   los 3 años. Es el pendiente §4.5 visto desde el otro lado.
+4. **Dos horas de salida que no coinciden.** El late check out de Valencia: `hoteles.json`
+   dice 2:00 PM, su Word dice 4:00 PM. Y en Maracay su Word rotula "LATE CHECK IN ...
+   desde las 5:00 PM", que se escribió como "LATE CHECK OUT ... hasta las 5:00 PM" por
+   ser lo único que tiene sentido para un cliente. Los dos valores están hoy escritos a
+   mano en sus plantillas; en cuanto se confirmen, mejor que salgan de `hoteles.json`.
+
+Y lo de siempre: **probarlo en el teléfono.** Sus plantillas son bastante más largas que
+las de Marla —el asomo del mensaje y el arrastre son justo lo que cambia con el largo—.
 
 ---
 

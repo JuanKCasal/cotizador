@@ -106,6 +106,21 @@ function conHab_(cat, clave, cambios) {
   return c;
 }
 
+/**
+ * Una copia del catalogo con una plantilla de mentira bajo unas iniciales que
+ * no existen.
+ *
+ * Los marcadores se prueban asi y no sobre una plantilla real: las de
+ * plantillas.json las puede reescribir cualquier asesora desde la
+ * administracion, y una prueba no puede tener como premisa un dato que se
+ * cambia sin tocar codigo.
+ */
+function conPlantilla_(cat, hotel, quien, texto) {
+  var c = JSON.parse(JSON.stringify(cat));
+  c.plantillas[hotel + '|' + quien] = texto;
+  return c;
+}
+
 // ============================================================================
 // SUITE
 // ============================================================================
@@ -491,6 +506,24 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
   t.contiene(txt, '*Reservemos!*', 'Cierre de la plantilla');
   t.ok(!/\n{3,}/.test(txt), 'Sin bloques de 3+ saltos de linea');
 
+  // ---- T20b. La fecha de la cotizacion la pone quien llama ----------------
+  t.caso('T20b Fecha de cotizacion');
+  var catFC = conPlantilla_(cat, 'HBK', 'ZZ',
+    'F[{{FECHA_COTIZACION}}] {{BLOQUE_HABITACIONES}} {{TOTAL}}');
+  r = M.calcular(catFC, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_DBL', 2)]));
+  txt = M.render(catFC, r, { asesorIniciales: 'ZZ', fechaCotizacion: '2026-09-11' });
+  t.contiene(txt, 'F[11/09/26]', 'Sale con el formato de fecha del hotel');
+
+  txt = M.render(catFC, r, { asesorIniciales: 'ZZ' });
+  t.eq(M.marcadoresNoResueltos(txt).length, 0, 'Sin fecha el marcador se resuelve igual');
+  t.contiene(txt, 'F[]', 'Y queda vacio en vez de imprimir una fecha inventada');
+
+  var lanzo = false;
+  try {
+    M.render(catFC, r, { asesorIniciales: 'ZZ', fechaCotizacion: '11/09/2026' });
+  } catch (e) { lanzo = true; }
+  t.ok(lanzo, 'Una fecha fuera de ISO rompe en vez de imprimir cualquier cosa');
+
   // ---- T21. El suplemento single ya no se explica en el mensaje -----------
   t.caso('T21 Suplemento single sin texto');
   r = M.calcular(cat, req_('HBK', '2026-09-01', '2026-09-03', [lin_('BAS_DBL', 1)]));
@@ -796,6 +829,27 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
     var tt = M.render(cat, rr, { asesorIniciales: 'MZ', cliente: 'Prueba' });
     t.eq(M.marcadoresNoResueltos(tt).length, 0, par[0] + ': plantilla completa');
     t.noContiene(tt, 'IVA', par[0] + ': sin mencion de impuestos');
+  });
+
+  // ---- T25b. Toda plantilla cargada tiene que renderizar -------------------
+  // Recorre plantillas.json tal como este, sin nombrar a ninguna asesora: el
+  // dia que entre una nueva con juego propio, esta prueba ya la cubre.
+  t.caso('T25b Plantillas de todas las asesoras');
+  var ejemploHab = { HBK: 'BAS_DBL', HIM: 'DLX_VMON', HPA: 'HOL_GARD',
+                     WTC: 'DLX_KING', HMC: 'DLX_KING' };
+  Object.keys(cat.plantillas).forEach(function (clave) {
+    var partes = clave.split('|');
+    var hotel = partes[0], quien = partes[1] || 'MZ';
+    var hab = ejemploHab[hotel];
+    if (!hab) { t.ok(false, clave + ': hotel sin habitacion de ejemplo'); return; }
+    var rr = M.calcular(cat, req_(hotel, '2026-09-01', '2026-09-03', [lin_(hab, 2)]));
+    if (!rr.ok) { t.ok(false, clave + ': el ejemplo no calcula',
+                       (rr.errores || []).join('; ')); return; }
+    var tt = M.render(cat, rr, { asesorIniciales: quien, cliente: 'Prueba',
+                                 fechaCotizacion: '2026-09-11' });
+    t.eq(M.marcadoresNoResueltos(tt).length, 0, clave + ': sin marcadores pendientes');
+    t.noContiene(tt, 'IVA', clave + ': sin mencion de impuestos');
+    t.ok(tt.length > 200, clave + ': texto con contenido');
   });
 
   // ---- T26. El validador no reporta errores -------------------------------

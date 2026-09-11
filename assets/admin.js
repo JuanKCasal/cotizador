@@ -820,7 +820,8 @@
       r = Motor.calcular(cat, req);
       if (!r.ok) throw new Error(r.errores[0]);
       caja.textContent = Motor.render(cat, r, {
-        asesorIniciales: quien || 'MZ', cliente: 'María Sánchez'
+        asesorIniciales: quien || 'MZ', cliente: 'María Sánchez',
+        fechaCotizacion: hoyISO()
       });
     } catch (e) {
       caja.textContent = 'No se puede previsualizar: ' + e.message;
