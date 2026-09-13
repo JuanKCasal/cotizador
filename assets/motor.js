@@ -890,11 +890,128 @@ var Motor = (function () {
     return m ? m.filter(function (v, i, a) { return a.indexOf(v) === i; }) : [];
   }
 
+  // ==========================================================================
+  // CONVERSION A BOLIVARES
+  // ==========================================================================
+  /**
+   * Un numero escrito por una persona.
+   *
+   * Aqui se escribe "842,2067" y tambien "1.234,56", y la API manda
+   * "832.4883". Los tres tienen que entrar. La regla: si vienen los dos
+   * separadores, el ULTIMO es el decimal y el otro agrupa miles; si viene uno
+   * solo, es el decimal.
+   *
+   * Que "1.500" se lea 1,5 y no mil quinientos es deliberado y es el caso
+   * ambiguo de verdad: no hay forma de distinguirlo del "832.4883" de la API.
+   * Por eso la pantalla devuelve SIEMPRE el numero ya formateado debajo del
+   * campo: lo que se entendio se ve, que es la unica defensa contra una
+   * tolerancia que se traga un error en silencio.
+   */
+  function parseNumero(txt) {
+    if (typeof txt === 'number') return isFinite(txt) ? txt : NaN;
+    var s = String(txt == null ? '' : txt).replace(/[^0-9.,-]/g, '').trim();
+    if (!s) return NaN;
+    var ultPunto = s.lastIndexOf('.'), ultComa = s.lastIndexOf(',');
+    var dec = ultPunto > ultComa ? '.' : (ultComa > -1 ? ',' : '');
+    if (dec) {
+      var corte = s.lastIndexOf(dec);
+      s = s.slice(0, corte).replace(/[.,]/g, '') + '.' + s.slice(corte + 1).replace(/[.,]/g, '');
+    }
+    var n = Number(s);
+    return isFinite(n) ? n : NaN;
+  }
+
+  /** Redondeo normal a centimos. NO es techo(): un cambio no se redondea hacia arriba. */
+  function r2c(n) { return Math.round((n + Number.EPSILON) * 100) / 100; }
+
+  /**
+   * Un monto con decimales, con los separadores del catalogo.
+   *
+   * fmtMoney() no sirve para bolivares: redondea hacia arriba a entero, que es
+   * lo correcto para un precio en dolares y seria cobrar de mas en una
+   * conversion de centimos.
+   */
+  function fmtDecimal(cat, n, decimales) {
+    var d = (decimales === undefined) ? 2 : decimales;
+    var sepMiles = (cat && cat.config && cat.config.SEPARADOR_MILES) || '';
+    var sepDec = (cat && cat.config && cat.config.SEPARADOR_DECIMAL) || ',';
+    var neg = n < 0;
+    var partes = Math.abs(n).toFixed(d).split('.');
+    var ent = partes[0], out = '', c = 0;
+    for (var i = ent.length - 1; i >= 0; i--) {
+      out = ent.charAt(i) + out;
+      if (++c % 3 === 0 && i > 0 && sepMiles) out = sepMiles + out;
+    }
+    return (neg ? '-' : '') + out + (partes[1] ? sepDec + partes[1] : '');
+  }
+
+  /**
+   * Cuanto es en bolivares, y cuanto es el anticipo.
+   *
+   * Devuelve errores explicitos en vez de un 0: un monto en blanco no es cero
+   * bolivares, es una cuenta que todavia no se puede hacer. La regla es la
+   * misma que en el resto del motor.
+   *
+   * El anticipo se saca del monto en DOLARES y recien despues se pasa a
+   * bolivares. Al reves -el porcentaje sobre el total en bolivares- da el
+   * mismo numero salvo por un centimo suelto, y este orden es el que la
+   * asesora puede rehacer a mano si el cliente le pregunta.
+   */
+  function convertir(cat, datos) {
+    var d = datos || {};
+    var res = { ok: false, errores: [] };
+    var monto = parseNumero(d.monto);
+    var tasa = parseNumero(d.tasa);
+    var pct = (d.pct === '' || d.pct === null || d.pct === undefined)
+      ? NaN : parseNumero(d.pct);
+
+    if (isNaN(tasa) || tasa <= 0) res.errores.push('Falta la tasa del d\u00EDa.');
+    if (isNaN(monto) || monto <= 0) res.errores.push('Falta el monto en d\u00F3lares.');
+    if (isNaN(pct) || pct < 0 || pct > 100) res.errores.push('El porcentaje va de 0 a 100.');
+    if (res.errores.length) return res;
+
+    res.ok = true;
+    res.tasa = tasa;
+    res.montoUsd = r2c(monto);
+    res.montoBs = r2c(monto * tasa);
+    res.pct = pct;
+    res.pctUsd = r2c(monto * pct / 100);
+    res.pctBs = r2c(res.pctUsd * tasa);
+    res.fechaTasa = d.fechaTasa || '';
+    return res;
+  }
+
+  /** El texto que se le manda al cliente. Vive en config.json, no aqui. */
+  function renderConversion(cat, conv, formato) {
+    if (!conv || !conv.ok) throw new Error('No se puede armar el mensaje de una conversion con errores.');
+    var plantilla = (cat && cat.config && cat.config.MENSAJE_CONVERSOR) || '';
+    if (!plantilla) throw new Error('Falta MENSAJE_CONVERSOR en config.json');
+
+    var map = {
+      MONTO_USD: fmtDecimal(cat, conv.montoUsd),
+      MONTO_BS: fmtDecimal(cat, conv.montoBs),
+      PCT: fmtDecimal(cat, conv.pct, conv.pct === Math.floor(conv.pct) ? 0 : 2),
+      MONTO_PCT_USD: fmtDecimal(cat, conv.pctUsd),
+      MONTO_PCT_BS: fmtDecimal(cat, conv.pctBs),
+      TASA: fmtDecimal(cat, conv.tasa, 4),
+      FECHA_TASA: conv.fechaTasa ? F.fmt(conv.fechaTasa, formato || 'dd/MM/yy') : '',
+      MONEDA: (cat && cat.config && cat.config.MONEDA) || '$'
+    };
+    var texto = plantilla.replace(/\{\{(\w+)\}\}/g, function (m, clave) {
+      return map.hasOwnProperty(clave) ? map[clave] : m;
+    });
+    return texto.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
   /** Marcadores que render() sabe resolver. Lo usa el validador. */
   var MARCADORES = ['HOTEL_NOMBRE','EMOJIS','ASESOR_INICIALES','CLIENTE','HORA_IN','HORA_OUT',
     'FECHA_IN','FECHA_OUT','BLOQUE_HABITACIONES','BLOQUE_CARGOS','BLOQUE_EXTRAS','BLOQUE_PROMO',
     'TOTAL','SUBTOTAL','DIAS','NOCHES','DIAS_N','NOCHES_N','PALABRA_NOCHES','PALABRA_DIAS',
     'DEPOSITO','LABEL_DEPOSITO','HORA_LATE','MENSAJE_CASHEA','FECHA_COTIZACION'];
+
+  /** Los del mensaje del conversor, que es otro texto y otra lista. */
+  var MARCADORES_CONVERSOR = ['MONTO_USD','MONTO_BS','PCT','MONTO_PCT_USD',
+    'MONTO_PCT_BS','TASA','FECHA_TASA','MONEDA'];
 
   return {
     Fechas: F,
@@ -905,7 +1022,12 @@ var Motor = (function () {
     rangoPorEdad: rangoPorEdad,
     textoEdades: textoEdades,
     MARCADORES: MARCADORES,
+    MARCADORES_CONVERSOR: MARCADORES_CONVERSOR,
     marcadoresNoResueltos: marcadoresNoResueltos,
+    convertir: convertir,
+    renderConversion: renderConversion,
+    parseNumero: parseNumero,
+    fmtDecimal: fmtDecimal,
     _interno: {
       tarifaNoche: tarifaNoche, temporadaDe: temporadaDe, promoDe: promoDe,
       stopSaleDe: stopSaleDe, resolverMenores: resolverMenores, r2: r2, techo: techo

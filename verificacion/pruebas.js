@@ -852,6 +852,53 @@ function ejecutarPruebas(cat, M, Validador, Catalogo) {
     t.ok(tt.length > 200, clave + ': texto con contenido');
   });
 
+  // ---- T25c. Conversor de dolares a bolivares ------------------------------
+  // El caso de la hoja de calculo que trajo el usuario, numero por numero: es
+  // el unico control de que esto cobra lo mismo que se venia cobrando a mano.
+  t.caso('T25c Conversor');
+  var conv = M.convertir(cat, { monto: '560', tasa: '842,2067', pct: '30' });
+  t.ok(conv.ok, 'La conversion del caso real calcula', (conv.errores || []).join('; '));
+  t.eq(conv.montoBs, 471635.75, 'Total en bolivares');
+  t.eq(conv.pctUsd, 168, 'El 30% en dolares');
+  t.eq(conv.pctBs, 141490.73, 'El 30% en bolivares');
+  t.eq(M.fmtDecimal(cat, conv.montoBs), '471.635,75', 'Formato con miles y decimales');
+  t.eq(M.fmtDecimal(cat, conv.pctBs), '141.490,73', 'Formato del anticipo');
+
+  var txtConv = M.renderConversion(cat, conv);
+  t.eq(M.marcadoresNoResueltos(txtConv).length, 0, 'Mensaje sin marcadores pendientes');
+  t.contiene(txtConv, '471.635,75 Bs', 'El total va en el mensaje');
+  t.contiene(txtConv, '141.490,73 Bs', 'Y el anticipo tambien');
+
+  // Nunca un 0 silencioso: sin monto no hay cero bolivares, hay una cuenta que
+  // todavia no se puede hacer.
+  t.ok(!M.convertir(cat, { monto: '', tasa: '842,2067', pct: '30' }).ok,
+       'Sin monto no calcula');
+  t.ok(!M.convertir(cat, { monto: '560', tasa: '', pct: '30' }).ok,
+       'Sin tasa no calcula');
+  t.ok(!M.convertir(cat, { monto: '560', tasa: '0', pct: '30' }).ok,
+       'Una tasa en cero no calcula');
+  t.ok(!M.convertir(cat, { monto: '560', tasa: '842', pct: '140' }).ok,
+       'Un porcentaje fuera de 0-100 no calcula');
+  t.ok(M.convertir(cat, { monto: '560', tasa: '842', pct: '0' }).ok,
+       'Pero 0% si: es una cotizacion sin anticipo');
+
+  var lanzoConv = false;
+  try { M.renderConversion(cat, { ok: false }); } catch (e) { lanzoConv = true; }
+  t.ok(lanzoConv, 'No se arma el mensaje de una conversion con errores');
+
+  // El redondeo es normal, no hacia arriba: techo() es para un precio en
+  // dolares, y aqui redondear hacia arriba seria cobrar centimos de mas.
+  t.eq(M.convertir(cat, { monto: '1', tasa: '842,2067', pct: '50' }).montoBs, 842.21,
+       'Los bolivares se redondean al centimo mas cercano');
+
+  // Lo que escribe una persona, en los tres formatos que de verdad escribe.
+  t.eq(M.parseNumero('1.234,56'), 1234.56, 'parseNumero: miles con punto y decimal con coma');
+  t.eq(M.parseNumero('842,2067'), 842.2067, 'parseNumero: solo coma');
+  t.eq(M.parseNumero('832.4883'), 832.4883, 'parseNumero: solo punto, como lo manda la API');
+  t.eq(M.parseNumero('$560,00'), 560, 'parseNumero: con el simbolo de moneda delante');
+  t.ok(isNaN(M.parseNumero('')), 'parseNumero: vacio no es cero');
+  t.ok(isNaN(M.parseNumero('abc')), 'parseNumero: texto no es cero');
+
   // ---- T26. El validador no reporta errores -------------------------------
   t.caso('T26 Validador');
   var hallazgos = Validador.validar(cat, M, '2026-09-01');

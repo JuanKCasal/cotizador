@@ -5,7 +5,7 @@ Estado del proyecto. Lee esto y `CLAUDE.md` antes de tocar nada.
 **Repo:** https://github.com/JuanKCasal/cotizador (público)
 **Sitio:** https://juankcasal.github.io/cotizador/
 **Local:** `C:\dev\cotizador`
-**Última actualización:** 11/09/2026
+**Última actualización:** 13/09/2026
 
 ---
 
@@ -23,8 +23,8 @@ diseño: una mano, de pie, con prisa.
 | Hoteles activos | Los cinco: HBK, HIM, HPA, WTC, HMC |
 | Asesores | MZ (Marla Zuluaga), LR (Lenin Rodrigues), LV (Luisana Villalobos) |
 | Suites de prueba | 4 · `npm test` |
-| Aserciones del motor | 384 |
-| Chequeos del cotizador | 131 |
+| Aserciones del motor | 406 |
+| Chequeos del cotizador | 131 + los del conversor |
 | Chequeos de administración | 63 |
 | Chequeos de publicación | 29 |
 | Validador sobre el catálogo real | 0 errores, 2 advertencias |
@@ -382,6 +382,65 @@ Cuatro hallazgos de datos. **Ninguno es del código y ninguno lo decido yo:**
 
 Y lo de siempre: **probarlo en el teléfono.** Sus plantillas son bastante más largas que
 las de Marla —el asomo del mensaje y el arrastre son justo lo que cambia con el largo—.
+
+---
+
+## 10. Sesión del 13/09/2026
+
+### La app pasa a tener dos pestañas: Cotizador y Conversor
+
+El cotizador entero es ahora el panel de la pestaña **Cotizador** y no cambió por dentro:
+el marcado es el mismo, envuelto en un `div` con `role="tabpanel"`. La segunda pestaña,
+**Conversor**, pasa un monto en dólares a bolívares y saca el anticipo.
+
+Cambiar de pestaña **no toca el estado de ninguna de las dos**: la cotización a medio
+armar sigue ahí al volver. Lo único que se mueve es qué se ve.
+
+Tres cosas de la maqueta, por si alguien las toca:
+
+- **`.lienzo.lienzo-conversor` lleva la clase doblada a propósito.** `.lienzo` declara una
+  rejilla de dos columnas en escritorio y un relleno abajo que deja sitio al asomo del
+  mensaje en el teléfono. Las dos tienen que perder en el conversor, y tienen que perder
+  **por especificidad, no por orden** — que es la regla que este repositorio ya aprendió
+  tres veces en un día.
+- **La barra del total se esconde con `body.en-conversor .barra { display: none !important }`.**
+  Es del cotizador: en el conversor no hay nada que totalizar y dejarla diciendo "Sin
+  cotizar" es ruido con un borde de 2px.
+- **Las pestañas se marcan con subrayado, no solo con color**, y miden 44px. El acento del
+  hotel no entra aquí: la sección en la que estás no depende de lo que estés cotizando.
+
+### El conversor
+
+El detalle de las reglas está en `README.md` §4. Lo que importa de las decisiones:
+
+- **La aritmética vive en `motor.js`** y se prueba en la suite del motor, sin navegador.
+  Los 406 assertions incluyen el caso real de la hoja de cálculo que venía usándose a
+  mano, número por número: $560 a 842,2067 son 471.635,75 Bs y el 30% son 141.490,73 Bs.
+- **La tasa se pide a `ve.dolarapi.com`** —la URL es dato, no código— y el campo queda
+  **editable siempre**. Sin eso, un servicio caído dejaría a la asesora sin poder pasar un
+  monto a bolívares con un cliente esperando, que es justo lo que este proyecto no se
+  permite.
+- **La fecha de la tasa se elige.** Arranca en hoy y acepta cualquier otro día, que sale
+  de la serie histórica. Si ese día no tiene tasa publicada **se usa la última anterior,
+  sea de cuándo sea** —es la que estaba vigente, decisión del negocio del 13/09/2026— y la
+  pista y el aviso lo dicen en ámbar con la fecha real. Solo se queda sin tasa una fecha
+  anterior a todo lo publicado.
+- **El texto del mensaje vive en `config.json`**, con sus propios marcadores y su propio
+  chequeo en el validador.
+
+### Lo que queda de esta sesión
+
+- **Correr `npm test` en tu PC.** Es lo único que falta y no es un detalle: acá la suite
+  del motor corre entera (406, en verde), pero **las tres suites que usan jsdom no se
+  pudieron correr** —el registro de npm está bloqueado en el entorno y no se pudo instalar
+  la dependencia—. Los chequeos nuevos del conversor están escritos en
+  `_verificar_spa.js` y nunca se han ejecutado.
+- **Probarlo en el teléfono.** La maqueta se verificó en Chromium de verdad a 390px y a
+  1440px —sin desborde horizontal, sin errores de consola, con la barra escondiéndose y
+  volviendo—, pero Chromium a 390px no es un teléfono.
+- **El puente al repositorio perdió el montaje del shell** (actualización de Windows del
+  8/09). Se puede leer, subir y bajar archivos, pero no correr comandos en la carpeta: por
+  eso esta sesión trabajó sobre copias y devolvió los archivos al final.
 
 ---
 

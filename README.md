@@ -72,7 +72,7 @@ de objetos cuyas claves son las columnas.
 
 | Archivo | Qué guarda |
 |---|---|
-| `config.json` | Versión de tarifas, moneda, separador decimal, mensaje de CASHEA, iniciales |
+| `config.json` | Versión de tarifas, moneda, separadores, mensaje de CASHEA, iniciales, y lo del conversor: las dos URL de tasa, el % de reserva y su mensaje |
 | `hoteles.json` | Nombre, emojis, horarios, modo de tarifa, formato de fecha y de ocupantes, depósito |
 | `habitaciones.json` | Categoría, ocupación, atributo, mínimos y máximos, suplemento single |
 | `temporadas.json` | Rango de fechas y prioridad, por hotel |
@@ -272,6 +272,37 @@ ocupación— y el validador lo reporta como error de carga.
 - **Cargos de fecha fija** aplican si la fecha pertenece a `[checkin, checkout)`. Si el
   cliente sale el 24 al mediodía, no paga la cena de Navidad.
 - Ante una noche sin tarifa: **error explícito con la fecha**, nunca un `0` ni un `NaN`.
+
+---
+
+### El conversor a bolívares
+
+Una segunda pestaña, no una segunda aplicación: pasa un monto en dólares a bolívares a la
+tasa de un día y saca el anticipo.
+
+- **La aritmética está en `motor.js`**, como todo lo que produce un número que ve el
+  cliente. `logica.js` solo pone y quita valores de la pantalla.
+- **El anticipo se calcula en dólares y recién después se pasa a bolívares.** Al revés
+  —el porcentaje sobre el total en bolívares— da lo mismo salvo por un céntimo suelto, y
+  este orden es el que la asesora puede rehacer a mano si el cliente pregunta.
+- **Los bolívares se redondean al céntimo más cercano, no hacia arriba.** `techo()` es
+  para un precio en dólares; redondear hacia arriba un cambio sería cobrar de más.
+- **La tasa se pide a la fuente que diga `config.json`** (`TASA_URL` para hoy,
+  `TASA_URL_HISTORICA` para cualquier otro día) y el campo **queda editable siempre**. Si
+  el servicio no responde, si el teléfono está sin datos o si el hotel trabaja con otra
+  tasa, se escribe a mano y se sigue. La última usada queda guardada en el navegador.
+- **Si para la fecha elegida no hay tasa publicada** —un sábado, un feriado— se usa la
+  última anterior, sea de cuándo sea: es la que estaba vigente ese día, por decisión del
+  negocio. Lo que no se negocia es **decirlo**: la pista y el aviso dan la fecha real en
+  ámbar. Una tasa de otro día puesta en el campo en silencio sería el mismo error que dejó
+  un cierre de venta sin bloquear nada durante meses. El único caso sin tasa es una fecha
+  anterior a todo lo publicado: ahí no hay ninguna anterior que ofrecer y el campo se vacía.
+- **El texto del mensaje vive en `config.json`** (`MENSAJE_CONVERSOR`), con sus propios
+  marcadores: `MONTO_USD`, `MONTO_BS`, `PCT`, `MONTO_PCT_USD`, `MONTO_PCT_BS`, `TASA`,
+  `FECHA_TASA` y `MONEDA`. El validador los revisa igual que los de las plantillas.
+- **Lo que se entendió, se devuelve.** Los campos aceptan `1.234,56` y `842.2067`, así que
+  la pantalla repite debajo el número ya formateado: una tolerancia que no muestra lo que
+  leyó es la que se tragó el `"5,6"` de Sheets durante meses.
 
 ---
 

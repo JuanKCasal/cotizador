@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
-  <link rel="stylesheet" href="assets/tokens.css?v=2026.09.11">
-  <link rel="stylesheet" href="assets/estilos.css?v=2026.09.11">
+  <link rel="stylesheet" href="assets/tokens.css?v=2026.09.13">
+  <link rel="stylesheet" href="assets/estilos.css?v=2026.09.13">
 </head>
 <body data-hotel="">
 
@@ -50,7 +50,19 @@
     </div>
   </header>
 
-  <main class="lienzo">
+  <!-- Dos secciones, no dos aplicaciones: el conversor usa la misma tasa y el
+       mismo mensaje que la cotizacion que se acaba de armar, asi que vive
+       detras de una pestaña y no detras de otra pantalla. -->
+  <nav class="pestanas" id="pestanas" role="tablist" aria-label="Secciones">
+    <button type="button" class="pestana" id="tabCotizador" role="tab"
+            aria-selected="true" aria-controls="panelCotizador">Cotizador</button>
+    <button type="button" class="pestana" id="tabConversor" role="tab"
+            aria-selected="false" aria-controls="panelConversor">Conversor</button>
+  </nav>
+
+  <main class="envoltura">
+
+  <div class="lienzo" id="panelCotizador" role="tabpanel" aria-labelledby="tabCotizador">
 
     <!-- ---------- Columna del formulario ---------- -->
     <div class="columna-form">
@@ -162,6 +174,86 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ====================== CONVERSOR ======================
+       Dolares a bolivares a la tasa del dia, y el anticipo. La tasa se pide a
+       la fuente que diga config.json, pero el campo queda editable: si el
+       servicio no responde o el hotel trabaja con otra tasa, la asesora la
+       escribe y sigue. Nunca puede quedarse sin poder pasar un monto a
+       bolivares con un cliente esperando.                                  -->
+  <div class="lienzo lienzo-conversor oculto" id="panelConversor" role="tabpanel"
+       aria-labelledby="tabConversor">
+    <div class="columna-conversor">
+
+      <section class="hoja">
+        <h2 class="t-seccion hoja-et">Tasa del día</h2>
+        <!-- La fecha manda: hoy sale de la tasa vigente y cualquier otra, de la
+             serie historica. Sin max: los selectores nativos de Android tratan
+             los limites como exclusivos y hoy quedaria fuera de su propio
+             calendario. Una fecha futura no rompe nada, se avisa y ya. -->
+        <div class="fila-tasa">
+          <label class="t-precio campo-caja campo-fecha-tasa">
+            <span class="t-seccion campo-etiqueta">Fecha de la tasa</span>
+            <input type="date" id="convFecha">
+          </label>
+          <button type="button" class="btn-borde" id="btnConvTasa">Actualizar</button>
+        </div>
+        <label class="t-precio campo-caja campo-tasa">
+          <span class="t-seccion campo-etiqueta">Bolívares por dólar</span>
+          <input type="text" id="convTasa" inputmode="decimal" autocomplete="off"
+                 placeholder="0,00">
+        </label>
+        <p class="t-pista pista" id="convTasaPista">Buscando la tasa del día…</p>
+      </section>
+
+      <section class="hoja">
+        <h2 class="t-seccion hoja-et">Reserva</h2>
+        <div class="fila-conversor">
+          <label class="t-precio campo-caja campo-monto">
+            <span class="t-seccion campo-etiqueta">Monto en dólares</span>
+            <input type="text" id="convMonto" inputmode="decimal" autocomplete="off"
+                   placeholder="0,00">
+          </label>
+          <label class="t-precio campo-caja campo-pct">
+            <span class="t-seccion campo-etiqueta">% a pagar</span>
+            <input type="text" id="convPct" inputmode="decimal" autocomplete="off">
+          </label>
+        </div>
+
+        <!-- Lo entendido, devuelto. Un campo que acepta "1.500" y "1,5" tiene
+             que decir cual de los dos leyo, o la tolerancia se traga el error
+             igual que se lo tragaba el "5,6" de Sheets. -->
+        <dl class="conv-cifras">
+          <div class="conv-linea">
+            <dt class="t-pista conv-et">Total en bolívares</dt>
+            <dd class="t-total conv-monto apagado" id="convTotalBs">Bs —</dd>
+          </div>
+          <div class="conv-linea conv-linea-pago">
+            <dt class="t-pista conv-et">
+              A pagar ahora <span class="conv-pct" id="convPctEt"></span>
+            </dt>
+            <dd class="t-total conv-monto apagado" id="convPagoBs">Bs —</dd>
+          </div>
+          <p class="t-pista conv-pie" id="convPie"></p>
+        </dl>
+      </section>
+
+      <section class="hoja">
+        <div class="seccion-cabecera">
+          <h2 class="t-seccion titulo-seccion">Así lo recibe el cliente</h2>
+        </div>
+        <div class="chat conv-chat">
+          <div class="burbuja" id="convBurbuja">
+            <p class="burbuja-vacio">Escribe el monto para ver el mensaje.</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primario btn-conv-copiar" id="btnConvCopiar"
+                disabled>Copiar mensaje</button>
+      </section>
+
+    </div>
+  </div>
   </main>
 
   <!-- ---------- Barra del total ---------- -->
@@ -308,8 +400,8 @@
 
 <div id="aviso" class="aviso" role="status" aria-live="polite"></div>
 
-<script src="assets/motor.js?v=2026.09.11"></script>
-<script src="assets/catalogo.js?v=2026.09.11"></script>
-<script src="assets/logica.js?v=2026.09.11"></script>
+<script src="assets/motor.js?v=2026.09.13"></script>
+<script src="assets/catalogo.js?v=2026.09.13"></script>
+<script src="assets/logica.js?v=2026.09.13"></script>
 </body>
 </html>

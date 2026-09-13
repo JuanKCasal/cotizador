@@ -214,6 +214,45 @@ html, body {
 .btn-cabecera.activo .btn-cabecera-icono::after { background: var(--tinta); }
 
 /* ----------------------------------------------------------------- Lienzo */
+/* ---------------------------------------------------------------- Pestañas */
+/* Dos secciones de la misma aplicacion. Subrayado y no pastillas: una pastilla
+   se lee como un filtro -algo que se elige y se vuelve a cambiar en el mismo
+   sitio- y esto es cambiar de pantalla.
+
+   El subrayado vive DENTRO del alto de la pestaña, montado sobre el borde de
+   abajo: si apareciera debajo, cambiar de pestaña movería la pagina entera un
+   par de pixeles. */
+.pestanas {
+  flex-shrink: 0;
+  display: flex; gap: var(--e4);
+  padding: 0 var(--e4);
+  background: var(--papel);
+  border-bottom: 1px solid var(--arena);
+}
+.pestana {
+  position: relative;
+  min-height: 44px; padding: 0 var(--e1);
+  border: 0; background: none;
+  font-family: var(--cuerpo); font-size: 15px; font-weight: 600;
+  color: var(--tinta-45);
+  cursor: pointer; white-space: nowrap;
+}
+.pestana::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  background: transparent;
+}
+/* El color no informa solo: la pestaña activa se marca con el subrayado, que
+   se ve igual en una pantalla al sol y para quien no distingue los grises. */
+.pestana[aria-selected="true"] { color: var(--tinta); }
+.pestana[aria-selected="true"]::after { background: var(--tinta); }
+
+/* La barra del total es del cotizador. En el conversor no hay nada que
+   totalizar, y dejarla ahi diciendo "Sin cotizar" es ruido con un borde de
+   2px. Esconde con !important, como toda utilidad que esconde. */
+body.en-conversor .barra { display: none !important; }
+
+.envoltura { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
 .lienzo {
   flex: 1;
   min-height: 0;
@@ -767,6 +806,58 @@ select:focus-visible, input:focus-visible {
 }
 @media (max-width: 899px) { .barra-sello { display: none; } }
 
+/* --------------------------------------------------------------- Conversor */
+/* Una sola columna, con tope de ancho: son cuatro campos y un mensaje, y
+   estirarlos a 1200px no los hace mas faciles de leer.
+
+   La clase va doblada (.lienzo.lienzo-conversor) a proposito: .lienzo declara
+   una rejilla de dos columnas en escritorio y un relleno de abajo que deja
+   sitio al asomo del mensaje en el telefono. Las dos tienen que perder aqui, y
+   tienen que perder por especificidad, no por orden. */
+.lienzo.lienzo-conversor {
+  display: block;
+  overflow-y: auto;
+  padding-bottom: calc(var(--respiro-abajo) + var(--e4));
+}
+.columna-conversor {
+  max-width: 560px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: var(--e3);
+}
+
+.fila-tasa { display: flex; align-items: stretch; gap: var(--e2); }
+.fila-tasa .campo-fecha-tasa { flex: 1; }
+.fila-tasa .btn-borde { height: var(--h-campo); flex-shrink: 0; }
+
+.fila-conversor { display: flex; gap: var(--e2); }
+.campo-monto { flex: 1; }
+/* Igual que las iniciales: un campo de contenido acotado no se lleva la fila. */
+.campo-pct { flex: 0 0 104px; }
+
+.conv-cifras { margin: 0; display: flex; flex-direction: column; gap: var(--e2); }
+.conv-linea {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--e3);
+}
+.conv-linea dt, .conv-linea dd { margin: 0; }
+/* Lo que de verdad se le cobra hoy al cliente, separado del total. */
+.conv-linea-pago { padding-top: var(--e2); border-top: 1px solid var(--arena-sut); }
+/* Mismo criterio que la barra del total: un guion suelto se lee como "todavia
+   no calculo"; en gris se lee como "no hay numero". */
+.conv-monto.apagado { color: #9FAEC0; }
+.conv-pct { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.conv-pie { margin: 0; }
+/* Ambar, no rojo: que la tasa sea de otro dia deja seguir trabajando; un error
+   detiene. El sistema ya separa los dos y aqui manda la misma regla. */
+.pista.pista-aviso { color: var(--aviso); }
+
+/* El mismo papel de WhatsApp que la vista del cotizador, con la clase doblada
+   para quedarse quieto dentro de la hoja en vez de estirarse. */
+.chat.conv-chat {
+  flex: 0 0 auto;
+  max-height: 340px;
+  border-radius: var(--r-medio);
+}
+.btn-conv-copiar { width: 100%; }
+
 /* ------------------------------------------------------- Respuesta al toque */
 /* En un teléfono no existe :hover. El :active es la única confirmación de que
    el dedo dio en el sitio: sin ella, ante cualquier demora se toca dos veces,
@@ -856,6 +947,12 @@ select:focus-visible, input:focus-visible {
   .columna-vista { overflow: hidden; }
 
   .barra { position: static; padding: 0 var(--relleno-ancho); }
+
+  .pestanas { padding: 0 var(--relleno-ancho); }
+  /* La rejilla de dos columnas es del cotizador; el conversor sigue siendo una
+     sola, centrada, con el mismo aire a los lados que el resto. */
+  .lienzo.lienzo-conversor { padding: var(--e5) var(--relleno-ancho); }
+  .btn-conv-copiar { width: auto; align-self: flex-end; min-width: 220px; }
 }
 
 /* ================================================================== MÓVIL */
@@ -910,6 +1007,12 @@ select:focus-visible, input:focus-visible {
 
   /* El formulario respira por encima del asomo plegado. */
   .lienzo { padding-bottom: calc(var(--h-asomo) + var(--e4)); }
+  /* Menos en el conversor, que no tiene asomo debajo: ese hueco seria una
+     pantalla de aire en blanco al final. */
+  .lienzo.lienzo-conversor { padding-bottom: calc(var(--respiro-abajo) + var(--e4)); }
+  /* El boton mas alto de la app, solo en el telefono: es donde cae el pulgar
+     y es lo que cierra la tarea, igual que copiar en el cotizador. */
+  .btn-conv-copiar { min-height: var(--h-copiar); }
 
   /* En el telefono la hoja aprieta por los lados, no por arriba: el ancho es
      el recurso escaso y los cinco botones de hotel se lo reparten. */
@@ -1013,6 +1116,13 @@ select:focus-visible, input:focus-visible {
 .aviso.visible { opacity: 1; transform: translate(-50%, 0); }
 .aviso.error   { background: var(--alerta); }
 .aviso.exito   { background: var(--exito); }
+/* Ambar: la tasa se trajo, pero no es la del dia que se pidio. Ni un exito
+   verde -que invita a no leer- ni un error rojo -que no lo es-. */
+.aviso.atencion { background: var(--aviso); }
+
+/* En el conversor no hay barra del total debajo, asi que el aviso no tiene por
+   que flotar a 84px del borde. */
+body.en-conversor .aviso { bottom: calc(var(--respiro-abajo) + 16px); }
 
 /* ==========================================================================
    MINI COTIZADOR

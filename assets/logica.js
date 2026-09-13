@@ -112,6 +112,8 @@
     $('calcVersion').textContent = ver;
     renderHoteles();
     conectarEventos();
+    conectarPestanas();
+    convMontar();
     if (window.innerWidth >= 900) calcMontar();
     $('cargando').classList.add('oculto');
     $('app').classList.remove('oculto');
@@ -1846,6 +1848,287 @@
 
     // Si la ventana cambia de tamaño, la burbuja podria quedar fuera.
     window.addEventListener('resize', function () { if (calcColapsado) colocarBurbuja(); });
+  }
+
+  // ==========================================================================
+  // CONVERSOR — dolares a bolivares
+  // ==========================================================================
+  // La aritmetica no esta aqui: esta en motor.js, como todo lo que produce un
+  // numero que ve el cliente. Esto es la pantalla.
+  var convTexto = '';
+  var convFechaTasa = '';
+  // De donde salio el numero que se ve en el campo. Importa al cambiar de
+  // fecha: una tasa que trajo la API y ya no corresponde al dia elegido hay
+  // que borrarla, pero una que escribio la asesora es suya y no se toca.
+  var convTasaManual = false;
+
+  function convMontar() {
+    $('convPct').value = String((CAT.config && CAT.config.PCT_RESERVA) || '30');
+    $('convFecha').value = hoyLocalISO();
+
+    var guardada = convLeerGuardada();
+    if (guardada) {
+      $('convTasa').value = guardada.tasa;
+      convFechaTasa = guardada.fecha || '';
+      convPistaTasa('guardada');
+    }
+
+    ['convTasa', 'convMonto', 'convPct'].forEach(function (id) {
+      $(id).addEventListener('input', convCalcular);
+    });
+    // Escribir la tasa a mano es afirmar que ESA es la del dia elegido: la
+    // pista tiene que dejar de decir "tasa oficial del 4", que ya no es cierto.
+    $('convTasa').addEventListener('input', function () {
+      convTasaManual = true;
+      convFechaTasa = Motor.Fechas.esISO($('convFecha').value) ? $('convFecha').value : '';
+      convPistaTasa('manual');
+    });
+    // Al salir del campo se devuelve el numero ya formateado: es la unica
+    // forma de que se vea que "1.500" se leyo como mil quinientos o como 1,5.
+    $('convMonto').addEventListener('blur', function () {
+      var n = Motor.parseNumero(this.value);
+      if (!isNaN(n) && n > 0) this.value = Motor.fmtDecimal(CAT, n, 2);
+      convCalcular();
+    });
+    $('btnConvTasa').addEventListener('click', function () { convPedirTasa(true); });
+    // Cambiar la fecha ES pedir la tasa: nadie elige otro dia para quedarse
+    // con el numero del dia anterior en pantalla.
+    $('convFecha').addEventListener('change', function () { convPedirTasa(true); });
+    $('btnConvCopiar').addEventListener('click', function () { copiar(convTexto); });
+
+    convCalcular();
+    convPedirTasa(false);
+  }
+
+  /**
+   * La ultima tasa que se uso en este navegador.
+   *
+   * No es una copia de respaldo por gusto: si la API no responde -o el
+   * telefono esta sin datos, que pasa- la asesora abre el conversor y al menos
+   * tiene la de ayer, fechada, en vez de un campo vacio.
+   */
+  function convLeerGuardada() {
+    try {
+      var crudo = localStorage.getItem('tasa');
+      return crudo ? JSON.parse(crudo) : null;
+    } catch (e) { return null; }
+  }
+
+  function convGuardarTasa(tasa, fecha) {
+    try {
+      localStorage.setItem('tasa', JSON.stringify({ tasa: tasa, fecha: fecha }));
+    } catch (e) { /* no es critico */ }
+  }
+
+  /**
+   * Pide la tasa a la fuente que diga config.json.
+   *
+   * Si falla no pasa nada grave y por eso no se avisa al arrancar: el campo
+   * queda editable y la pista dice de donde salio el numero que se esta
+   * usando. Solo cuando la asesora pulsa "Actualizar" -o sea, cuando pregunto-
+   * se le contesta que no se pudo.
+   */
+  function convPedirTasa(pidioElla) {
+    var iso = $('convFecha').value;
+    if (!Motor.Fechas.esISO(iso)) iso = hoyLocalISO();
+    var esHoy = (iso === hoyLocalISO());
+    var cfg = CAT.config || {};
+    var url = esHoy ? cfg.TASA_URL : cfg.TASA_URL_HISTORICA;
+
+    if (!url || typeof fetch !== 'function') {
+      if (pidioElla) aviso('No hay fuente de tasa configurada', 'error');
+      return;
+    }
+    convPistaTasa('buscando');
+    fetch(url, { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        var hallada = esHoy ? tasaDeHoy(d) : tasaDeLaSerie(d, iso);
+        if (!hallada) {
+          // Dejar en el campo la tasa de otro dia calcularia el total a un
+          // cambio que no es el de la fecha elegida, y el mensaje saldria con
+          // esa cifra sin que nada lo dijera. Se borra y se pide a mano.
+          if (!convTasaManual) {
+            $('convTasa').value = '';
+            convFechaTasa = '';
+            convCalcular();
+          }
+          convPistaTasa('sin-fecha', iso);
+          if (pidioElla) aviso('No hay tasa publicada para esa fecha', 'atencion');
+          return;
+        }
+        convTasaManual = false;
+        convFechaTasa = hallada.fecha;
+        $('convTasa').value = Motor.fmtDecimal(CAT, hallada.tasa, 4);
+        convGuardarTasa($('convTasa').value, convFechaTasa);
+        convPistaTasa(hallada.exacta ? (esHoy ? 'api' : 'historica') : 'aproximada', iso);
+        convCalcular();
+        // Un verde de "listo" sobre una tasa que no es la del dia pedido invita
+        // a no leer la pista, que es justo donde dice de que fecha es.
+        if (pidioElla) {
+          if (hallada.exacta) aviso('Tasa actualizada', 'exito');
+          else aviso('Se usó la tasa del ' + Motor.Fechas.fmtCorto(hallada.fecha), 'atencion');
+        }
+      })
+      .catch(function () {
+        convPistaTasa($('convTasa').value ? 'guardada' : 'sin');
+        if (pidioElla) aviso('No se pudo traer la tasa. Escríbela a mano.', 'error');
+      });
+  }
+
+  /** La respuesta del dia: un objeto suelto, no una serie. */
+  function tasaDeHoy(d) {
+    var tasa = Motor.parseNumero(d && (d.promedio || d.venta || d.compra));
+    if (isNaN(tasa) || tasa <= 0) return null;
+    var f = String((d && d.fechaActualizacion) || '').slice(0, 10);
+    return { tasa: tasa, fecha: Motor.Fechas.esISO(f) ? f : '', exacta: true };
+  }
+
+  /**
+   * La tasa de un dia dentro de la serie historica.
+   *
+   * Si ese dia exacto esta publicado, se usa. Si no -un sabado, un feriado, un
+   * dia que la fuente no publico- se usa la ultima anterior, sea de cuando
+   * sea: es la que estaba vigente ese dia, y asi lo decidio el negocio el
+   * 13/09/2026.
+   *
+   * Lo que NO se negocia es que se diga: cuando la fecha no es la pedida, la
+   * pista y el aviso lo dicen en ambar con la fecha real. Una tasa de otro dia
+   * puesta en el campo en silencio seria el mismo error que dejo un cierre de
+   * venta sin bloquear nada durante meses.
+   *
+   * Queda un solo caso sin tasa: una fecha anterior a todo lo publicado. Ahi no
+   * hay ninguna "anterior" que ofrecer.
+   */
+  function tasaDeLaSerie(lista, iso) {
+    if (!lista || !lista.length) return null;
+    var mejor = null;
+    for (var i = 0; i < lista.length; i++) {
+      var f = String(lista[i] && lista[i].fecha || '').slice(0, 10);
+      if (!Motor.Fechas.esISO(f) || f > iso) continue;
+      if (!mejor || f > mejor.fecha) {
+        mejor = { fecha: f, tasa: Motor.parseNumero(lista[i].promedio) };
+      }
+    }
+    if (!mejor || isNaN(mejor.tasa) || mejor.tasa <= 0) return null;
+    mejor.exacta = (mejor.fecha === iso);
+    return mejor;
+  }
+
+  function convPistaTasa(origen, pedida) {
+    var p = $('convTasaPista');
+    p.classList.remove('alerta');
+    p.classList.remove('pista-aviso');
+
+    if (origen === 'buscando') { p.textContent = 'Buscando la tasa…'; return; }
+    if (origen === 'sin') {
+      p.textContent = 'No se pudo traer la tasa. Escríbela a mano.';
+      p.classList.add('alerta');
+      return;
+    }
+    if (origen === 'sin-fecha') {
+      p.textContent = 'No hay tasa publicada para el ' +
+                      Motor.Fechas.fmtCorto(pedida) + '. Escríbela a mano.';
+      p.classList.add('pista-aviso');
+      return;
+    }
+    if (origen === 'aproximada') {
+      p.textContent = 'No hay tasa del ' + Motor.Fechas.fmtCorto(pedida) +
+                      '; se usa la del ' + Motor.Fechas.fmtCorto(convFechaTasa) +
+                      ', la última publicada antes de esa fecha.';
+      p.classList.add('pista-aviso');
+      return;
+    }
+    var cuando = convFechaTasa ? ' del ' + Motor.Fechas.fmtCorto(convFechaTasa) : '';
+    if (origen === 'manual') {
+      p.textContent = 'Tasa escrita a mano' + cuando + '.';
+      return;
+    }
+    var quien = (origen === 'guardada') ? 'Última tasa usada' : 'Tasa oficial';
+    p.textContent = quien + cuando + '. Puedes corregirla.';
+  }
+
+  function convCalcular() {
+    var conv = Motor.convertir(CAT, {
+      monto: $('convMonto').value,
+      tasa: $('convTasa').value,
+      pct: $('convPct').value,
+      fechaTasa: convFechaTasa
+    });
+
+    var et = $('convPctEt');
+    var pct = Motor.parseNumero($('convPct').value);
+    et.textContent = (!isNaN(pct) && pct >= 0 && pct <= 100) ? '(' + $('convPct').value.trim() + '%)' : '';
+
+    if (!conv.ok) {
+      convTexto = '';
+      $('convTotalBs').textContent = 'Bs —';
+      $('convPagoBs').textContent = 'Bs —';
+      $('convTotalBs').classList.add('apagado');
+      $('convPagoBs').classList.add('apagado');
+      $('convPie').textContent = '';
+      $('btnConvCopiar').disabled = true;
+      // Sin escribir nada todavia no hay nada que reprochar: la pantalla
+      // recien abierta invita, y solo cuando ya hay algo escrito dice que
+      // falta. Un error en la primera pantalla se lee como que algo se rompio.
+      var sinEmpezar = !$('convMonto').value.trim();
+      $('convBurbuja').innerHTML =
+        '<p class="burbuja-vacio">' +
+        esc(sinEmpezar ? 'Escribe el monto para ver el mensaje.' : (conv.errores[0] || '')) +
+        '</p>';
+      return;
+    }
+
+    $('convTotalBs').textContent = 'Bs ' + Motor.fmtDecimal(CAT, conv.montoBs);
+    $('convPagoBs').textContent = 'Bs ' + Motor.fmtDecimal(CAT, conv.pctBs);
+    $('convTotalBs').classList.remove('apagado');
+    $('convPagoBs').classList.remove('apagado');
+    $('convPie').textContent =
+      Motor.fmtDecimal(CAT, conv.montoUsd) + ' USD · ' +
+      Motor.fmtDecimal(CAT, conv.pctUsd) + ' USD a la tasa ' +
+      Motor.fmtDecimal(CAT, conv.tasa, 4);
+
+    convTexto = Motor.renderConversion(CAT, conv);
+    $('convBurbuja').innerHTML = aHtmlWhatsApp(convTexto);
+    $('btnConvCopiar').disabled = false;
+  }
+
+  // ==========================================================================
+  // PESTAÑAS
+  // ==========================================================================
+  /**
+   * Cambiar de pestaña no toca el estado de ninguna de las dos: la cotizacion
+   * a medio armar sigue ahi al volver. Lo unico que se mueve es que se ve.
+   */
+  function mostrarSeccion(cual) {
+    var esConv = (cual === 'conversor');
+    $('panelCotizador').classList.toggle('oculto', esConv);
+    $('panelConversor').classList.toggle('oculto', !esConv);
+    document.body.classList.toggle('en-conversor', esConv);
+    $('tabCotizador').setAttribute('aria-selected', String(!esConv));
+    $('tabConversor').setAttribute('aria-selected', String(esConv));
+    // El foco solo en escritorio: en el telefono abriria el teclado encima de
+    // la pantalla que la asesora acaba de pedir ver.
+    if (esConv && !anchoDeMovil()) $('convMonto').focus();
+  }
+
+  function conectarPestanas() {
+    $('tabCotizador').addEventListener('click', function () { mostrarSeccion('cotizador'); });
+    $('tabConversor').addEventListener('click', function () { mostrarSeccion('conversor'); });
+
+    $('pestanas') // el contenedor, para las flechas
+      .addEventListener('keydown', function (e) {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        var esConv = $('tabConversor').getAttribute('aria-selected') === 'true';
+        var destino = (e.key === 'ArrowRight') ? 'conversor' : 'cotizador';
+        if ((destino === 'conversor') === esConv) return;
+        e.preventDefault();
+        mostrarSeccion(destino);
+        $(destino === 'conversor' ? 'tabConversor' : 'tabCotizador').focus();
+      });
   }
 
   /** Borra todo lo cargado en el mini, sin tocar la cotizacion de la app. */

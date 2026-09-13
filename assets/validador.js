@@ -356,6 +356,30 @@ var Validador = (function () {
       });
     });
 
+    // --- 7b. El mensaje del conversor ----------------------------------------
+    // Otro texto y otra lista de marcadores. Se revisa igual que las
+    // plantillas: una llave mal escrita se imprime literal, y el cliente
+    // recibe "{{MONTO_BS}} Bs" en lugar de una cifra.
+    var msgConv = (cat.config && cat.config.MENSAJE_CONVERSOR) || '';
+    if (msgConv) {
+      var okConv = M.MARCADORES_CONVERSOR || [];
+      var usadosConv = (msgConv.match(/\{\{(\w+)\}\}/g) || [])
+        .map(function (x) { return x.slice(2, -2); });
+      usadosConv.filter(function (v, i, a) { return a.indexOf(v) === i; })
+        .forEach(function (u) {
+          if (okConv.indexOf(u) === -1) {
+            add('ERROR', 'config', 'MARCADOR_DESCONOCIDO',
+                'MENSAJE_CONVERSOR usa {{' + u + '}} que el motor no sabe resolver.');
+          }
+        });
+      ['MONTO_BS', 'MONTO_PCT_BS'].forEach(function (req) {
+        if (usadosConv.indexOf(req) === -1) {
+          add('ADVERTENCIA', 'config', 'MARCADOR_FALTANTE',
+              'MENSAJE_CONVERSOR no incluye {{' + req + '}}.');
+        }
+      });
+    }
+
     // --- 8. Consistencia de catalogo de habitaciones -------------------------
     Object.keys(cat.habitaciones).forEach(function (k) {
       var hb = cat.habitaciones[k];

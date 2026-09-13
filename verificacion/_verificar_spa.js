@@ -648,6 +648,64 @@ function paso(ficha, campo, signo) {
      /\.hab-controles \.campo-select \{[^}]*100%/.test(hojaCss),
      'y tambien en movil');
 
+  // ======================================================== 17. PESTAÑAS Y CONVERSOR
+  // La cotizacion armada tiene que seguir ahi al volver: cambiar de pestaña no
+  // es empezar de nuevo.
+  const habsAntesDeCambiar = qa('#lineas .hab').length;
+
+  ok($('panelConversor').classList.contains('oculto'), 'el conversor arranca escondido');
+  eq($('tabCotizador').getAttribute('aria-selected'), 'true', 'la pestaña del cotizador arranca activa');
+
+  click($('tabConversor'));
+  await esperar(120);
+  ok($('panelCotizador').classList.contains('oculto'), 'el cotizador se esconde');
+  ok(!$('panelConversor').classList.contains('oculto'), 'el conversor se muestra');
+  ok(doc.body.classList.contains('en-conversor'), 'el cuerpo marca que se esta en el conversor');
+  eq($('tabConversor').getAttribute('aria-selected'), 'true', 'y su pestaña queda activa');
+  eq($('tabCotizador').getAttribute('aria-selected'), 'false', 'la otra deja de estarlo');
+
+  // La fecha de la tasa arranca en hoy, y en la zona del equipo: con
+  // toISOString() una cotizacion de las 8 de la noche pediria la de mañana.
+  const hoyLocal = (() => {
+    const d = new Date(), m = d.getMonth() + 1, dd = d.getDate();
+    return `${d.getFullYear()}-${m < 10 ? '0' : ''}${m}-${dd < 10 ? '0' : ''}${dd}`;
+  })();
+  eq($('convFecha').value, hoyLocal, 'la fecha de la tasa arranca en hoy');
+
+  // El arnes no tiene red: fetch solo sirve datos/, asi que la tasa no llega y
+  // hay que escribirla. Ese es justo el camino que la asesora usa el dia que
+  // la API no responde, y el que no puede fallar.
+  eq($('convTotalBs').textContent, 'Bs —', 'sin tasa no hay total');
+  ok($('btnConvCopiar').disabled, 'y no se puede copiar');
+
+  setVal($('convTasa'), '842,2067', 'input');
+  setVal($('convMonto'), '560', 'input');
+  await esperar(120);
+  eq($('convTotalBs').textContent, 'Bs 471.635,75', 'el total en bolivares');
+  eq($('convPagoBs').textContent, 'Bs 141.490,73', 'el 30% en bolivares');
+  ok(!$('btnConvCopiar').disabled, 'con los dos datos ya se puede copiar');
+  ok($('convBurbuja').textContent.indexOf('471.635,75 Bs') !== -1,
+     'el mensaje lleva el total', $('convBurbuja').textContent);
+  ok($('convTasaPista').textContent.indexOf('mano') !== -1,
+     'la pista dice que la tasa se escribio a mano', $('convTasaPista').textContent);
+
+  setVal($('convPct'), '50', 'input');
+  await esperar(100);
+  eq($('convPagoBs').textContent, 'Bs 235.817,88', 'el porcentaje se puede cambiar');
+
+  // Un monto sin tasa no es cero bolivares: es una cuenta que no se puede hacer.
+  setVal($('convTasa'), '', 'input');
+  await esperar(100);
+  eq($('convTotalBs').textContent, 'Bs —', 'borrar la tasa apaga el total');
+  ok($('btnConvCopiar').disabled, 'y vuelve a bloquear el copiado');
+
+  click($('tabCotizador'));
+  await esperar(120);
+  ok(!$('panelCotizador').classList.contains('oculto'), 'se vuelve al cotizador');
+  ok(!doc.body.classList.contains('en-conversor'), 'y el cuerpo lo deja de marcar');
+  eq(qa('#lineas .hab').length, habsAntesDeCambiar,
+     'la cotizacion armada sigue intacta despues del viaje de ida y vuelta');
+
   // ================================================ N. LA HOJA, EN CRUDO
   // Dos atributos class en la misma etiqueta no dan error: el navegador se
   // queda con el primero y tira el segundo, en silencio. Asi desaparecio

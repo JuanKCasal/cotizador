@@ -9,5 +9,9 @@
   "CONTADOR_COTIZACIONES": "0",
   "SEPARADOR_MILES": ".",
   "REPO_GITHUB": "JuanKCasal/cotizador",
-  "RAMA_GITHUB": "main"
+  "RAMA_GITHUB": "main",
+  "TASA_URL": "https://ve.dolarapi.com/v1/dolares/oficial",
+  "PCT_RESERVA": "30",
+  "MENSAJE_CONVERSOR": "Total de Reserva {{MONEDA}}{{MONTO_USD}}, en Bolívares a tasa del día es: {{MONTO_BS}} Bs;\n\nPuede reservar con el {{PCT}}%, en este caso, {{MONEDA}}{{MONTO_PCT_USD}} en Bolívares a la tasa del día {{MONTO_PCT_BS}} Bs.",
+  "TASA_URL_HISTORICA": "https://ve.dolarapi.com/v1/historicos/dolares/oficial"
 }
