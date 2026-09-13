@@ -19,3 +19,7 @@ Desktop.ini
 .claude/
 .codex/
 .impeccable/
+
+# Lo que el asistente deja al entregar archivos a la conversacion. Son
+# capturas y borradores de trabajo, no del proyecto, y el repo es publico.
+Claude outputs/
