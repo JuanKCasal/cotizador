@@ -5,7 +5,7 @@
     "fecha_inicio": "2026-09-25",
     "fecha_fin": "2026-09-26",
     "motivo": "STOP SALE",
-    "activo": true
+    "activo": false
   },
   {
     "hotel": "HPA",
@@ -13,7 +13,7 @@
     "fecha_inicio": "2026-09-25",
     "fecha_fin": "2026-09-26",
     "motivo": "STOP SALE",
-    "activo": true
+    "activo": false
   },
   {
     "hotel": "HPA",
@@ -21,7 +21,7 @@
     "fecha_inicio": "2026-09-25",
     "fecha_fin": "2026-09-26",
     "motivo": "STOP SALE",
-    "activo": true
+    "activo": false
   },
   {
     "hotel": "HPA",
@@ -29,7 +29,7 @@
     "fecha_inicio": "2026-09-25",
     "fecha_fin": "2026-09-26",
     "motivo": "STOP SALE",
-    "activo": true
+    "activo": false
   },
   {
     "hotel": "HPA",
